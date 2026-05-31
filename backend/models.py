@@ -2,7 +2,6 @@
 models.py — Pydantic request/response models for Jyotish AI API
 """
 
-from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional, Any
 from pydantic import BaseModel, Field

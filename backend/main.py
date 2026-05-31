@@ -125,22 +125,28 @@ app.add_middleware(
 )
 
 # ── Security headers middleware ────────────────────────────────────────────────
+# NOTE: @app.middleware("http") wraps outermost — runs before CORS.
+# We must never raise here or CORS headers will be missing on error responses.
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"]    = "nosniff"
-    response.headers["X-Frame-Options"]           = "DENY"
-    response.headers["X-XSS-Protection"]          = "1; mode=block"
-    response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"]        = "geolocation=(), microphone=(), camera=()"
-    # CSP: allow only same-origin + our known backend (tighten after deploy)
-    response.headers["Content-Security-Policy"]   = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data:; "
-        "connect-src 'self' https://*.supabase.co"
-    )
+    try:
+        response = await call_next(request)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Unhandled error in request pipeline")
+        response = JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+            headers={
+                "Access-Control-Allow-Origin":  request.headers.get("origin", "*"),
+                "Access-Control-Allow-Credentials": "false",
+            },
+        )
+    response.headers["X-Content-Type-Options"]  = "nosniff"
+    response.headers["X-Frame-Options"]         = "DENY"
+    response.headers["X-XSS-Protection"]        = "1; mode=block"
+    response.headers["Referrer-Policy"]         = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]      = "geolocation=(), microphone=(), camera=()"
     return response
 
 app.include_router(ashtama_router)
@@ -360,8 +366,7 @@ class NatalChartRequest(BaseModel):
     place_of_birth: str                # max 120 chars
     user_id: Optional[str] = None      # if logged in
 
-    # allow_mutation needed so cleaned() can write back sanitised values
-    model_config = {"str_strip_whitespace": True, "arbitrary_types_allowed": True}
+    model_config = {"str_strip_whitespace": True}
 
     def cleaned(self) -> dict:
         """Return sanitised dict — avoids Pydantic v2 immutability issues."""

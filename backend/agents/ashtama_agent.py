@@ -21,8 +21,6 @@ Register in main.py:
     app.include_router(ashtama_router)
 """
 
-from __future__ import annotations
-
 import datetime
 from pathlib import Path
 from typing import Optional
