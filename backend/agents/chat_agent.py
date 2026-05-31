@@ -109,8 +109,9 @@ def _build_tara_calendar(natal_nak_index: int, year: int, month: int,
     return month_name, "\n".join(lines)
 
 
-def _build_system(chart: dict, location: str = "Chennai") -> str:
+def _build_system(natal_chart, location: str = "Chennai") -> str:
     """Build the system prompt from the natal chart response + today's panchangam."""
+    chart: dict = natal_chart if isinstance(natal_chart, dict) else {}
     planets = chart.get("planet_positions", {})
     asc     = chart.get("ascendant", {})
     yogas   = [y["name"] for y in chart.get("yogas", []) if isinstance(y, dict)]
@@ -134,12 +135,16 @@ def _build_system(chart: dict, location: str = "Chennai") -> str:
         )
 
     # Full antardasha sequence
-    antardasha_lines = [
-        f"  {'→ ' if b['planet'] == bh.get('planet') else '  '}"
-        f"{b['planet']}: {b['start']} – {b['end']}"
-        + (" ← current" if b['planet'] == bh.get('planet') else "")
-        for b in seq
-    ]
+    antardasha_lines = []
+    for b in seq:
+        if not isinstance(b, dict):
+            continue
+        planet = b.get("planet", "?")
+        is_cur = planet == bh.get("planet")
+        antardasha_lines.append(
+            f"  {'→ ' if is_cur else '  '}{planet}: {b.get('start','')} – {b.get('end','')}"
+            + (" ← current" if is_cur else "")
+        )
 
     # ── helpers ──────────────────────────────────────────────────────────────
     def _fmt_iso(iso_str: str | None) -> str:

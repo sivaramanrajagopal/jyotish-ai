@@ -789,6 +789,9 @@ def chat_endpoint(request: Request, req: ChatRequest):
         return {"reply": reply, "model": "gpt-4o-mini"}
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except Exception:
-        # Never leak internal errors to client
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Chat endpoint error: %s\n%s", exc, traceback.format_exc()
+        )
         raise HTTPException(status_code=500, detail="Chat service temporarily unavailable.")
