@@ -379,12 +379,18 @@ class NatalChartRequest(BaseModel):
         }
 
 
-_geocoder = Nominatim(user_agent="jyotish-ai")
+_geocoder = Nominatim(user_agent="jyotish-ai", timeout=10)
 
 
 def _geocode(place: str) -> tuple[float, float, str]:
     """Return (lat, lon, timezone_str) for a place name."""
-    location = _geocoder.geocode(place, addressdetails=True, language="en")
+    try:
+        location = _geocoder.geocode(place, addressdetails=True, language="en")
+    except Exception as geo_err:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Geocoding service unavailable. Please try again. ({geo_err})"
+        )
     if not location:
         raise HTTPException(status_code=400, detail=f"Could not geocode '{place}'.")
     lat = location.latitude
