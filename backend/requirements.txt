@@ -1,0 +1,50 @@
+# Jyotish AI — Backend dependencies
+# Install: pip install -r requirements.txt
+
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Astronomy engine
+pyswisseph==2.10.3.2
+
+# Database
+supabase==2.10.0
+
+# AI
+anthropic==0.40.0
+openai>=1.35.0
+
+# Scheduling
+apscheduler==3.10.4
+
+# Payments
+razorpay==1.4.1
+
+# Email
+resend==2.4.0
+
+# Geocoding (for natal chart place → lat/lon)
+geopy==2.4.1
+
+# HTTP client (for geocoding and external APIs)
+httpx==0.27.2
+
+# Data validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Date/time helpers
+python-dateutil==2.9.0.post0
+
+# Environment
+python-dotenv==1.0.1
+
+# Async support
+anyio==4.7.0
+
+# Rate limiting (OWASP A05 — security misconfiguration protection)
+slowapi==0.1.9
+
+# Timezone
+timezonefinder==6.5.2

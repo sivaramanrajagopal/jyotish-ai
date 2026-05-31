@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- ── Viewport: prevents zoom issues on iOS, fixes keyboard push-up ── -->
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+
+    <!-- ── PWA / home screen ── -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#f59e0b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- ── iOS specific ── -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Jyotish AI" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+
+    <!-- ── Favicon ── -->
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+
+    <!-- ── SEO / Social ── -->
+    <title>Jyotish AI — Classical Vedic Astrology</title>
+    <meta name="description"
+      content="Classical Vedic astrology powered by AI — precise natal charts, daily Panchangam, Tara Balam, Chandra Ashtama, and cosmic guidance." />
+    <meta name="keywords" content="vedic astrology, jyotish, panchangam, natal chart, dasha, tara balam, AI astrology" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Jyotish AI — Classical Vedic Astrology" />
+    <meta property="og:description" content="Precise natal charts, daily Panchangam, and AI-powered Vedic guidance." />
+    <meta property="og:type" content="website" />
+
+    <!-- ── Prevent tap highlight flash on mobile ── -->
+    <style>
+      * { -webkit-tap-highlight-color: transparent; }
+      html { background: #120c00; }
+      body { margin: 0; overscroll-behavior: none; }
+      #root { min-height: 100svh; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

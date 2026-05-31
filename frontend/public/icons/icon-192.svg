@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="40" fill="#120c00"/>
+  <rect width="192" height="192" rx="40" fill="url(#bg)" opacity="0.6"/>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2d1a00"/>
+      <stop offset="100%" stop-color="#0e0900"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ganesha face — scaled to 192x192 -->
+  <!-- Left ear -->
+  <ellipse cx="45" cy="108" rx="28" ry="34" fill="#d97706" opacity="0.8"/>
+  <ellipse cx="45" cy="108" rx="18" ry="22" fill="#120c00" opacity="0.7"/>
+  <!-- Right ear -->
+  <ellipse cx="147" cy="108" rx="28" ry="34" fill="#d97706" opacity="0.8"/>
+  <ellipse cx="147" cy="108" rx="18" ry="22" fill="#120c00" opacity="0.7"/>
+
+  <!-- Head -->
+  <ellipse cx="96" cy="112" rx="58" ry="64" fill="#fbbf24"/>
+  <ellipse cx="96" cy="112" rx="52" ry="58" fill="#fcd34d"/>
+
+  <!-- Crown base -->
+  <rect x="44" y="48" width="104" height="14" rx="7" fill="#d97706"/>
+  <!-- Crown peaks -->
+  <polygon points="96,18 80,48 112,48" fill="#fbbf24"/>
+  <polygon points="68,26 52,48 80,48" fill="#d97706"/>
+  <polygon points="124,26 112,48 140,48" fill="#d97706"/>
+  <!-- Crown gem -->
+  <circle cx="96" cy="30" r="7" fill="#fef3c7"/>
+  <circle cx="96" cy="30" r="3.5" fill="#f59e0b"/>
+
+  <!-- Eyes -->
+  <ellipse cx="78" cy="100" rx="10" ry="9" fill="#1a0e00"/>
+  <ellipse cx="114" cy="100" rx="10" ry="9" fill="#1a0e00"/>
+  <circle cx="78" cy="100" r="4.5" fill="#fef3c7"/>
+  <circle cx="114" cy="100" r="4.5" fill="#fef3c7"/>
+  <circle cx="79" cy="100" r="2.5" fill="#1a0e00"/>
+  <circle cx="115" cy="100" r="2.5" fill="#1a0e00"/>
+
+  <!-- Third eye -->
+  <ellipse cx="96" cy="80" rx="6" ry="7" fill="#d97706"/>
+  <ellipse cx="96" cy="80" rx="3" ry="4.5" fill="#fef3c7"/>
+
+  <!-- Trunk curling left -->
+  <path d="M 88 130 Q 72 152 60 158 Q 48 164 50 174 Q 52 180 62 177"
+    stroke="#d97706" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <path d="M 88 130 Q 72 152 60 158 Q 48 164 50 174 Q 52 180 62 177"
+    stroke="#fbbf24" stroke-width="7" stroke-linecap="round" fill="none"/>
+
+  <!-- Right tusk -->
+  <path d="M 124 134 Q 148 144 154 164"
+    stroke="#fef3c7" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <!-- Left tusk stub -->
+  <path d="M 68 134 Q 52 140 46 154"
+    stroke="#fef3c7" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.4"/>
+
+  <!-- Om symbol -->
+  <text x="96" y="68" text-anchor="middle" font-size="14" fill="#d97706" font-family="serif" opacity="0.8">ॐ</text>
+
+  <!-- Border glow ring -->
+  <rect width="192" height="192" rx="40" fill="none" stroke="#f59e0b" stroke-width="3" opacity="0.3"/>
+</svg>
