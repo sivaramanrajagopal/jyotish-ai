@@ -321,21 +321,34 @@ def chat(
     """
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError(
-            "OPENAI_API_KEY is not set in backend/.env"
+        raise RuntimeError("OPENAI_API_KEY is not configured on the server.")
+
+    try:
+        system_prompt = _build_system(natal_chart, location)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("_build_system failed: %s", e, exc_info=True)
+        system_prompt = (
+            "You are Jyotish AI, a Vedic astrology advisor. "
+            "The user's natal chart could not be loaded. "
+            "Answer their question as best you can based on today's Panchangam alone."
         )
 
-    client = OpenAI(api_key=api_key)
-
-    system_prompt = _build_system(natal_chart, location)
-
-    response = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=TOKENS,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            *messages,
-        ],
-    )
-
-    return response.choices[0].message.content or ""
+    from openai import APIError, AuthenticationError, RateLimitError
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model=MODEL,
+            max_tokens=TOKENS,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                *messages,
+            ],
+        )
+        return response.choices[0].message.content or ""
+    except AuthenticationError:
+        raise RuntimeError("OpenAI API key is invalid. Please check server configuration.")
+    except RateLimitError:
+        raise RuntimeError("OpenAI rate limit reached. Please try again in a moment.")
+    except APIError as e:
+        raise RuntimeError(f"OpenAI API error: {e}")
