@@ -14,8 +14,6 @@ Security hardening (OWASP Top 10):
   A09 Logging                — tracebacks never sent to client
 """
 
-from __future__ import annotations
-
 import os
 import re
 from contextlib import asynccontextmanager
@@ -28,7 +26,7 @@ from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from fastapi import FastAPI, HTTPException, Query, Request, Body
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -402,7 +400,7 @@ def _geocode(place: str) -> tuple[float, float, str]:
 
 @app.post("/natal-chart")
 @limiter.limit("20/minute")
-def natal_chart(request: Request, req: NatalChartRequest = Body(...)):
+def natal_chart(request: Request, req: NatalChartRequest):
     """
     Calculate a Vedic natal chart.
 
@@ -492,7 +490,7 @@ class ForecastRequest(BaseModel):
 
 @app.post("/forecast")
 @limiter.limit("10/minute")
-def forecast(request: Request, req: ForecastRequest = Body(...)):
+def forecast(request: Request, req: ForecastRequest):
     """
     Generate a personalized daily Vedic forecast using Claude AI.
 
@@ -676,7 +674,7 @@ def transit_chart(
 
 @app.post("/chat")
 @limiter.limit("30/minute")
-def chat_endpoint(request: Request, req: ChatRequest = Body(...)):
+def chat_endpoint(request: Request, req: ChatRequest):
     """
     Multi-turn Vedic astrology chat grounded in the user's natal chart.
     Pass the full conversation history with each request.
