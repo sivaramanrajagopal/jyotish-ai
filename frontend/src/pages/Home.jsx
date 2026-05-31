@@ -269,7 +269,12 @@ export default function Home() {
       setChart(data)
       setActiveTab('chart')          // auto-navigate to chart tab
     } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
+      const detail = err.response?.data?.detail
+      // Pydantic v2 returns an array of {type, loc, msg, input} objects
+      const msg = Array.isArray(detail)
+        ? detail.map(e => `${e.loc?.slice(-1)[0] ?? 'field'}: ${e.msg}`).join(' · ')
+        : (typeof detail === 'string' ? detail : 'Something went wrong. Please try again.')
+      setError(msg)
     } finally {
       setLoading(false)
     }

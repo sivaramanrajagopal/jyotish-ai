@@ -343,19 +343,24 @@ def validate_today(
 # ─────────────────────────────────────────────
 
 class NatalChartRequest(BaseModel):
-    name: str                          # max 80 chars — validated below
+    name: str                          # max 80 chars
     dob: str                           # YYYY-MM-DD
     tob: str                           # HH:MM (24h, local time)
     place_of_birth: str                # max 120 chars
     user_id: Optional[str] = None      # if logged in
 
-    model_config = {"str_strip_whitespace": True}
+    # allow_mutation needed so cleaned() can write back sanitised values
+    model_config = {"str_strip_whitespace": True, "arbitrary_types_allowed": True}
 
-    def cleaned(self) -> "NatalChartRequest":
-        """Sanitise free-text fields."""
-        self.name          = _sanitise(self.name, 80)
-        self.place_of_birth = _sanitise(self.place_of_birth, 120)
-        return self
+    def cleaned(self) -> dict:
+        """Return sanitised dict — avoids Pydantic v2 immutability issues."""
+        return {
+            "name":           _sanitise(self.name, 80),
+            "dob":            self.dob,
+            "tob":            self.tob,
+            "place_of_birth": _sanitise(self.place_of_birth, 120),
+            "user_id":        self.user_id,
+        }
 
 
 _geocoder = Nominatim(user_agent="jyotish-ai")
@@ -393,31 +398,38 @@ def natal_chart(request: Request, req: NatalChartRequest):
     - Stores in natal_charts table (if user_id provided)
     - Returns planet positions, ascendant, yogas
     """
-    req = req.cleaned()
+    cleaned = req.cleaned()
+    name           = cleaned["name"]
+    dob            = cleaned["dob"]
+    tob            = cleaned["tob"]
+    place_of_birth = cleaned["place_of_birth"]
+    user_id        = cleaned["user_id"]
 
     # Validate date + time formats strictly
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", req.dob):
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", dob):
         raise HTTPException(status_code=400, detail="dob must be YYYY-MM-DD.")
-    if not re.match(r"^\d{2}:\d{2}$", req.tob):
+    # Accept HH:MM or HH:MM:SS (HTML time inputs vary)
+    if not re.match(r"^\d{2}:\d{2}(:\d{2})?$", tob):
         raise HTTPException(status_code=400, detail="tob must be HH:MM (24h).")
+    tob = tob[:5]   # normalise to HH:MM
     try:
-        datetime.strptime(req.dob, "%Y-%m-%d")
-        datetime.strptime(req.tob, "%H:%M")
+        datetime.strptime(dob, "%Y-%m-%d")
+        datetime.strptime(tob, "%H:%M")
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=f"Invalid date/time: {exc}")
 
-    lat, lon, timezone = _geocode(req.place_of_birth)
+    lat, lon, timezone = _geocode(place_of_birth)
 
     chart = calculate_natal_chart(
-        dob=req.dob,
-        tob=req.tob,
+        dob=dob,
+        tob=tob,
         lat=lat,
         lon=lon,
         timezone=timezone,
     )
 
     # Add geocoded location back into response
-    chart["place_of_birth"] = req.place_of_birth
+    chart["place_of_birth"] = place_of_birth
     chart["birth_data"]["lat"] = lat
     chart["birth_data"]["lon"] = lon
     chart["birth_data"]["timezone"] = timezone
@@ -426,18 +438,18 @@ def natal_chart(request: Request, req: NatalChartRequest):
     try:
         from agents.dasha_agent import get_personal_dasha
         moon_lon = chart["planet_positions"]["Moon"]["longitude"]
-        chart["dasha"] = get_personal_dasha(moon_lon, req.dob)
+        chart["dasha"] = get_personal_dasha(moon_lon, dob)
     except Exception as e:
         print(f"[dasha error] {e}")
         chart["dasha"] = {}
 
     # Store in Supabase if user_id provided
-    if req.user_id and SUPABASE_ENABLED:
+    if user_id and SUPABASE_ENABLED:
         try:
             sb = get_supabase()
             asc = chart["ascendant"]
             db_row = {
-                "user_id":               req.user_id,
+                "user_id":               user_id,
                 "sun_sign":              chart["planet_positions"]["Sun"]["sign"],
                 "moon_sign":             chart["planet_positions"]["Moon"]["sign"],
                 "ascendant":             asc["sign"],
