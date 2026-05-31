@@ -31,6 +31,7 @@ from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -104,6 +105,18 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log validation errors to Render logs and return a readable 422."""
+    import logging
+    logging.getLogger(__name__).error(
+        "422 validation error on %s %s: %s | body: %s",
+        request.method, request.url.path, exc.errors(), exc.body
+    )
+    # Return human-readable messages to the client
+    msgs = [f"{' → '.join(str(l) for l in e['loc'])}: {e['msg']}" for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": " | ".join(msgs)})
 
 app.add_middleware(
     CORSMiddleware,
