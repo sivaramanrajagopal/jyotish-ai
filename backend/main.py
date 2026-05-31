@@ -379,34 +379,109 @@ class NatalChartRequest(BaseModel):
         }
 
 
-_geocoder = Nominatim(user_agent="jyotish-ai", timeout=10)
+_geocoder = Nominatim(user_agent="jyotish-ai/1.0", timeout=10)
+
+# In-process cache: normalised city name → (lat, lon, tz)
+_geocache: dict[str, tuple[float, float, str]] = {}
+
+# Hardcoded fallback for common Indian cities (covers most Jyotish users)
+_CITY_FALLBACK: dict[str, tuple[float, float, str]] = {
+    "chennai":      (13.0827, 80.2707, "Asia/Kolkata"),
+    "madras":       (13.0827, 80.2707, "Asia/Kolkata"),
+    "mumbai":       (19.0760, 72.8777, "Asia/Kolkata"),
+    "bombay":       (19.0760, 72.8777, "Asia/Kolkata"),
+    "delhi":        (28.6139, 77.2090, "Asia/Kolkata"),
+    "new delhi":    (28.6139, 77.2090, "Asia/Kolkata"),
+    "bengaluru":    (12.9716, 77.5946, "Asia/Kolkata"),
+    "bangalore":    (12.9716, 77.5946, "Asia/Kolkata"),
+    "hyderabad":    (17.3850, 78.4867, "Asia/Kolkata"),
+    "kolkata":      (22.5726, 88.3639, "Asia/Kolkata"),
+    "calcutta":     (22.5726, 88.3639, "Asia/Kolkata"),
+    "pune":         (18.5204, 73.8567, "Asia/Kolkata"),
+    "ahmedabad":    (23.0225, 72.5714, "Asia/Kolkata"),
+    "surat":        (21.1702, 72.8311, "Asia/Kolkata"),
+    "jaipur":       (26.9124, 75.7873, "Asia/Kolkata"),
+    "lucknow":      (26.8467, 80.9462, "Asia/Kolkata"),
+    "kanpur":       (26.4499, 80.3319, "Asia/Kolkata"),
+    "nagpur":       (21.1458, 79.0882, "Asia/Kolkata"),
+    "coimbatore":   (11.0168, 76.9558, "Asia/Kolkata"),
+    "madurai":      (9.9252,  78.1198, "Asia/Kolkata"),
+    "tiruchirappalli": (10.7905, 78.7047, "Asia/Kolkata"),
+    "trichy":       (10.7905, 78.7047, "Asia/Kolkata"),
+    "kochi":        (9.9312,  76.2673, "Asia/Kolkata"),
+    "cochin":       (9.9312,  76.2673, "Asia/Kolkata"),
+    "thiruvananthapuram": (8.5241, 76.9366, "Asia/Kolkata"),
+    "trivandrum":   (8.5241,  76.9366, "Asia/Kolkata"),
+    "visakhapatnam": (17.6868, 83.2185, "Asia/Kolkata"),
+    "vizag":        (17.6868, 83.2185, "Asia/Kolkata"),
+    "patna":        (25.5941, 85.1376, "Asia/Kolkata"),
+    "bhopal":       (23.2599, 77.4126, "Asia/Kolkata"),
+    "indore":       (22.7196, 75.8577, "Asia/Kolkata"),
+    "varanasi":     (25.3176, 82.9739, "Asia/Kolkata"),
+    "agra":         (27.1767, 78.0081, "Asia/Kolkata"),
+    "amritsar":     (31.6340, 74.8723, "Asia/Kolkata"),
+    "chandigarh":   (30.7333, 76.7794, "Asia/Kolkata"),
+    "guwahati":     (26.1445, 91.7362, "Asia/Kolkata"),
+    "new york":     (40.7128, -74.0060, "America/New_York"),
+    "london":       (51.5074,  -0.1278, "Europe/London"),
+    "singapore":    (1.3521,  103.8198, "Asia/Singapore"),
+    "dubai":        (25.2048,  55.2708, "Asia/Dubai"),
+    "kuala lumpur": (3.1390,  101.6869, "Asia/Kuala_Lumpur"),
+}
 
 
 def _geocode(place: str) -> tuple[float, float, str]:
-    """Return (lat, lon, timezone_str) for a place name."""
+    """Return (lat, lon, timezone_str) for a place name.
+
+    Priority: in-process cache → hardcoded fallback → Nominatim API.
+    """
+    key = place.strip().lower()
+
+    # 1. In-process cache (avoids repeated Nominatim calls)
+    if key in _geocache:
+        return _geocache[key]
+
+    # 2. Hardcoded fallback for common cities
+    if key in _CITY_FALLBACK:
+        result = _CITY_FALLBACK[key]
+        _geocache[key] = result
+        return result
+
+    # 3. Nominatim lookup
     try:
         location = _geocoder.geocode(place, addressdetails=True, language="en")
     except Exception as geo_err:
+        err_str = str(geo_err)
+        if "429" in err_str:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Geocoding rate limit reached. "
+                    "Please enter your city name exactly (e.g. 'Chennai', 'Mumbai') "
+                    "and try again in a few seconds."
+                )
+            )
         raise HTTPException(
             status_code=503,
-            detail=f"Geocoding service unavailable. Please try again. ({geo_err})"
+            detail="Geocoding service unavailable. Please try again shortly."
         )
     if not location:
-        raise HTTPException(status_code=400, detail=f"Could not geocode '{place}'.")
+        raise HTTPException(status_code=400, detail=f"Could not find location '{place}'. Try a major nearby city.")
     lat = location.latitude
     lon = location.longitude
 
-    # Determine timezone from lat/lon using timezonefinder
+    # Determine timezone from lat/lon
     try:
         from timezonefinder import TimezoneFinder
         tf = TimezoneFinder()
         tz = tf.timezone_at(lat=lat, lng=lon) or "UTC"
     except ImportError:
-        # Fallback: if country is India, use IST
         country = (location.raw.get("address") or {}).get("country_code", "").upper()
         tz = "Asia/Kolkata" if country == "IN" else "UTC"
 
-    return lat, lon, tz
+    result = (lat, lon, tz)
+    _geocache[key] = result
+    return result
 
 
 @app.post("/natal-chart")
