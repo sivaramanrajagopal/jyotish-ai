@@ -30,9 +30,9 @@ geopy==2.4.1
 # HTTP client (for geocoding and external APIs)
 httpx==0.27.2
 
-# Data validation
-pydantic==2.10.3
-pydantic-settings==2.6.1
+# Data validation (2.11+ has pre-built wheels for Python 3.12/3.13/3.14)
+pydantic==2.11.5
+pydantic-settings==2.9.1
 
 # Date/time helpers
 python-dateutil==2.9.0.post0
