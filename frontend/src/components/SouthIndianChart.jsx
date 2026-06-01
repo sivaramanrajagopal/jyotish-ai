@@ -242,8 +242,8 @@ export default function SouthIndianChart({
   })
 
   const centreStyle = {
-    background: "linear-gradient(135deg, #1a0e00, #2d1a00)",
-    border: "1px solid rgba(251,191,36,0.2)",
+    background: "#FFF8F0",
+    border: "1px solid #E8DDD0",
     textAlign: "center",
     verticalAlign: "middle",
     padding: "8px",
@@ -267,18 +267,18 @@ export default function SouthIndianChart({
           <tr>
             <Cell {...cellProps(10)} />
             <td colSpan={2} rowSpan={2} style={centreStyle}>
-              <div style={{ color:"#fbbf24", fontWeight:700, fontSize:"0.85rem" }}>{title}</div>
+              <div style={{ color:"#E47911", fontWeight:700, fontSize:"0.85rem" }}>{title}</div>
               {subtitle && (
-                <div style={{ color:"rgba(254,243,199,0.4)", fontSize:"0.6rem", marginTop:"4px", lineHeight:1.4 }}>
+                <div style={{ color:"#AAA", fontSize:"0.6rem", marginTop:"4px", lineHeight:1.4 }}>
                   {subtitle}
                 </div>
               )}
               {showDetails && (
-                <div style={{ marginTop:"8px", fontSize:"0.5rem", color:"rgba(254,243,199,0.3)", lineHeight:1.8 }}>
-                  <div><span style={{color:"#ef4444"}}>℞</span> Retrograde</div>
-                  <div><span style={{color:"#f59e0b"}}>★</span> Vargottama</div>
-                  <div style={{color:"rgba(254,243,199,0.4)"}}>15.3° = degree</div>
-                  <div style={{color:"rgba(254,243,199,0.4)"}}>P2 = pada</div>
+                <div style={{ marginTop:"8px", fontSize:"0.5rem", color:"#AAA", lineHeight:1.8 }}>
+                  <div><span style={{color:"#D13212"}}>℞</span> Retrograde</div>
+                  <div><span style={{color:"#E47911"}}>★</span> Vargottama</div>
+                  <div style={{color:"#AAA"}}>15.3° = degree</div>
+                  <div style={{color:"#AAA"}}>P2 = pada</div>
                 </div>
               )}
             </td>
@@ -297,9 +297,9 @@ export default function SouthIndianChart({
         </tbody>
       </table>
       {!showDetails && (
-        <div style={{ fontSize:"0.55rem", color:"rgba(251,191,36,0.3)", marginTop:"4px", textAlign:"right" }}>
-          <span style={{color:"#ef4444"}}>℞</span> Retrograde &nbsp;
-          <span style={{color:"#f59e0b"}}>★</span> Vargottama
+        <div style={{ fontSize:"0.55rem", color:"#AAA", marginTop:"4px", textAlign:"right" }}>
+          <span style={{color:"#D13212"}}>℞</span> Retrograde &nbsp;
+          <span style={{color:"#E47911"}}>★</span> Vargottama
         </div>
       )}
     </div>

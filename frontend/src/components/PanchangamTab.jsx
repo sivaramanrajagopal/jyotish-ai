@@ -87,7 +87,7 @@ function PanchangamLimbs({ data }) {
       {/* Sunrise / Sunset */}
       <div className="flex justify-between text-xs px-1" style={S.sub}>
         <span>☀ Sunrise: {fmtTime(data.sunrise)}</span>
-        <span>🌇 Sunset: {fmtTime(data.sunset)}</span>
+        <span>🌆 Sunset: {fmtTime(data.sunset)}</span>
       </div>
 
       {/* Purnima / Amavasya banner */}
