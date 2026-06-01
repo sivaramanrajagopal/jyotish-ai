@@ -23,7 +23,7 @@ import ForecastPanel from '../components/ForecastPanel'
 import ChatPanel from '../components/ChatPanel'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
-import GaneshaIcon from '../components/GaneshaIcon'
+// GaneshaIcon replaced by inline ॐ symbol in GaneshaBanner
 
 // ── Shared colours — Amazon light + saffron ───────────────────────────────────
 const G = {
@@ -67,14 +67,24 @@ function NeedChart({ onGoHome }) {
   )
 }
 
-// ── Ganesha + mantra banner ───────────────────────────────────────────────────
+// ── Om symbol + mantra banner ─────────────────────────────────────────────────
 function GaneshaBanner() {
   return (
     <div
       className="flex items-center justify-center gap-4 py-3 px-4"
       style={{ background: '#232F3E', borderBottom: '3px solid #FF9900' }}
     >
-      <GaneshaIcon size={52} glow />
+      {/* Om symbol */}
+      <div style={{
+        fontSize: '44px',
+        lineHeight: 1,
+        color: '#FF9900',
+        fontFamily: 'serif',
+        filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.6))',
+        userSelect: 'none',
+      }}>
+        ॐ
+      </div>
       <div className="text-left">
         <div className="text-lg font-bold" style={{ color: '#FF9900', letterSpacing: '0.08em' }}>
           ॐ महा गणपतये नमः
@@ -126,16 +136,16 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
               <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Date of Birth</label>
               <input
                 type="date" name="dob" value={form.dob} onChange={handleChange} required
-                className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-                style={G.input}
+                className="rounded-lg px-4 py-2.5 text-sm focus:outline-none"
+                style={{ ...G.input, width: '100%', boxSizing: 'border-box', display: 'block' }}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Time of Birth</label>
               <input
                 type="time" name="tob" value={form.tob} onChange={handleChange} required
-                className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-                style={G.input}
+                className="rounded-lg px-4 py-2.5 text-sm focus:outline-none"
+                style={{ ...G.input, width: '100%', boxSizing: 'border-box', display: 'block' }}
               />
             </div>
           </div>
