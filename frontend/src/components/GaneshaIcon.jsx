@@ -1,115 +1,111 @@
 /**
  * GaneshaIcon.jsx
- * A clean SVG Ganesha face icon — golden cosmic style.
- * Depicts: elephant head, large ears, crown (kireetam), curved trunk,
- * single intact tusk, third eye, and Om symbol on forehead.
+ * Cute, vibrant Ganesha — saffron + orange palette, works on dark header.
  */
 
-export default function GaneshaIcon({ size = 40, glow = false }) {
-  const gold   = '#fbbf24'
-  const dark   = '#1a0e00'
-  const mid    = '#d97706'
-  const light  = '#fef3c7'
-  const dim    = 'rgba(251,191,36,0.5)'
+export default function GaneshaIcon({ size = 56, glow = false }) {
+  const saffron = '#FF9900'
+  const deepOrange = '#E47911'
+  const skin    = '#FFB347'
+  const skinLt  = '#FFD280'
+  const red     = '#D13212'
+  const cream   = '#FFF8DC'
+  const brown   = '#5C2A00'
+  const white   = '#FFFFFF'
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 80 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={glow ? { filter: `drop-shadow(0 0 6px ${gold})` } : undefined}
+      style={glow ? { filter: `drop-shadow(0 0 8px ${saffron})` } : undefined}
       aria-label="Ganesha"
     >
-      {/* ── Left ear (large, round) ── */}
-      <ellipse cx="11" cy="36" rx="9" ry="11" fill={mid} opacity="0.8" />
-      <ellipse cx="11" cy="36" rx="6" ry="7.5" fill={dark} opacity="0.6" />
+      {/* ── Halo / aura ── */}
+      <circle cx="40" cy="36" r="34" fill={saffron} opacity="0.12" />
+      <circle cx="40" cy="36" r="30" fill={saffron} opacity="0.07" />
+
+      {/* ── Left ear ── */}
+      <ellipse cx="12" cy="40" rx="11" ry="13" fill={skin} />
+      <ellipse cx="12" cy="40" rx="7"  ry="9"  fill={skinLt} opacity="0.6" />
+      <ellipse cx="12" cy="40" rx="4"  ry="6"  fill={brown}  opacity="0.25" />
 
       {/* ── Right ear ── */}
-      <ellipse cx="53" cy="36" rx="9" ry="11" fill={mid} opacity="0.8" />
-      <ellipse cx="53" cy="36" rx="6" ry="7.5" fill={dark} opacity="0.6" />
+      <ellipse cx="68" cy="40" rx="11" ry="13" fill={skin} />
+      <ellipse cx="68" cy="40" rx="7"  ry="9"  fill={skinLt} opacity="0.6" />
+      <ellipse cx="68" cy="40" rx="4"  ry="6"  fill={brown}  opacity="0.25" />
 
-      {/* ── Head / face (oval) ── */}
-      <ellipse cx="32" cy="36" rx="20" ry="22" fill={gold} />
-      <ellipse cx="32" cy="36" rx="18" ry="20" fill="#fcd34d" />
+      {/* ── Head ── */}
+      <ellipse cx="40" cy="42" rx="25" ry="27" fill={skin} />
+      <ellipse cx="40" cy="42" rx="22" ry="24" fill={skinLt} />
 
-      {/* ── Crown / kireetam ── */}
-      {/* Base band */}
-      <rect x="14" y="14" width="36" height="5" rx="2.5" fill={mid} />
-      {/* Centre peak */}
-      <polygon points="32,4 27,14 37,14" fill={gold} />
-      {/* Left peak */}
-      <polygon points="22,7 18,14 26,14" fill={mid} />
-      {/* Right peak */}
-      <polygon points="42,7 38,14 46,14" fill={mid} />
-      {/* Crown gem */}
-      <circle cx="32" cy="10" r="2.5" fill={light} />
+      {/* ── Crown base ── */}
+      <rect x="18" y="18" width="44" height="7" rx="3.5" fill={deepOrange} />
+      {/* Crown peaks */}
+      <polygon points="40,4 34,18 46,18"  fill={saffron} />
+      <polygon points="28,9 22,18 34,18"  fill={deepOrange} />
+      <polygon points="52,9 46,18 58,18"  fill={deepOrange} />
+      {/* Crown gems */}
+      <circle cx="40" cy="9"  r="3" fill={red}   />
+      <circle cx="28" cy="13" r="2" fill={cream} opacity="0.9" />
+      <circle cx="52" cy="13" r="2" fill={cream} opacity="0.9" />
+      {/* Gold crown dots */}
+      <circle cx="33" cy="21" r="1.2" fill={saffron} />
+      <circle cx="40" cy="21" r="1.2" fill={saffron} />
+      <circle cx="47" cy="21" r="1.2" fill={saffron} />
+
+      {/* ── Forehead tilak / third eye ── */}
+      <ellipse cx="40" cy="31" rx="3" ry="3.5" fill={red} />
+      <ellipse cx="40" cy="31" rx="1.5" ry="2" fill={cream} />
+
+      {/* ── OM symbol on forehead ── */}
+      <text x="40" y="27" textAnchor="middle" fontSize="7"
+        fill={deepOrange} fontFamily="serif" fontWeight="bold" opacity="0.9">ॐ</text>
 
       {/* ── Eyes ── */}
-      <ellipse cx="25" cy="33" rx="3.5" ry="3" fill={dark} />
-      <ellipse cx="39" cy="33" rx="3.5" ry="3" fill={dark} />
-      <circle cx="25" cy="33" r="1.5" fill={light} />
-      <circle cx="39" cy="33" r="1.5" fill={light} />
-      {/* Pupils */}
-      <circle cx="25.5" cy="33" r="0.8" fill={dark} />
-      <circle cx="39.5" cy="33" r="0.8" fill={dark} />
+      <ellipse cx="32" cy="40" rx="5" ry="4.5" fill={white} />
+      <ellipse cx="48" cy="40" rx="5" ry="4.5" fill={white} />
+      <circle  cx="32" cy="40.5" r="3"   fill={brown} />
+      <circle  cx="48" cy="40.5" r="3"   fill={brown} />
+      <circle  cx="32" cy="40.5" r="1.4" fill={white} />
+      <circle  cx="48" cy="40.5" r="1.4" fill={white} />
+      <circle  cx="32.6" cy="40.2" r="0.7" fill={brown} />
+      <circle  cx="48.6" cy="40.2" r="0.7" fill={brown} />
+      {/* Eyelashes */}
+      <path d="M28 37.5 Q30 35 32 37" stroke={brown} strokeWidth="0.8" fill="none" />
+      <path d="M44 37.5 Q46 35 48 37" stroke={brown} strokeWidth="0.8" fill="none" />
 
-      {/* ── Third eye / tilak ── */}
-      <ellipse cx="32" cy="26" rx="2" ry="2.5" fill={mid} />
-      <ellipse cx="32" cy="26" rx="1" ry="1.5" fill={light} />
+      {/* ── Eyebrows ── */}
+      <path d="M27 36 Q32 33 37 35.5" stroke={brown} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M43 35.5 Q48 33 53 36" stroke={brown} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+
+      {/* ── Cheek blush ── */}
+      <ellipse cx="27" cy="47" rx="5" ry="3" fill={red} opacity="0.18" />
+      <ellipse cx="53" cy="47" rx="5" ry="3" fill={red} opacity="0.18" />
 
       {/* ── Trunk (curling left — auspicious) ── */}
-      <path
-        d="M 29 43 Q 24 50 20 52 Q 16 54 17 58 Q 18 60 21 59"
-        stroke={mid}
-        strokeWidth="4"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M 29 43 Q 24 50 20 52 Q 16 54 17 58 Q 18 60 21 59"
-        stroke={gold}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-      />
+      <path d="M 37 52 Q 30 60 26 63 Q 22 66 22 70 Q 22 73 26 72"
+        stroke={deepOrange} strokeWidth="5.5" strokeLinecap="round" fill="none" />
+      <path d="M 37 52 Q 30 60 26 63 Q 22 66 22 70 Q 22 73 26 72"
+        stroke={skin}      strokeWidth="3.5" strokeLinecap="round" fill="none" />
+      <path d="M 37 52 Q 30 60 26 63 Q 22 66 22 70 Q 22 73 26 72"
+        stroke={skinLt}    strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
 
       {/* ── Right tusk (intact) ── */}
-      <path
-        d="M 42 44 Q 50 48 52 55"
-        stroke={light}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.9"
-      />
-      {/* Left tusk (broken — just a stub) */}
-      <path
-        d="M 22 44 Q 17 46 15 50"
-        stroke={light}
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.5"
-      />
+      <path d="M 51 53 Q 60 58 63 67"
+        stroke={cream} strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M 51 53 Q 60 58 63 67"
+        stroke={saffron} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.4" />
 
-      {/* ── Subtle OM on forehead ── */}
-      <text
-        x="32"
-        y="20"
-        textAnchor="middle"
-        fontSize="5"
-        fill={mid}
-        fontFamily="serif"
-        opacity="0.7"
-      >
-        ॐ
-      </text>
+      {/* ── Left tusk (broken — stub) ── */}
+      <path d="M 29 53 Q 22 56 19 62"
+        stroke={cream} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" />
 
-      {/* ── Brow / forehead markings ── */}
-      <line x1="20" y1="28" x2="29" y2="27" stroke={mid} strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
-      <line x1="44" y1="28" x2="35" y2="27" stroke={mid} strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+      {/* ── Necklace ── */}
+      <path d="M 20 53 Q 40 58 60 53"
+        stroke={saffron} strokeWidth="1.5" strokeDasharray="2 2" fill="none" opacity="0.7" />
     </svg>
   )
 }

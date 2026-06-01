@@ -23,24 +23,24 @@ const LOCATIONS = [
 ]
 
 const SPECIAL_TITHIS = {
-  Purnima:  { label: '🌕 Purnima',  style: { background: 'rgba(251,191,36,0.18)', border: '1px solid rgba(251,191,36,0.45)', color: '#fcd34d' } },
-  Amavasya: { label: '🌑 Amavasya', style: { background: 'rgba(30,20,0,0.7)',     border: '1px solid rgba(251,191,36,0.2)',  color: '#d97706' } },
+  Purnima:  { label: '🌕 Purnima',  style: { background: '#FFFBF0', border: '1px solid #FF9900', color: '#E47911' } },
+  Amavasya: { label: '🌑 Amavasya', style: { background: '#F5F5F5', border: '1px solid #CCC',    color: '#555' } },
 }
 
 const KALAM_CONFIG = [
-  { key: 'rahu',    start: 'rahu_kalam_start',   end: 'rahu_kalam_end',   label: 'Rahu Kalam', dotColor: '#ef4444', activeColor: '#fca5a5' },
-  { key: 'gulikai', start: 'gulikai_kalam_start', end: 'gulikai_kalam_end',label: 'Gulikai',    dotColor: '#f59e0b', activeColor: '#fcd34d' },
-  { key: 'yama',    start: 'yamaganda_start',     end: 'yamaganda_end',    label: 'Yamaganda',  dotColor: '#f97316', activeColor: '#fdba74' },
+  { key: 'rahu',    start: 'rahu_kalam_start',   end: 'rahu_kalam_end',   label: 'Rahu Kalam', dotColor: '#D13212', activeColor: '#D13212' },
+  { key: 'gulikai', start: 'gulikai_kalam_start', end: 'gulikai_kalam_end',label: 'Gulikai',    dotColor: '#FF9900', activeColor: '#E47911' },
+  { key: 'yama',    start: 'yamaganda_start',     end: 'yamaganda_end',    label: 'Yamaganda',  dotColor: '#E47911', activeColor: '#E47911' },
 ]
 
 // ── Style helpers ────────────────────────────────────────────────────────────
 
 const S = {
-  label: { color: 'rgba(251,191,36,0.5)' },
-  value: { color: '#fef3c7' },
-  sub:   { color: 'rgba(254,243,199,0.35)' },
-  card:  { background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.18)', borderRadius: '12px' },
-  input: { background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', color: '#fef3c7', borderRadius: '8px' },
+  label: { color: '#888' },
+  value: { color: '#232F3E' },
+  sub:   { color: '#AAA' },
+  card:  { background: '#FFFFFF', border: '1px solid #E8DDD0', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' },
+  input: { background: '#FFFFFF', border: '1px solid #C8BAA8', color: '#1A1A1A', borderRadius: '8px' },
 }
 
 // ── Utility formatters ────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ function PanchangamLimbs({ data }) {
             <span className="text-sm font-bold">{specialNext.label}</span>
             <span className="text-xs" style={S.sub}>begins after {fmtTime(data.tithi_end_time)}</span>
           </div>
-          <span className="text-xs italic" style={{ color: 'rgba(251,191,36,0.3)' }}>Kshaya Tithi</span>
+          <span className="text-xs italic" style={{ color: '#AAA' }}>Kshaya Tithi</span>
         </div>
       )}
 
@@ -176,8 +176,8 @@ function PanchangamLimbs({ data }) {
                     style={{ background: dotColor, opacity: active ? 1 : 0.5 }}
                   />
                   <span className="text-sm" style={{
-                    color: active ? activeColor : 'rgba(254,243,199,0.5)',
-                    fontWeight: active ? 600 : 400,
+                    color: active ? activeColor : '#888',
+                    fontWeight: active ? 700 : 400,
                   }}>
                     {label}
                     {active && <span className="ml-1 text-xs opacity-70">● NOW</span>}
@@ -206,10 +206,10 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
       <table style={{
         width: '100%', borderCollapse: 'collapse',
         fontFamily: "'Inter', system-ui, sans-serif",
-        fontSize: '0.72rem', color: '#fef3c7',
+        fontSize: '0.72rem', color: '#1A1A1A',
       }}>
         <thead>
-          <tr style={{ background: 'rgba(251,191,36,0.1)', color: 'rgba(251,191,36,0.6)' }}>
+          <tr style={{ background: '#FFF8F0', borderBottom: '2px solid #FF9900' }}>
             <th style={th}>Planet</th>
             <th style={th}>Sign</th>
             <th style={{ ...th, textAlign: 'right' }}>Deg</th>
@@ -222,35 +222,35 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
         <tbody>
           {/* Ascendant row */}
           {ascendant && (
-            <tr style={{ background: 'rgba(251,191,36,0.1)', borderBottom: '1px solid rgba(251,191,36,0.12)' }}>
-              <td style={td}><span style={{ color: '#fbbf24', fontWeight: 700 }}>⬆ ASC</span></td>
-              <td style={{ ...td, fontWeight: 600 }}>{ascendant.sign}</td>
-              <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace' }}>
+            <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #EEE' }}>
+              <td style={td}><span style={{ color: '#FF9900', fontWeight: 700 }}>⬆ ASC</span></td>
+              <td style={{ ...td, fontWeight: 700, color: '#232F3E' }}>{ascendant.sign}</td>
+              <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: '#555' }}>
                 {ascendant.degree_in_sign?.toFixed(2)}°
               </td>
-              <td style={{ ...td, textAlign: 'center' }}>{ascendant.pada}</td>
-              <td style={td}>{ascendant.nakshatra}</td>
-              <td style={{ ...td, textAlign: 'center' }}>—</td>
-              <td style={{ ...td, textAlign: 'center' }}>—</td>
+              <td style={{ ...td, textAlign: 'center', color: '#555' }}>{ascendant.pada}</td>
+              <td style={{ ...td, color: '#444' }}>{ascendant.nakshatra}</td>
+              <td style={{ ...td, textAlign: 'center', color: '#888' }}>—</td>
+              <td style={{ ...td, textAlign: 'center', color: '#888' }}>—</td>
             </tr>
           )}
           {ORDER.map(name => {
             const p = planetPositions?.[name]
             if (!p) return null
             return (
-              <tr key={name} style={{ borderBottom: '1px solid rgba(251,191,36,0.08)' }}>
+              <tr key={name} style={{ borderBottom: '1px solid #EEE' }}>
                 <td style={td}>
                   <span style={{ marginRight: 4 }}>{SYMS[name]}</span>
-                  <span style={{ fontWeight: 600 }}>{name}</span>
+                  <span style={{ fontWeight: 600, color: '#232F3E' }}>{name}</span>
                 </td>
-                <td style={{ ...td, fontWeight: 500 }}>{p.sign}</td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace' }}>
+                <td style={{ ...td, fontWeight: 600, color: '#232F3E' }}>{p.sign}</td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: '#555' }}>
                   {p.degree_in_sign?.toFixed(2)}°
                 </td>
-                <td style={{ ...td, textAlign: 'center' }}>{p.pada}</td>
-                <td style={td}>{p.nakshatra}</td>
-                <td style={{ ...td, textAlign: 'center', fontWeight: 700 }}>H{p.house}</td>
-                <td style={{ ...td, textAlign: 'center', color: p.retrograde ? '#f87171' : 'rgba(254,243,199,0.25)', fontWeight: 700 }}>
+                <td style={{ ...td, textAlign: 'center', color: '#555' }}>{p.pada}</td>
+                <td style={{ ...td, color: '#444' }}>{p.nakshatra}</td>
+                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#FF9900' }}>H{p.house}</td>
+                <td style={{ ...td, textAlign: 'center', color: p.retrograde ? '#D13212' : '#CCC', fontWeight: 700 }}>
                   {p.retrograde ? '℞' : '—'}
                 </td>
               </tr>
@@ -263,10 +263,9 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
 }
 
 const th = {
-  padding: '6px 8px', fontWeight: 600, fontSize: '0.65rem',
+  padding: '6px 8px', fontWeight: 700, fontSize: '0.65rem',
   textTransform: 'uppercase', letterSpacing: '0.05em',
-  borderBottom: '1px solid rgba(251,191,36,0.2)', whiteSpace: 'nowrap',
-  textAlign: 'left',
+  whiteSpace: 'nowrap', textAlign: 'left', color: '#444',
 }
 const td = { padding: '5px 8px', whiteSpace: 'nowrap' }
 
@@ -336,7 +335,7 @@ export default function PanchangamTab() {
           style={S.input}
         >
           {LOCATIONS.map(l => (
-            <option key={l} value={l} style={{ background: '#1a0e00' }}>{l}</option>
+            <option key={l} value={l}>{l}</option>
           ))}
         </select>
       </div>
@@ -351,13 +350,13 @@ export default function PanchangamTab() {
           </h2>
 
           {loadingP && (
-            <div className="text-sm py-6 text-center animate-pulse" style={{ color: 'rgba(251,191,36,0.3)' }}>
+            <div className="text-sm py-6 text-center animate-pulse" style={{ color: '#FF9900' }}>
               Loading Panchangam…
             </div>
           )}
           {errorP && (
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
-              style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
               {errorP}
             </div>
           )}
@@ -371,13 +370,13 @@ export default function PanchangamTab() {
           </h2>
 
           {loadingT && (
-            <div className="text-sm py-6 text-center animate-pulse" style={{ color: 'rgba(251,191,36,0.3)' }}>
+            <div className="text-sm py-6 text-center animate-pulse" style={{ color: '#FF9900' }}>
               Computing transit chart…
             </div>
           )}
           {errorT && (
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
-              style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
               {errorT}
             </div>
           )}
@@ -385,7 +384,7 @@ export default function PanchangamTab() {
           {transit && !loadingT && (
             <div>
               <div className="rounded-xl p-3 mb-4"
-                style={{ background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.18)' }}>
+                style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
                 <SouthIndianChart
                   title="Transit"
                   subtitle={`${date} · ${location} · Noon`}
@@ -397,12 +396,12 @@ export default function PanchangamTab() {
 
               {/* Planet details table */}
               <div className="rounded-xl overflow-hidden"
-                style={{ background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.18)' }}>
-                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid rgba(251,191,36,0.12)' }}>
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={S.label}>
+                style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
+                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid #EEE', background: '#FFF8F0' }}>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#888' }}>
                     Planet Details
                   </span>
-                  <span className="text-xs ml-3" style={S.sub}>
+                  <span className="text-xs ml-3" style={{ color: '#AAA' }}>
                     Ayanamsa: Lahiri {transit.ayanamsa_value?.toFixed(4)}°
                   </span>
                 </div>

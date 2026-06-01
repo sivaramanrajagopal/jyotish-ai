@@ -25,16 +25,19 @@ import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
 import GaneshaIcon from '../components/GaneshaIcon'
 
-// ── Shared colours ────────────────────────────────────────────────────────────
+// ── Shared colours — Amazon light + saffron ───────────────────────────────────
 const G = {
-  bg:      'linear-gradient(180deg, #1a0e00 0%, #120c00 40%, #0e0900 100%)',
-  card:    { background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.18)' },
-  input:   { background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', color: '#fef3c7' },
-  gold:    '#fbbf24',
-  cream:   '#fef3c7',
-  sub:     'rgba(254,243,199,0.5)',
-  label:   'rgba(251,191,36,0.5)',
-  btn:     { background: 'linear-gradient(135deg,#d97706,#f59e0b)', color: '#1a0e00' },
+  bg:      '#FFF8F0',
+  card:    { background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
+  input:   { background: '#FFFFFF', border: '1px solid #C8BAA8', color: '#1A1A1A' },
+  gold:    '#FF9900',
+  cream:   '#FFFFFF',
+  sub:     '#666666',
+  label:   '#444444',
+  btn:     { background: '#FF9900', color: '#232F3E', fontWeight: '700' },
+  nav:     { background: '#232F3E' },
+  orange:  '#FF9900',
+  dark:    '#232F3E',
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -50,34 +53,34 @@ const TABS = [
 function NeedChart({ onGoHome }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="text-4xl mb-4" style={{ filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.4))' }}>✦</div>
-      <p className="text-base font-semibold mb-2" style={{ color: '#fef3c7' }}>Your chart hasn't been calculated yet</p>
-      <p className="text-sm mb-6" style={{ color: 'rgba(254,243,199,0.45)' }}>Go to Home and enter your birth details first.</p>
+      <div className="text-5xl mb-4">🪷</div>
+      <p className="text-base font-semibold mb-2" style={{ color: '#232F3E' }}>Your chart hasn't been calculated yet</p>
+      <p className="text-sm mb-6" style={{ color: '#888' }}>Go to Home and enter your birth details first.</p>
       <button
         onClick={onGoHome}
-        className="font-semibold px-6 py-2.5 rounded-xl text-sm"
+        className="font-bold px-6 py-2.5 rounded-lg text-sm"
         style={G.btn}
       >
-        Go to Home ✦
+        Go to Home →
       </button>
     </div>
   )
 }
 
-// ── Ganesha + mantra banner (shared across all tabs at top) ───────────────────
+// ── Ganesha + mantra banner ───────────────────────────────────────────────────
 function GaneshaBanner() {
   return (
     <div
-      className="text-center py-3 flex items-center justify-center gap-3 border-b"
-      style={{ borderColor: 'rgba(251,191,36,0.15)', background: 'rgba(251,191,36,0.05)' }}
+      className="flex items-center justify-center gap-4 py-3 px-4"
+      style={{ background: '#232F3E', borderBottom: '3px solid #FF9900' }}
     >
-      <GaneshaIcon size={32} glow />
-      <div>
-        <div className="text-xs font-bold tracking-widest" style={{ color: '#fbbf24', letterSpacing: '0.15em' }}>
+      <GaneshaIcon size={52} glow />
+      <div className="text-left">
+        <div className="text-lg font-bold" style={{ color: '#FF9900', letterSpacing: '0.08em' }}>
           ॐ महा गणपतये नमः
         </div>
-        <div className="text-xs hidden sm:block" style={{ color: 'rgba(251,191,36,0.4)' }}>
-          Om Maha Ganapathaye Namaha
+        <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          Jyotish AI — Vedic Astrology • Om Maha Ganapathaye Namaha
         </div>
       </div>
     </div>
@@ -92,72 +95,74 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
     <div className="max-w-lg mx-auto px-4 py-10">
       {/* Hero */}
       <div className="text-center mb-10">
-        <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.5))' }}>✦</div>
-        <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ color: '#fef3c7' }}>
-          Jyotish <span style={{ color: '#fbbf24' }}>AI</span>
+        <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.4))' }}>🪷</div>
+        <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ color: '#232F3E' }}>
+          Jyotish <span style={{ color: '#FF9900' }}>AI</span>
         </h1>
-        <p className="text-base max-w-sm mx-auto" style={{ color: 'rgba(254,243,199,0.55)' }}>
+        <p className="text-base max-w-sm mx-auto" style={{ color: '#666' }}>
           Classical Vedic astrology powered by AI — precise charts, daily forecasts, and cosmic guidance.
         </p>
       </div>
 
       {/* Birth form */}
       <div className="rounded-2xl p-6" style={G.card}>
-        <h2 className="text-lg font-semibold mb-5" style={{ color: '#fef3c7' }}>Get Your Free Natal Chart</h2>
+        <h2 className="text-lg font-semibold mb-1" style={{ color: '#232F3E' }}>Get Your Free Natal Chart</h2>
+        <p className="text-xs mb-5" style={{ color: '#888' }}>Enter your birth details below</p>
         <form onSubmit={onChartReady} className="space-y-4">
 
           <div>
-            <label className="block text-sm mb-1" style={{ color: G.sub }}>Full Name</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Full Name</label>
             <input
               name="name" value={form.name} onChange={handleChange}
               placeholder="Your name" required
-              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none placeholder-amber-100/20"
-              style={G.input}
+              className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
+              style={{ ...G.input, '::placeholder': { color: '#aaa' } }}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Mobile: stack vertically; sm+: side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm mb-1" style={{ color: G.sub }}>Date of Birth</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Date of Birth</label>
               <input
                 type="date" name="dob" value={form.dob} onChange={handleChange} required
-                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none"
+                className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
                 style={G.input}
               />
             </div>
             <div>
-              <label className="block text-sm mb-1" style={{ color: G.sub }}>Time of Birth</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Time of Birth</label>
               <input
                 type="time" name="tob" value={form.tob} onChange={handleChange} required
-                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none"
+                className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
                 style={G.input}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm mb-1" style={{ color: G.sub }}>Place of Birth</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Place of Birth</label>
             <input
               name="place_of_birth" value={form.place_of_birth} onChange={handleChange}
-              placeholder="City, Country" required
-              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none placeholder-amber-100/20"
+              placeholder="City, Country (e.g. Chennai, India)" required
+              className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
               style={G.input}
             />
           </div>
 
           {error && (
-            <div className="text-sm rounded-xl px-4 py-3"
-              style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
+            <div className="text-sm rounded-lg px-4 py-3"
+              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
               {error}
             </div>
           )}
 
           <button
             type="submit" disabled={loading}
-            className="w-full font-semibold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"
             style={G.btn}
           >
-            {loading ? 'Calculating chart…' : 'Calculate My Chart ✦'}
+            {loading ? 'Calculating chart…' : 'Calculate My Chart →'}
           </button>
         </form>
       </div>
@@ -182,10 +187,10 @@ function MyChartTab({ chart, onGoHome }) {
             sub: chart.planet_positions.Moon.nakshatra },
         ].map(({ label, value, sub }) => (
           <div key={label} className="rounded-xl p-4 text-center"
-            style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
-            <div className="text-xs mb-1" style={{ color: 'rgba(251,191,36,0.6)' }}>{label}</div>
-            <div className="text-lg font-bold" style={{ color: '#fef3c7' }}>{value}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'rgba(254,243,199,0.4)' }}>{sub}</div>
+            style={{ background: '#FFF8F0', border: '2px solid #FF9900', boxShadow: '0 2px 6px rgba(255,153,0,0.12)' }}>
+            <div className="text-xs mb-1 font-medium" style={{ color: '#888' }}>{label}</div>
+            <div className="text-lg font-bold" style={{ color: '#232F3E' }}>{value}</div>
+            <div className="text-xs mt-0.5" style={{ color: '#999' }}>{sub}</div>
           </div>
         ))}
       </div>
@@ -201,9 +206,9 @@ function MyChartTab({ chart, onGoHome }) {
             pos: chart.navamsa_positions, lagnaIdx: chart.navamsa_ascendant?.sign_index, nav: true },
         ].map(({ title, sub, pos, lagnaIdx, nav }) => (
           <div key={title} className="rounded-xl p-4"
-            style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)' }}>
+            style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
             <h3 className="text-sm font-semibold mb-3 text-center uppercase tracking-wide"
-              style={{ color: 'rgba(254,243,199,0.6)' }}>{title}</h3>
+              style={{ color: '#888' }}>{title}</h3>
             <SouthIndianChart title={nav ? 'D9' : 'D1'} subtitle={sub}
               planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav} />
           </div>
@@ -212,12 +217,12 @@ function MyChartTab({ chart, onGoHome }) {
 
       {/* Planet Table */}
       <div className="rounded-xl overflow-hidden mb-8"
-        style={{ background: 'rgba(251,191,36,0.04)', border: '1px solid rgba(251,191,36,0.18)' }}>
-        <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(251,191,36,0.15)' }}>
-          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'rgba(254,243,199,0.6)' }}>
+        style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid #EEE', background: '#FFF8F0' }}>
+          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#444' }}>
             Planet Details — D1 Rasi
           </h3>
-          <p className="text-xs mt-0.5" style={{ color: 'rgba(254,243,199,0.3)' }}>
+          <p className="text-xs mt-0.5" style={{ color: '#999' }}>
             Ayanamsa: {chart.ayanamsa} {chart.ayanamsa_value?.toFixed(4)}° &nbsp;·&nbsp; ★ Vargottama &nbsp;·&nbsp; ℞ Retrograde
           </p>
         </div>
@@ -228,15 +233,15 @@ function MyChartTab({ chart, onGoHome }) {
       {/* Yogas */}
       {chart.yogas?.length > 0 && (
         <div className="rounded-xl p-5 mb-8"
-          style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)' }}>
-          <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide" style={{ color: '#fbbf24' }}>
+          style={{ background: '#FFFBF0', border: '2px solid #FF9900', boxShadow: '0 2px 6px rgba(255,153,0,0.1)' }}>
+          <h3 className="font-bold mb-3 text-sm uppercase tracking-wide" style={{ color: '#E47911' }}>
             ✦ Yogas Detected
           </h3>
           <div className="space-y-2">
             {chart.yogas.map((y, i) => (
               <div key={i} className="text-sm">
-                <span className="font-semibold" style={{ color: '#fcd34d' }}>{y.name}</span>
-                <span className="ml-2" style={{ color: 'rgba(254,243,199,0.5)' }}>— {y.description}</span>
+                <span className="font-semibold" style={{ color: '#232F3E' }}>{y.name}</span>
+                <span className="ml-2" style={{ color: '#666' }}>— {y.description}</span>
               </div>
             ))}
           </div>
@@ -285,8 +290,8 @@ export default function Home() {
   // ── Top tab bar (desktop) / content area ────────────────────────────────
   return (
     <div
-      className="min-h-screen flex flex-col text-white"
-      style={{ background: G.bg }}
+      className="min-h-screen flex flex-col"
+      style={{ background: G.bg, color: '#1A1A1A' }}
     >
       {/* Ganesha banner — always visible */}
       <GaneshaBanner />
@@ -294,11 +299,7 @@ export default function Home() {
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
         className="hidden sm:flex border-b sticky top-0 z-30"
-        style={{
-          background: 'rgba(18,12,0,0.95)',
-          borderColor: 'rgba(251,191,36,0.15)',
-          backdropFilter: 'blur(12px)',
-        }}
+        style={{ background: '#FFFFFF', borderColor: '#E8DDD0', boxShadow: '0 2px 4px rgba(0,0,0,0.06)' }}
       >
         {TABS.map(tab => (
           <button
@@ -306,17 +307,16 @@ export default function Home() {
             onClick={() => setActiveTab(tab.key)}
             className="flex items-center gap-1.5 px-5 py-3 text-sm font-semibold transition-all relative"
             style={{
-              color: activeTab === tab.key ? '#fbbf24' : 'rgba(254,243,199,0.4)',
-              borderBottom: activeTab === tab.key ? '2px solid #f59e0b' : '2px solid transparent',
+              color: activeTab === tab.key ? '#FF9900' : '#555',
+              borderBottom: activeTab === tab.key ? '3px solid #FF9900' : '3px solid transparent',
             }}
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {/* dot indicator when chart loaded and on relevant tabs */}
             {chart && ['chart','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
-                style={{ background: '#f59e0b' }}
+                style={{ background: '#FF9900' }}
               />
             )}
           </button>
@@ -362,10 +362,10 @@ export default function Home() {
       <nav
         className="sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
         style={{
-          background: 'rgba(18,12,0,0.97)',
-          borderTop: '1px solid rgba(251,191,36,0.2)',
+          background: '#FFFFFF',
+          borderTop: '1px solid #E8DDD0',
           paddingBottom: 'env(safe-area-inset-bottom)',
-          backdropFilter: 'blur(16px)',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
         }}
       >
         {TABS.map(tab => (
@@ -373,7 +373,7 @@ export default function Home() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative"
-            style={{ color: activeTab === tab.key ? '#fbbf24' : 'rgba(254,243,199,0.35)' }}
+            style={{ color: activeTab === tab.key ? '#FF9900' : '#888' }}
           >
             <span style={{ fontSize: '18px', lineHeight: 1 }}>{tab.icon}</span>
             <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.04em' }}>

@@ -65,7 +65,7 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  background: #120c00;
+  background: #FFF8F0;
 }
 
 /* Override default heading colours — app uses its own inline styles */

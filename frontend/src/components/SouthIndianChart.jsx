@@ -143,18 +143,18 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
   const hasCrisis = planets.some(p => CRISIS_SET.has(p))
   const hasGrowth = planets.some(p => GROWTH_SET.has(p))
 
-  let bg = "#1a0e00"
-  if (hasCrisis && !hasGrowth) bg = "#1c0a00"
-  else if (hasGrowth && !hasCrisis) bg = "#0a150a"
+  let bg = "#FFFFFF"
+  if (hasCrisis && !hasGrowth) bg = "#FFF8F8"
+  else if (hasGrowth && !hasCrisis) bg = "#F0FFF4"
 
   const lagnaGrad = isLagna
-    ? ", linear-gradient(45deg, transparent 46%, #f59e0b 47%, #f59e0b 53%, transparent 54%)"
+    ? ", linear-gradient(45deg, transparent 46%, #FF9900 47%, #FF9900 53%, transparent 54%)"
     : ""
 
   return (
     <td style={{
       background: `${bg}${lagnaGrad}`,
-      border: "1px solid rgba(251,191,36,0.2)",
+      border: "1px solid #E8DDD0",
       padding: "4px 3px 3px",
       verticalAlign: "top",
       width: "25%",
@@ -163,7 +163,7 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
       {/* Sign label top-right */}
       <div style={{
         fontSize: "0.5rem",
-        color: "rgba(251,191,36,0.45)",
+        color: "#BBAA99",
         textAlign: "right",
         lineHeight: 1,
         marginBottom: "2px",
@@ -175,8 +175,8 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
       {/* ASC label */}
       {isLagna && (
         <div style={{
-          fontSize: "0.48rem", fontWeight: 700, color: "#fbbf24",
-          background: "rgba(251,191,36,0.2)", borderRadius: "3px",
+          fontSize: "0.48rem", fontWeight: 700, color: "#FFFFFF",
+          background: "#FF9900", borderRadius: "3px",
           padding: "0 3px", display: "inline-block", marginBottom: "2px",
         }}>ASC</div>
       )}

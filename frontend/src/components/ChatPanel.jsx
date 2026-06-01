@@ -85,7 +85,7 @@ function MarkdownText({ text }) {
       const content = trimmed.replace(/^[-*]\s+/, '')
       elements.push(
         <div key={key++} style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
-          <span style={{ color: '#fbbf24', flexShrink: 0, marginTop: '1px' }}>•</span>
+          <span style={{ color: '#FF9900', flexShrink: 0, marginTop: '1px' }}>•</span>
           <span>{renderBoldSafe(content)}</span>
         </div>
       )
@@ -112,7 +112,7 @@ function renderBoldSafe(text) {
   const parts = text.split(/\*\*(.+?)\*\*/g)
   return parts.map((part, i) =>
     i % 2 === 1
-      ? <strong key={i} style={{ color: '#fef3c7', fontWeight: 600 }}>{part}</strong>
+      ? <strong key={i} style={{ color: '#232F3E', fontWeight: 700 }}>{part}</strong>
       : part
   )
 }
@@ -170,20 +170,20 @@ export default function ChatPanel({ chart, placeOfBirth }) {
     }
   }
 
-  const cardBg    = { background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.18)' }
-  const userBubble = { background: 'linear-gradient(135deg, #b45309, #d97706)', color: '#fef9ec', borderRadius: '14px 14px 2px 14px' }
-  const aiBubble   = { background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.15)', color: 'rgba(254,243,199,0.85)', borderRadius: '2px 14px 14px 14px' }
+  const cardBg    = { background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }
+  const userBubble = { background: '#FF9900', color: '#232F3E', borderRadius: '14px 14px 2px 14px', fontWeight: 500 }
+  const aiBubble   = { background: '#F5F5F5', border: '1px solid #E8E8E8', color: '#1A1A1A', borderRadius: '2px 14px 14px 14px' }
 
   return (
     <div className="rounded-2xl overflow-hidden mb-8" style={cardBg}>
 
       {/* Header */}
-      <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(251,191,36,0.15)' }}>
+      <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #EEE', background: '#232F3E' }}>
         <span className="text-base">🔮</span>
-        <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'rgba(251,191,36,0.6)' }}>
+        <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#FF9900' }}>
           Ask Your Chart
         </h3>
-        <span className="ml-auto text-xs" style={{ color: 'rgba(254,243,199,0.2)' }}>Powered by GPT-4o mini</span>
+        <span className="ml-auto text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Powered by GPT-4o mini</span>
       </div>
 
       {/* Topic chips */}
@@ -197,11 +197,10 @@ export default function ChatPanel({ chart, placeOfBirth }) {
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all disabled:opacity-40"
               style={{
-                background: isActive ? topic.bg : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${isActive ? topic.border : 'rgba(255,255,255,0.1)'}`,
-                color: isActive ? topic.color : 'rgba(254,243,199,0.45)',
+                background: isActive ? topic.bg : '#F5F5F5',
+                border: `1px solid ${isActive ? topic.border : '#DDD'}`,
+                color: isActive ? topic.color : '#555',
                 transform: isActive ? 'scale(1.04)' : 'scale(1)',
-                boxShadow: isActive ? `0 0 8px ${topic.bg}` : 'none',
               }}
             >
               {topic.label}
@@ -209,17 +208,17 @@ export default function ChatPanel({ chart, placeOfBirth }) {
           )
         })}
       </div>
-      <div className="px-5 pb-1 text-xs" style={{ color: 'rgba(254,243,199,0.2)' }}>
+      <div className="px-5 pb-1 text-xs" style={{ color: '#AAA' }}>
         Tap a topic to ask a suggested question, or type your own below
       </div>
 
       {/* Messages */}
-      <div className="px-4 py-4 space-y-3 min-h-[120px] max-h-[480px] overflow-y-auto">
+      <div className="px-4 py-4 space-y-3 min-h-[120px] max-h-[480px] overflow-y-auto" style={{ background: '#FAFAFA' }}>
 
         {/* Empty state */}
         {messages.length === 0 && (
           <div className="text-center py-6">
-            <p className="text-xs mb-1" style={{ color: 'rgba(254,243,199,0.25)' }}>
+            <p className="text-xs mb-1" style={{ color: '#BBB' }}>
               Ask anything about your natal chart, Dasha, or life areas.
             </p>
           </div>
@@ -235,7 +234,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
               }
               {/* Auto-tag badges on AI replies */}
               {msg.role === 'assistant' && i === messages.length - 1 && activeTopics.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid rgba(251,191,36,0.1)' }}>
+                <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid #EEE' }}>
                   {activeTopics.map(key => {
                     const t = TOPIC_MAP[key]
                     if (!t) return null
@@ -262,9 +261,9 @@ export default function ChatPanel({ chart, placeOfBirth }) {
           <div className="flex justify-start">
             <div className="px-4 py-3 rounded-2xl rounded-bl-sm" style={aiBubble}>
               <div className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#fbbf24', animationDelay:'0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#fbbf24', animationDelay:'150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#fbbf24', animationDelay:'300ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#FF9900', animationDelay:'0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#FF9900', animationDelay:'150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#FF9900', animationDelay:'300ms' }} />
               </div>
             </div>
           </div>
@@ -274,21 +273,21 @@ export default function ChatPanel({ chart, placeOfBirth }) {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 flex gap-2" style={{ borderTop: '1px solid rgba(251,191,36,0.15)' }}>
+      <div className="px-4 py-3 flex gap-2" style={{ borderTop: '1px solid #EEE', background: '#FFFFFF' }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Ask about your chart…"
           disabled={loading}
-          className="flex-1 px-4 py-2.5 text-sm rounded-xl focus:outline-none transition-colors disabled:opacity-40 placeholder-amber-100/20"
-          style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', color: '#fef3c7' }}
+          className="flex-1 px-4 py-2.5 text-sm rounded-xl focus:outline-none transition-colors disabled:opacity-40"
+          style={{ background: '#F5F5F5', border: '1px solid #DDD', color: '#1A1A1A' }}
         />
         <button
           onClick={() => sendMessage()}
           disabled={!input.trim() || loading}
-          className="px-4 py-2.5 rounded-xl transition-all text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#1a0e00' }}
+          className="px-4 py-2.5 rounded-xl transition-all text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: '#FF9900', color: '#232F3E' }}
         >
           ↑
         </button>
