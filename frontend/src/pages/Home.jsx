@@ -98,6 +98,25 @@ function GaneshaBanner() {
 }
 
 // ── HOME TAB ──────────────────────────────────────────────────────────────────
+// Shared field style — enforces identical height/appearance on all inputs
+// including iOS date/time pickers which default to different heights
+const fieldStyle = {
+  display: 'block',
+  width: '100%',
+  boxSizing: 'border-box',
+  height: '46px',
+  padding: '0 16px',
+  fontSize: '14px',
+  lineHeight: '46px',
+  borderRadius: '8px',
+  border: '1px solid #C8BAA8',
+  background: '#FFFFFF',
+  color: '#1A1A1A',
+  WebkitAppearance: 'none',   // removes iOS native chrome on date/time
+  appearance: 'none',
+  outline: 'none',
+}
+
 function HomeTab({ form, setForm, onChartReady, loading, error }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
@@ -125,8 +144,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
             <input
               name="name" value={form.name} onChange={handleChange}
               placeholder="Your name" required
-              className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-              style={{ ...G.input, '::placeholder': { color: '#aaa' } }}
+              style={{ ...fieldStyle }}
             />
           </div>
 
@@ -136,16 +154,14 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
               <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Date of Birth</label>
               <input
                 type="date" name="dob" value={form.dob} onChange={handleChange} required
-                className="rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-                style={{ ...G.input, width: '100%', boxSizing: 'border-box', display: 'block' }}
+                style={{ ...fieldStyle }}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Time of Birth</label>
               <input
                 type="time" name="tob" value={form.tob} onChange={handleChange} required
-                className="rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-                style={{ ...G.input, width: '100%', boxSizing: 'border-box', display: 'block' }}
+                style={{ ...fieldStyle }}
               />
             </div>
           </div>
@@ -155,8 +171,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
             <input
               name="place_of_birth" value={form.place_of_birth} onChange={handleChange}
               placeholder="City, Country (e.g. Chennai, India)" required
-              className="w-full rounded-lg px-4 py-2.5 text-sm focus:outline-none"
-              style={G.input}
+              style={{ ...fieldStyle }}
             />
           </div>
 
