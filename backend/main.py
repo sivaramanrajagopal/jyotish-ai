@@ -745,12 +745,23 @@ def chat_endpoint(request: Request, req: ChatRequest):
 
 # ── Language helpers ──────────────────────────────────────────────────────────
 _TAMIL_INSTRUCTION = """
-LANGUAGE INSTRUCTION: Respond ENTIRELY in Tamil (தமிழ்) script.
-Use these Tamil planet names: சூரியன் (Sun), சந்திரன் (Moon), செவ்வாய் (Mars),
-புதன் (Mercury), குரு/வியாழன் (Jupiter), சுக்கிரன் (Venus), சனி (Saturn),
-ராகு (Rahu), கேது (Ketu).
-House numbers, scores and technical terms like Mahadasha/Bhukti may stay in English.
-Do NOT mix languages sentence-by-sentence — write fully in Tamil.
+=== மொழி அறிவுறுத்தல் (STRICT TAMIL ONLY) ===
+உங்கள் பதில் முழுவதும் தூய தமிழில் இருக்க வேண்டும்.
+தங்கிலீஷ் (Tanglish) வேண்டாம். தேவநாகரி / ஹிந்தி எழுத்துகள் வேண்டாம்.
+ஆங்கில எழுத்துகளை உரை வரிகளில் கலக்காதீர்கள்.
+
+கிரக பெயர்கள் (இவற்றை மட்டுமே பயன்படுத்தவும்):
+சூரியன் | சந்திரன் | செவ்வாய் | புதன் | குரு | சுக்கிரன் | சனி | ராகு | கேது
+
+ஜோதிட சொற்கள்:
+மகாதசை = Mahadasha | புத்தி = Bhukti | பாவம் / வீடு = House
+நட்சத்திரம் = Nakshatra | லக்னம் = Lagna | யோகம் = Yoga
+கோசாரம் = Transit | உச்சம் = Exalted | நீசம் = Debilitated
+வக்கிரம் = Retrograde | ஜன்ம ராசி = Natal Moon sign
+
+அனுமதிக்கப்படுவன (ALLOWED in English):
+H1…H12 (வீட்டு எண்கள்) | எண் மதிப்புகள் / புள்ளிகள் (scores like 71.8)
+=== END INSTRUCTION ===
 """.strip()
 
 

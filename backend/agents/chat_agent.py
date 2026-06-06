@@ -322,10 +322,22 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
 
 _TAMIL_CHAT_SUFFIX = """
 
-LANGUAGE INSTRUCTION: Respond ENTIRELY in Tamil (தமிழ்) script.
-Use Tamil planet names: சூரியன் (Sun), சந்திரன் (Moon), செவ்வாய் (Mars),
-புதன் (Mercury), குரு (Jupiter), சுக்கிரன் (Venus), சனி (Saturn), ராகு (Rahu), கேது (Ketu).
-House numbers, Dasha names and scores may remain in English. Do not mix languages sentence-by-sentence."""
+=== மொழி அறிவுறுத்தல் (STRICT TAMIL ONLY) ===
+உங்கள் பதில் முழுவதும் தூய தமிழில் இருக்க வேண்டும்.
+தங்கிலீஷ் (Tanglish) வேண்டாம். தேவநாகரி / ஹிந்தி எழுத்துகள் வேண்டாம்.
+ஆங்கில எழுத்துகளை உரை வரிகளில் கலக்காதீர்கள்.
+
+கிரக பெயர்கள் (இவற்றை மட்டுமே பயன்படுத்தவும்):
+சூரியன் | சந்திரன் | செவ்வாய் | புதன் | குரு | சுக்கிரன் | சனி | ராகு | கேது
+
+ஜோதிட சொற்கள்:
+மகாதசை = Mahadasha | புத்தி = Bhukti | பாவம் = House
+நட்சத்திரம் = Nakshatra | லக்னம் = Lagna | கோசாரம் = Transit
+உச்சம் = Exalted | நீசம் = Debilitated | வக்கிரம் = Retrograde
+
+அனுமதிக்கப்படுவன (ALLOWED in English):
+H1…H12 (வீட்டு எண்கள்) | எண் மதிப்புகள் (scores)
+=== END INSTRUCTION ===""
 
 
 def chat(

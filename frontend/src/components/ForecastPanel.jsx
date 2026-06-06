@@ -140,7 +140,7 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError }) {
 }
 
 // ── Daily Reading Card ────────────────────────────────────────────────────
-function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses }) {
+function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses, language = 'english' }) {
   if (!reading) return null
   const dtcRag = dtc?.rag?.status || 'AMBER'
   const rc     = RAG[dtcRag] || RAG.AMBER
@@ -193,8 +193,8 @@ function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses 
         </div>
       </div>
 
-      {/* Dasha-Transit correlation detail */}
-      {dtc?.summary && (
+      {/* Dasha-Transit correlation detail — English only (hardcoded template) */}
+      {dtc?.summary && language !== 'tamil' && (
         <div style={{
           borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10,
           fontSize:11, color:'rgba(255,255,255,0.55)', lineHeight:1.6,
@@ -314,6 +314,7 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
           overall={dailyReading.overall_health}
           topHouses={dailyReading.top_houses}
           challengingHouses={dailyReading.challenging_houses}
+          language={language}
         />
       )}
       {!dailyReading && !readingLoading && (
