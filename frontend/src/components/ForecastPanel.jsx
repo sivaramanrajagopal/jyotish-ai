@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import LanguageToggle from './LanguageToggle'
 
 const HOUSE_ICONS = {
   1:'🧘', 2:'💰', 3:'💬', 4:'🏠', 5:'🎨', 6:'⚔️',
@@ -216,17 +217,17 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
   const [insightCache,   setInsightCache]   = useState({})
   const [dailyReading,   setDailyReading]   = useState(null)
   const [readingLoading, setReadingLoading] = useState(false)
+  const [language,       setLanguage]       = useState('english')
 
+  // Load scores + daily reading on mount (scores cached, reading language-aware)
   useEffect(() => {
     if (!chart) return
     setScoresLoading(true)
     setReadingLoading(true)
     setScoresError('')
-
-    // Fetch scores and daily reading in parallel
     Promise.all([
       api.post('/forecast/scores', { natal_chart: chart }),
-      api.post('/forecast/daily-reading', { natal_chart: chart, gender }),
+      api.post('/forecast/daily-reading', { natal_chart: chart, gender, language }),
     ]).then(([scoresRes, readingRes]) => {
       setScores(scoresRes.data)
       setDailyReading(readingRes.data)
@@ -236,7 +237,22 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
       setScoresLoading(false)
       setReadingLoading(false)
     })
-  }, [chart])
+  }, [chart]) // scores load once; language changes handled below
+
+  // Re-fetch daily reading when language changes (scores are language-agnostic)
+  const handleLanguageChange = async (lang) => {
+    setLanguage(lang)
+    setInsightCache({})       // clear insight cache — needs re-generation in new language
+    setDailyReading(null)
+    setReadingLoading(true)
+    try {
+      const res = await api.post('/forecast/daily-reading', {
+        natal_chart: chart, gender, language: lang,
+      })
+      setDailyReading(res.data)
+    } catch (_) {}
+    finally { setReadingLoading(false) }
+  }
 
   const handleTagClick = async (houseNum) => {
     if (selectedHouse === houseNum) { setSelectedHouse(null); return }
@@ -250,6 +266,7 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
         natal_chart: chart,
         house_num:   houseNum,
         gender,
+        language,
       })
       setInsightCache(prev => ({ ...prev, [houseNum]: res.data.insight || '' }))
     } catch (err) {
@@ -321,9 +338,13 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
         </div>
       )}
 
-      <p style={{ fontSize:12, color:'#888', marginBottom:12, textAlign:'center' }}>
-        Tap any life area tag to see your personalised forecast
-      </p>
+      {/* Language toggle + instruction row */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+        <p style={{ fontSize:12, color:'#888', margin:0 }}>
+          Tap any life area to see your forecast
+        </p>
+        <LanguageToggle language={language} onChange={handleLanguageChange} />
+      </div>
 
       {/* 12 tags: 3 columns on mobile, 4 on desktop */}
       <div style={{

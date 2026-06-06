@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import api from '../api/client'
+import LanguageToggle from './LanguageToggle'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -129,7 +130,8 @@ export default function ChatPanel({ chart, placeOfBirth }) {
   const [messages, setMessages]     = useState([])
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
-  const [activeTopics, setActive]   = useState([])   // highlighted chips after last AI reply
+  const [activeTopics, setActive]   = useState([])
+  const [language, setLanguage]     = useState('english')
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -151,6 +153,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
         natal_chart: chart,
         messages: newMessages,
         location: guessLocation(placeOfBirth),
+        language,
       })
       const reply = data.reply || ''
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
@@ -183,7 +186,10 @@ export default function ChatPanel({ chart, placeOfBirth }) {
         <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#FF9900' }}>
           Ask Your Chart
         </h3>
-        <span className="ml-auto text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Powered by GPT-4o mini</span>
+        <div className="ml-auto flex items-center gap-3">
+          <LanguageToggle language={language} onChange={setLanguage} />
+          <span className="text-xs hidden sm:block" style={{ color: 'rgba(255,255,255,0.4)' }}>GPT-4o mini</span>
+        </div>
       </div>
 
       {/* Topic chips */}

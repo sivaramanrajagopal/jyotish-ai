@@ -320,23 +320,23 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
         return ""
 
 
+_TAMIL_CHAT_SUFFIX = """
+
+LANGUAGE INSTRUCTION: Respond ENTIRELY in Tamil (தமிழ்) script.
+Use Tamil planet names: சூரியன் (Sun), சந்திரன் (Moon), செவ்வாய் (Mars),
+புதன் (Mercury), குரு (Jupiter), சுக்கிரன் (Venus), சனி (Saturn), ராகு (Rahu), கேது (Ketu).
+House numbers, Dasha names and scores may remain in English. Do not mix languages sentence-by-sentence."""
+
+
 def chat(
     natal_chart: dict,
-    messages: list[dict],   # [{"role": "user"|"assistant", "content": str}, ...]
+    messages: list[dict],
     location: str = "Chennai",
+    language: str = "english",
 ) -> str:
     """
     Send one turn of conversation and return the assistant reply.
-
-    Args:
-        natal_chart:  Full /natal-chart response (needs dasha included).
-        messages:     Full conversation history including the latest user message.
-
-    Returns:
-        Assistant reply string.
-
-    Raises:
-        RuntimeError if OPENAI_API_KEY is not set.
+    language: "english" | "tamil"
     """
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -352,6 +352,9 @@ def chat(
             "The user's natal chart could not be loaded. "
             "Answer their question as best you can based on today's Panchangam alone."
         )
+
+    if language.lower() == "tamil":
+        system_prompt += _TAMIL_CHAT_SUFFIX
 
     from openai import APIError, AuthenticationError, RateLimitError
     try:

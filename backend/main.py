@@ -562,8 +562,9 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     natal_chart: dict
-    messages: list[ChatMessage]   # full history including latest user message
+    messages: list[ChatMessage]
     location: str = "Chennai"
+    language: str = "english"     # "english" | "tamil"
 
     model_config = {"str_strip_whitespace": True}
 
@@ -726,7 +727,7 @@ def chat_endpoint(request: Request, req: ChatRequest):
         raise HTTPException(status_code=400, detail="No valid messages provided.")
 
     try:
-        reply = jyotish_chat(natal_chart=req.natal_chart, messages=msgs, location=req.location)
+        reply = jyotish_chat(natal_chart=req.natal_chart, messages=msgs, location=req.location, language=req.language)
         return {"reply": reply, "model": "gpt-4o-mini"}
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -742,9 +743,25 @@ def chat_endpoint(request: Request, req: ChatRequest):
 # Deterministic Forecast — House Scores
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ── Language helpers ──────────────────────────────────────────────────────────
+_TAMIL_INSTRUCTION = """
+LANGUAGE INSTRUCTION: Respond ENTIRELY in Tamil (தமிழ்) script.
+Use these Tamil planet names: சூரியன் (Sun), சந்திரன் (Moon), செவ்வாய் (Mars),
+புதன் (Mercury), குரு/வியாழன் (Jupiter), சுக்கிரன் (Venus), சனி (Saturn),
+ராகு (Rahu), கேது (Ketu).
+House numbers, scores and technical terms like Mahadasha/Bhukti may stay in English.
+Do NOT mix languages sentence-by-sentence — write fully in Tamil.
+""".strip()
+
+
+def _lang_suffix(language: str) -> str:
+    """Return the Tamil instruction suffix if needed."""
+    return f"\n\n{_TAMIL_INSTRUCTION}" if language.lower() == "tamil" else ""
+
+
 class ForecastScoresRequest(BaseModel):
     natal_chart: dict
-    transit_date: Optional[str] = None   # YYYY-MM-DD; defaults to today
+    transit_date: Optional[str] = None
 
     model_config = {"str_strip_whitespace": True}
 
@@ -752,8 +769,9 @@ class ForecastScoresRequest(BaseModel):
 class HouseInsightRequest(BaseModel):
     natal_chart: dict
     house_num:   int
-    gender:      str = "unspecified"   # "male" | "female" | "other"
+    gender:      str = "unspecified"
     transit_date: Optional[str] = None
+    language:    str = "english"          # "english" | "tamil"
 
     model_config = {"str_strip_whitespace": True}
 
@@ -827,6 +845,7 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
         "Be direct and practical — 3 sentences max per section. "
         "Never be vague. Always name specific planets, signs, or periods. "
         f"{gender_note}"
+        + _lang_suffix(req.language)
     )
 
     user_prompt = (
@@ -880,6 +899,7 @@ class DailyReadingRequest(BaseModel):
     natal_chart:  dict
     gender:       str = "unspecified"
     transit_date: Optional[str] = None
+    language:     str = "english"
     model_config = {"str_strip_whitespace": True}
 
 
@@ -952,6 +972,7 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
         "natal chart strength, current Dasha period, Gochara transit health, and Tara Balam. "
         "Be specific — name planets, houses, and periods. No disclaimers. No generic statements. "
         f"{'Tailor the language for a man.' if req.gender.lower()=='male' else 'Tailor the language for a woman.' if req.gender.lower()=='female' else ''}"
+        + _lang_suffix(req.language)
     )
 
     user_prompt = (
