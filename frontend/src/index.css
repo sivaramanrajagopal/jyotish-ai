@@ -336,6 +336,28 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 0.75rem;
 }
 
+.home-hero__img-wrap {
+  padding: 10px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow:
+    0 4px 24px rgba(255, 153, 0, 0.18),
+    0 0 0 1px rgba(255, 153, 0, 0.12);
+}
+
+.home-hero__img {
+  display: block;
+  width: clamp(120px, 34vw, 152px);
+  height: auto;
+  object-fit: contain;
+}
+
+[data-theme="dark"] .home-hero__img-wrap {
+  box-shadow:
+    0 4px 28px rgba(255, 153, 0, 0.22),
+    0 0 0 1px rgba(255, 153, 0, 0.2);
+}
+
 .ganesha-art .ganesha-halo {
   animation: ganesha-breathe 4s ease-in-out infinite;
 }

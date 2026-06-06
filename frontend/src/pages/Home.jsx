@@ -175,7 +175,17 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       <header className="home-hero">
         <div className="home-hero__glow" aria-hidden="true" />
         <div className="home-hero__art">
-          <GaneshaIllustration size={108} />
+          <div className="home-hero__img-wrap">
+            <img
+              src="/images/ganesha.png"
+              alt="Lord Ganesha — Om"
+              className="home-hero__img"
+              width={152}
+              height={152}
+              loading="eager"
+              decoding="async"
+            />
+          </div>
         </div>
         <h1 className="home-hero__title">
           {APP_SHORT} <span>Jyotish</span>
