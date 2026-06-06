@@ -5,7 +5,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
-import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from '../constants/brand'
+import { APP_NAME, APP_SHORT, APP_TAGLINE, APP_FEATURE_LINKS } from '../constants/brand'
+import GaneshaIllustration from '../components/GaneshaIllustration'
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
@@ -93,25 +94,25 @@ function NeedChart({ onGoHome }) {
   )
 }
 
-// ── Om symbol + mantra banner ─────────────────────────────────────────────────
+function clearStorage() {
+  try { localStorage.removeItem(LS_KEY) } catch {}
+  window.location.reload()
+}
+
+// ── Compact header — Ganesha + app name (hidden on Home; hero has Ganesha) ───
 function GaneshaBanner() {
   return (
     <div
-      className="flex items-center gap-3 sm:gap-4 py-3 px-3 sm:px-4"
-      style={{ background: 'var(--nav-bg)', borderBottom: '3px solid var(--banner-border)' }}
+      className="flex items-center gap-2.5 sm:gap-3 py-2.5 px-3 sm:px-4"
+      style={{ background: 'var(--nav-bg)', borderBottom: '2px solid var(--banner-border)' }}
     >
-      <div style={{
-        fontSize: 'clamp(32px, 8vw, 44px)', lineHeight: 1, color: 'var(--orange)', fontFamily: 'serif',
-        filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.6))', userSelect: 'none', flexShrink: 0,
-      }}>
-        ॐ
-      </div>
+      <GaneshaIllustration size={36} compact />
       <div className="flex-1 text-left min-w-0">
-        <div className="text-sm sm:text-lg font-bold truncate" style={{ color: 'var(--orange)', letterSpacing: '0.08em' }}>
-          ॐ महா கணபதயே நமஹ
+        <div className="text-sm sm:text-base font-bold truncate" style={{ color: 'var(--orange)', letterSpacing: '0.04em' }}>
+          {APP_NAME}
         </div>
-        <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          {APP_NAME} — {APP_TAGLINE}
+        <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          ॐ श्री கணபதியே நமஹ
         </div>
       </div>
       <DarkModeToggle small />
@@ -139,30 +140,69 @@ const fieldStyle = {
   outline: 'none',
 }
 
-function HomeTab({ form, setForm, onChartReady, loading, error }) {
+function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 sm:py-10">
-      {/* Hero */}
-      <div className="text-center mb-8 sm:mb-10">
-        <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.4))' }}>🪷</div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-          {APP_NAME.split(' ')[0]}{' '}
-          <span style={{ color: 'var(--orange)' }}>{APP_NAME.split(' ').slice(1).join(' ')}</span>
+    <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
+      {chart && form.name && (
+        <div className="welcome-back">
+          <div className="welcome-back__text">
+            <span className="welcome-back__name">Welcome back, {form.name}</span>
+            <span className="welcome-back__meta">{form.dob} · {form.place_of_birth}</span>
+          </div>
+          <div className="welcome-back__actions">
+            <button
+              type="button"
+              className="welcome-back__btn welcome-back__btn--primary"
+              onClick={() => onGoToTab('chart')}
+            >
+              View chart →
+            </button>
+            <button
+              type="button"
+              className="welcome-back__btn welcome-back__btn--ghost"
+              onClick={clearStorage}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hero — artistic Ganesha + short copy */}
+      <header className="home-hero">
+        <div className="home-hero__glow" aria-hidden="true" />
+        <div className="home-hero__art">
+          <GaneshaIllustration size={108} />
+        </div>
+        <h1 className="home-hero__title">
+          {APP_SHORT} <span>Jyotish</span>
         </h1>
-        <p className="text-sm sm:text-base max-w-md mx-auto mb-2" style={{ color: 'var(--text-secondary)' }}>
-          {APP_TAGLINE}
-        </p>
-        <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
-          {APP_DESCRIPTION}
-        </p>
-      </div>
+        <p className="home-hero__tagline">{APP_TAGLINE}</p>
+        <div className="home-hero__features" aria-label="Features">
+          {APP_FEATURE_LINKS.map(({ label, tab }) =>
+            chart ? (
+              <button
+                key={label}
+                type="button"
+                className="home-hero__chip home-hero__chip--link"
+                onClick={() => onGoToTab(tab)}
+              >
+                {label}
+              </button>
+            ) : (
+              <span key={label} className="home-hero__chip">{label}</span>
+            )
+          )}
+        </div>
+      </header>
 
       {/* Birth form */}
       <div className="rounded-2xl p-4 sm:p-6" style={G.card}>
-        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Get Your Free Natal Chart</h2>
-        <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>Enter your birth details below</p>
+        <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Enter birth details
+        </h2>
         <form onSubmit={onChartReady} className="space-y-4">
 
           <div>
@@ -225,37 +265,10 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
             className="w-full font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"
             style={G.btn}
           >
-            {loading ? 'Calculating chart…' : 'Calculate My Chart →'}
+            {loading ? 'Calculating…' : 'Calculate Chart →'}
           </button>
         </form>
       </div>
-
-      {/* Saved chart indicator */}
-      {(() => {
-        const s = loadFromStorage()
-        if (!s?.form?.name) return null
-        return (
-          <div style={{
-            marginTop:12, padding:'10px 14px', borderRadius:10,
-            background:'var(--card-bg)', border:'1px solid var(--card-border)',
-            display:'flex', justifyContent:'space-between', alignItems:'center',
-          }}>
-            <span style={{ fontSize:12, color:'var(--text-muted)' }}>
-              💾 Saved: <strong style={{ color:'var(--text-primary)' }}>{s.form.name}</strong>
-              {' '}— {s.form.dob}
-            </span>
-            <button onClick={() => {
-              try { localStorage.removeItem(LS_KEY) } catch {}
-              window.location.reload()
-            }} style={{
-              fontSize:11, color:'var(--error-text)', background:'none',
-              border:'none', cursor:'pointer', padding:'2px 6px',
-            }}>
-              Clear ✕
-            </button>
-          </div>
-        )
-      })()}
     </div>
   )
 }
@@ -469,8 +482,14 @@ export default function Home() {
       className="min-h-screen flex flex-col"
       style={{ background: 'var(--app-bg)', color: 'var(--text-primary)' }}
     >
-      {/* Ganesha banner — always visible */}
-      <GaneshaBanner />
+      {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
+      {activeTab === 'home' ? (
+        <div className="banner-minimal">
+          <DarkModeToggle small />
+        </div>
+      ) : (
+        <GaneshaBanner />
+      )}
 
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
@@ -519,6 +538,8 @@ export default function Home() {
             form={form} setForm={setForm}
             onChartReady={handleSubmit}
             loading={loading} error={error}
+            chart={chart}
+            onGoToTab={setTab}
           />
         </div>
 
