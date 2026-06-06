@@ -1,4 +1,4 @@
-/* Jyotish AI — service worker for cosmic alert notifications */
+/* Parashara Jyotish — service worker for cosmic alert notifications */
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -31,7 +31,7 @@ self.addEventListener('message', (event) => {
   const { type, title, body, tag, url } = event.data || {}
   if (type !== 'SHOW_NOTIFICATION') return
   event.waitUntil(
-    self.registration.showNotification(title || 'Jyotish AI', {
+    self.registration.showNotification(title || 'Parashara Jyotish', {
       body: body || '',
       icon: '/icons/icon-192.svg',
       badge: '/icons/icon-192.svg',

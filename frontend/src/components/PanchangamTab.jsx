@@ -23,8 +23,8 @@ const LOCATIONS = [
 ]
 
 const SPECIAL_TITHIS = {
-  Purnima:  { label: '🌕 Purnima',  style: { background: '#FFFBF0', border: '1px solid #FF9900', color: '#E47911' } },
-  Amavasya: { label: '🌑 Amavasya', style: { background: '#F5F5F5', border: '1px solid #CCC',    color: '#555' } },
+  Purnima:  { label: '🌕 Purnima',  style: { background: 'var(--yoga-bg)', border: '1px solid var(--highlight-border)', color: 'var(--orange-dark)' } },
+  Amavasya: { label: '🌑 Amavasya', style: { background: 'var(--surface-muted)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)' } },
 }
 
 const KALAM_CONFIG = [
@@ -103,7 +103,7 @@ function PanchangamLimbs({ data }) {
             <span className="text-sm font-bold">{specialNext.label}</span>
             <span className="text-xs" style={S.sub}>begins after {fmtTime(data.tithi_end_time)}</span>
           </div>
-          <span className="text-xs italic" style={{ color: '#AAA' }}>Kshaya Tithi</span>
+          <span className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Kshaya Tithi</span>
         </div>
       )}
 

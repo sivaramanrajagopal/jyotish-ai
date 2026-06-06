@@ -1,7 +1,7 @@
 {
-  "name": "Jyotish AI — Vedic Astrology",
-  "short_name": "Jyotish AI",
-  "description": "Classical Vedic astrology powered by AI — precise charts, daily Panchangam, and cosmic guidance.",
+  "name": "Parashara Jyotish — Vedic Astrology",
+  "short_name": "Parashara",
+  "description": "Natal chart (D1/D9), Vimshottari Dasha, Ashtakavarga, Gochara forecast, Panchangam, Tara Balam, and AI guidance.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -36,7 +36,7 @@
     {
       "name": "Ask AI",
       "short_name": "Ask AI",
-      "description": "Chat with Jyotish AI",
+      "description": "Chat with Parashara Jyotish",
       "url": "/?tab=chat",
       "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
     }

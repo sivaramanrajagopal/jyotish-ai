@@ -1,4 +1,4 @@
-# Jyotish AI — Deployment Guide
+# Parashara Jyotish — Deployment Guide
 ## GitHub → Render (backend) + Vercel (frontend) — 100% free
 
 ---

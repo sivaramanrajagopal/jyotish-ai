@@ -31,7 +31,7 @@ MODEL  = "gpt-4o-mini"
 TOKENS = 800   # per reply — keep responses concise
 
 SYSTEM_TEMPLATE = """\
-You are Jyotish AI — a classical Vedic astrology advisor (Parashari system, \
+You are Parashara Jyotish — a classical Vedic astrology advisor (Parashari system, \
 Lahiri ayanamsa, Whole Sign houses, Vimshottari Dasha).
 
 You are speaking with {name}. Their natal chart and today's Panchangam are below. \
@@ -368,7 +368,7 @@ def chat(
         import logging
         logging.getLogger(__name__).error("_build_system failed: %s", e, exc_info=True)
         system_prompt = (
-            "You are Jyotish AI, a Vedic astrology advisor. "
+            "You are Parashara Jyotish, a Vedic astrology advisor. "
             "The user's natal chart could not be loaded. "
             "Answer their question as best you can based on today's Panchangam alone."
         )

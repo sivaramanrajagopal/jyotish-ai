@@ -1,11 +1,11 @@
 /**
- * Home.jsx — Jyotish AI
+ * Home.jsx — Parashara Jyotish
  * Tabbed layout: Home · My Chart · Panchangam · Ask AI · Forecast
- * Desktop: top tab bar | Mobile: bottom nav bar
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
+import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from '../constants/brand'
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
@@ -14,6 +14,7 @@ import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
 import AshtakavargaPanel from '../components/AshtakavargaPanel'
 import DashaRoadmap from '../components/DashaRoadmap'
+import DashaSummaryCard from '../components/DashaSummaryCard'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
 import NotificationSettings from '../components/NotificationSettings'
 import { startNotificationWatcher } from '../lib/notifications'
@@ -110,7 +111,7 @@ function GaneshaBanner() {
           ॐ महா கணபதயே நமஹ
         </div>
         <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          Jyotish AI — Vedic Astrology
+          {APP_NAME} — {APP_TAGLINE}
         </div>
       </div>
       <DarkModeToggle small />
@@ -147,10 +148,14 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
       <div className="text-center mb-8 sm:mb-10">
         <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.4))' }}>🪷</div>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-          Jyotish <span style={{ color: 'var(--orange)' }}>AI</span>
+          {APP_NAME.split(' ')[0]}{' '}
+          <span style={{ color: 'var(--orange)' }}>{APP_NAME.split(' ').slice(1).join(' ')}</span>
         </h1>
-        <p className="text-sm sm:text-base max-w-sm mx-auto" style={{ color: 'var(--text-secondary)' }}>
-          Classical Vedic astrology powered by AI — precise charts, daily forecasts, and cosmic guidance.
+        <p className="text-sm sm:text-base max-w-md mx-auto mb-2" style={{ color: 'var(--text-secondary)' }}>
+          {APP_TAGLINE}
+        </p>
+        <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
+          {APP_DESCRIPTION}
         </p>
       </div>
 
@@ -262,6 +267,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth }) {
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
 
       <NotificationSettings placeOfBirth={placeOfBirth} />
+
+      <DashaSummaryCard chart={chart} />
 
       {/* Big 3 */}
       <div className="big-three-grid mb-6 sm:mb-8">
@@ -384,6 +391,32 @@ export default function Home() {
   const [chart, setChart] = useState(saved?.chart || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+  const [chartRefreshing, setChartRefreshing] = useState(false)
+
+  const setTab = useCallback((key) => {
+    setActiveTab(key)
+    try {
+      const url = new URL(window.location.href)
+      if (key === 'home') url.searchParams.delete('tab')
+      else url.searchParams.set('tab', key)
+      window.history.replaceState({}, '', url)
+    } catch {}
+  }, [])
+
+  // Refresh stale saved charts missing ISO dasha dates
+  useEffect(() => {
+    const s = loadFromStorage()
+    if (!s?.form?.dob || !s?.chart) return
+    if (s.chart.dasha?.mahadasha?.start_iso) return
+    setChartRefreshing(true)
+    api.post('/natal-chart', s.form)
+      .then(({ data }) => {
+        setChart(data)
+        saveToStorage(s.form, data)
+      })
+      .catch(() => {})
+      .finally(() => setChartRefreshing(false))
+  }, [])
 
   // Cosmic alert watcher (while app is open / installed as PWA)
   useEffect(() => {
@@ -397,12 +430,12 @@ export default function Home() {
     const onMsg = (e) => {
       const tab = e.data?.tab
       if (e.data?.type === 'NAV_TAB' && TABS.some(t => t.key === tab)) {
-        setActiveTab(tab)
+        setTab(tab)
       }
     }
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
-  }, [])
+  }, [setTab])
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -412,8 +445,8 @@ export default function Home() {
     try {
       const { data } = await api.post('/natal-chart', form)
       setChart(data)
-      saveToStorage(form, data)   // ← persist to localStorage
-      setActiveTab('chart')          // auto-navigate to chart tab
+      saveToStorage(form, data)
+      setTab('chart')
     } catch (err) {
       const detail = err.response?.data?.detail
       // Pydantic v2 returns an array of {type, loc, msg, input} objects
@@ -426,7 +459,9 @@ export default function Home() {
     }
   }
 
-  const goHome = () => setActiveTab('home')
+  const goHome = () => setTab('home')
+
+  const tabPane = (key) => ({ display: activeTab === key ? 'block' : 'none' })
 
   // ── Top tab bar (desktop) / content area ────────────────────────────────
   return (
@@ -445,7 +480,7 @@ export default function Home() {
         {TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => setTab(tab.key)}
             className="flex items-center gap-1.5 px-4 lg:px-5 py-3 text-sm font-semibold transition-all relative"
             style={{
               color: activeTab === tab.key ? 'var(--nav-tab-active)' : 'var(--nav-tab-text)',
@@ -467,39 +502,51 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Tab content ── */}
+      {/* ── Tab content (kept mounted to preserve Chat / Forecast state) ── */}
       <main className="flex-1 pb-20 sm:pb-0">
-        {activeTab === 'home' && (
+        {chartRefreshing && (
+          <div style={{
+            textAlign: 'center', padding: '8px', fontSize: 12,
+            color: 'var(--orange)', background: 'var(--highlight-bg)',
+            borderBottom: '1px solid var(--card-border)',
+          }}>
+            Refreshing chart data…
+          </div>
+        )}
+
+        <div style={tabPane('home')}>
           <HomeTab
             form={form} setForm={setForm}
             onChartReady={handleSubmit}
             loading={loading} error={error}
           />
-        )}
+        </div>
 
-        {activeTab === 'chart' && (
+        <div style={tabPane('chart')}>
           <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} />
-        )}
+        </div>
 
-        {activeTab === 'panchangam' && (
+        <div style={tabPane('panchangam')}>
           <PanchangamTab />
-        )}
+        </div>
 
-        {activeTab === 'chat' && (
-          chart
+        <div style={tabPane('chat')}>
+          {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
                 <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} />
               </div>
             : <NeedChart onGoHome={goHome} />
-        )}
+          }
+        </div>
 
-        {activeTab === 'forecast' && (
-          chart
+        <div style={tabPane('forecast')}>
+          {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
                 <ForecastPanel chart={chart} gender={form.gender} showDatePicker />
               </div>
             : <NeedChart onGoHome={goHome} />
-        )}
+          }
+        </div>
       </main>
 
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
@@ -515,7 +562,7 @@ export default function Home() {
         {TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => setTab(tab.key)}
             className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
             style={{ color: activeTab === tab.key ? 'var(--orange)' : 'var(--text-muted)' }}
           >

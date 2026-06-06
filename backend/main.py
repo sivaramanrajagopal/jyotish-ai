@@ -97,8 +97,8 @@ _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localh
 ALLOWED_ORIGINS_LIST = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app = FastAPI(
-    title="Jyotish AI API",
-    description="Vedic astrology engine — Phase 1: Panchangam",
+    title="Parashara Jyotish API",
+    description="Vedic astrology — Natal chart, Dasha, Gochara, Panchangam, Ashtakavarga",
     version="0.1.0",
     lifespan=lifespan,
     # Disable auto-generated docs in production to reduce attack surface
@@ -125,7 +125,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS_LIST,
     allow_credentials=False,   # no cookies/sessions yet — keep False
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
@@ -222,7 +222,7 @@ def _get_panchangam(date_str: str, location: str) -> dict:
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "Jyotish AI", "version": "0.1.0"}
+    return {"status": "ok", "service": "Parashara Jyotish", "version": "0.1.0"}
 
 
 @app.get("/ping")
@@ -854,7 +854,7 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
     }.get(req.gender.lower(), "")
 
     system = (
-        "You are Jyotish AI, a classical Vedic astrology advisor. "
+        "You are Parashara Jyotish, a classical Vedic astrology advisor. "
         "Provide a focused, specific forecast for ONE life area based on the data below. "
         "Be direct and practical — 3 sentences max per section. "
         "Never be vague. Always name specific planets, signs, or periods. "
@@ -959,29 +959,30 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
     top3 = sorted(scores["houses"].values(), key=lambda x: x["score"], reverse=True)[:3]
     bot3 = sorted(scores["houses"].values(), key=lambda x: x["score"])[:3]
 
-    # ── Tara Balam context (from natal chart response) ─────────────────────
+    # ── Tara Balam context (respects transit_date when provided) ───────────
     tara_context = ""
     try:
         from agents.tara_engine import compute_all as _tara_all
         from zoneinfo import ZoneInfo
-        bd      = req.natal_chart.get("birth_data", {})
-        nak_idx = req.natal_chart.get("moon_nakshatra_index")
+        bd       = req.natal_chart.get("birth_data", {})
+        nak_idx  = req.natal_chart.get("moon_nakshatra_index")
         rasi_idx = req.natal_chart.get("moon_rasi_index")
         if nak_idx is not None and rasi_idx is not None:
             tz_id = bd.get("timezone", "Asia/Kolkata")
-            td    = date.today()
-            dt    = datetime.datetime(td.year, td.month, td.day, 12, 0, 0, tzinfo=ZoneInfo(tz_id))
+            td    = date.fromisoformat(req.transit_date) if req.transit_date else date.today()
+            dt    = datetime(td.year, td.month, td.day, 12, 0, 0, tzinfo=ZoneInfo(tz_id))
             pp    = _tara_all(int(nak_idx), int(rasi_idx), dt, tz_id)
             tara  = pp.get("tara", {})
+            day_lbl = "today" if td == date.today() else td.isoformat()
             tara_context = (
-                f"Tara Balam today: {tara.get('name')} (Tara {tara.get('position')}) — "
+                f"Tara Balam ({day_lbl}): {tara.get('name')} (Tara {tara.get('position')}) — "
                 f"{tara.get('nature')}. {tara.get('meaning', '')}"
             )
     except Exception:
         pass
 
     system = (
-        "You are Jyotish AI, a classical Vedic astrology advisor. "
+        "You are Parashara Jyotish, a classical Vedic astrology advisor. "
         "Write a concise daily reading (4–5 sentences) synthesising ALL available data: "
         "natal chart strength, current Dasha period, Gochara transit health, and Tara Balam. "
         "Be specific — name planets, houses, and periods. No disclaimers. No generic statements. "

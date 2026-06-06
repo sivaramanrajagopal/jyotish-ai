@@ -55,13 +55,13 @@ function PlanetBadgeCompact({ planet, retrograde, vargottama }) {
       color: col.fg,
       lineHeight: 1.5,
       whiteSpace: "nowrap",
-      border: vargottama ? "1.5px solid #f59e0b" : "1px solid transparent",
+      border: vargottama ? "1.5px solid var(--orange)" : "1px solid transparent",
     }}>
       {retrograde && (
-        <sup style={{ fontSize:"0.55rem", color:"#ef4444", fontWeight:900, marginRight:"1px" }}>℞</sup>
+        <sup style={{ fontSize:"0.55rem", color:"var(--error-text)", fontWeight:900, marginRight:"1px" }}>℞</sup>
       )}
       {short}
-      {vargottama && <sup style={{ fontSize:"0.5rem", color:"#f59e0b", marginLeft:"1px" }}>★</sup>}
+      {vargottama && <sup style={{ fontSize:"0.5rem", color:"var(--orange)", marginLeft:"1px" }}>★</sup>}
     </span>
   )
 }
@@ -85,7 +85,7 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
       background: col.bg,
       color: col.fg,
       lineHeight: 1.3,
-      border: vargottama ? "1.5px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
+      border: vargottama ? "1.5px solid var(--orange)" : "1px solid var(--card-border)",
       minWidth: "30px",
       position: "relative",
     }}>
@@ -95,8 +95,8 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
           position: "absolute",
           top: "-7px",
           right: "-5px",
-          background: "#ef4444",
-          color: "#fff",
+          background: "var(--error-text)",
+          color: "var(--nav-text)",
           fontSize: "0.48rem",
           fontWeight: 900,
           borderRadius: "99px",
@@ -112,7 +112,7 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
           position: "absolute",
           top: "-7px",
           left: "-4px",
-          color: "#f59e0b",
+          color: "var(--orange)",
           fontSize: "0.55rem",
           fontWeight: 900,
         }}>★</span>
@@ -148,7 +148,7 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
   else if (hasGrowth && !hasCrisis) bg = "var(--chart-cell-growth)"
 
   const lagnaGrad = isLagna
-    ? ", linear-gradient(45deg, transparent 46%, #FF9900 47%, #FF9900 53%, transparent 54%)"
+    ? ", linear-gradient(45deg, transparent 46%, var(--orange) 47%, var(--orange) 53%, transparent 54%)"
     : ""
 
   return (
@@ -175,8 +175,8 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
       {/* ASC label */}
       {isLagna && (
         <div style={{
-          fontSize: "0.48rem", fontWeight: 700, color: "#FFFFFF",
-          background: "#FF9900", borderRadius: "3px",
+          fontSize: "0.48rem", fontWeight: 700, color: "var(--nav-text)",
+          background: "var(--orange)", borderRadius: "3px",
           padding: "0 3px", display: "inline-block", marginBottom: "2px",
         }}>ASC</div>
       )}
