@@ -20,6 +20,11 @@ from agents.tara_engine import (
     _dt_to_jd, _moon_longitude, _nak_index,
     NAKSHATRAS, TARA_TABLE,
 )
+from agents.transit_score_agent import (
+    score_all_houses,
+    compact_gochara_summary,
+    dasha_transit_correlation,
+)
 
 MODEL  = "gpt-4o-mini"
 TOKENS = 800   # per reply — keep responses concise
@@ -298,7 +303,21 @@ def _build_system(natal_chart, location: str = "Chennai") -> str:
         week_panch     = _week_panch or "  (not available)",
         tara_month     = _tara_month_label,
         tara_calendar  = _tara_cal_block,
-    )
+    ) + _build_gochara_block(natal_chart, dasha)
+
+
+def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
+    """
+    Silently compute Gochara scores and Dasha-Transit correlation,
+    then return a compact text block to append to the system prompt.
+    Errors are swallowed — chat should still work if scoring fails.
+    """
+    try:
+        scores = score_all_houses(natal_chart)
+        return "\n\n" + compact_gochara_summary(scores, dasha)
+    except Exception as e:
+        print(f"[chat_agent] Gochara block error (non-fatal): {e}")
+        return ""
 
 
 def chat(

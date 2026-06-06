@@ -870,3 +870,132 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
         "lord_dignity": house_data.get("lord_dignity"),
         "transit_planets": house_data.get("transit_planets", []),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Daily Reading — full synthesis of natal + Dasha + Gochara + Tara
+# ─────────────────────────────────────────────────────────────────────────────
+
+class DailyReadingRequest(BaseModel):
+    natal_chart:  dict
+    gender:       str = "unspecified"
+    transit_date: Optional[str] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/forecast/daily-reading")
+@limiter.limit("15/minute")
+def forecast_daily_reading(request: Request, req: DailyReadingRequest):
+    """
+    Synthesise natal chart + Dasha + Gochara + Tara Balam into a
+    3-5 sentence daily reading with a Dasha-Transit correlation score.
+    """
+    if not req.natal_chart or "birth_data" not in req.natal_chart:
+        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+
+    # ── Scores + Dasha-Transit correlation ────────────────────────────────
+    try:
+        from agents.transit_score_agent import (
+            score_all_houses, dasha_transit_correlation, compact_gochara_summary
+        )
+        scores = score_all_houses(req.natal_chart, req.transit_date)
+        dasha  = req.natal_chart.get("dasha", {}) or {}
+        dtc    = dasha_transit_correlation(scores, dasha)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Scoring error: {exc}")
+
+    # ── Derive age ─────────────────────────────────────────────────────────
+    dob_str = req.natal_chart.get("birth_data", {}).get("dob", "")
+    age = ""
+    try:
+        dob_d = date.fromisoformat(dob_str)
+        today = date.today()
+        age   = str(today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day)))
+    except Exception:
+        pass
+
+    md = (dasha.get("mahadasha") or {})
+    bh = (dasha.get("bhukti")    or {})
+
+    oh = scores["overall_health"]
+    top3 = sorted(scores["houses"].values(), key=lambda x: x["score"], reverse=True)[:3]
+    bot3 = sorted(scores["houses"].values(), key=lambda x: x["score"])[:3]
+
+    # ── Tara Balam context (from natal chart response) ─────────────────────
+    tara_context = ""
+    try:
+        from agents.tara_engine import compute_all as _tara_all
+        from zoneinfo import ZoneInfo
+        bd      = req.natal_chart.get("birth_data", {})
+        nak_idx = req.natal_chart.get("moon_nakshatra_index")
+        rasi_idx = req.natal_chart.get("moon_rasi_index")
+        if nak_idx is not None and rasi_idx is not None:
+            tz_id = bd.get("timezone", "Asia/Kolkata")
+            td    = date.today()
+            dt    = datetime.datetime(td.year, td.month, td.day, 12, 0, 0, tzinfo=ZoneInfo(tz_id))
+            pp    = _tara_all(int(nak_idx), int(rasi_idx), dt, tz_id)
+            tara  = pp.get("tara", {})
+            tara_context = (
+                f"Tara Balam today: {tara.get('name')} (Tara {tara.get('position')}) — "
+                f"{tara.get('nature')}. {tara.get('meaning', '')}"
+            )
+    except Exception:
+        pass
+
+    system = (
+        "You are Jyotish AI, a classical Vedic astrology advisor. "
+        "Write a concise daily reading (4–5 sentences) synthesising ALL available data: "
+        "natal chart strength, current Dasha period, Gochara transit health, and Tara Balam. "
+        "Be specific — name planets, houses, and periods. No disclaimers. No generic statements. "
+        f"{'Tailor the language for a man.' if req.gender.lower()=='male' else 'Tailor the language for a woman.' if req.gender.lower()=='female' else ''}"
+    )
+
+    user_prompt = (
+        f"Age: {age or 'unknown'}. Gender: {req.gender}.\n"
+        f"Current Dasha: {md.get('planet','')} Mahadasha ({md.get('remaining_years','')} yrs left) / "
+        f"{bh.get('planet','')} Bhukti ({bh.get('remaining_months','')} months left).\n"
+        f"Dasha-Transit correlation: {dtc['rag']['label']} ({dtc['correlation_score']}/100). {dtc['overall']}\n"
+        f"{dtc['summary']}\n\n"
+        f"Overall transit health: {oh['average_score']}/100 [{oh['rag']['label']}]\n"
+        f"Strongest areas today: {', '.join(h['name'] for h in top3)}\n"
+        f"Most challenging areas: {', '.join(h['name'] for h in bot3)}\n"
+        f"{tara_context}\n\n"
+        "Write the daily reading as a single flowing paragraph. "
+        "Start with the Dasha-Transit correlation, then the strongest/weakest areas, "
+        "then practical guidance for today."
+    )
+
+    try:
+        from openai import OpenAI, AuthenticationError, RateLimitError
+        client   = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=300,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": user_prompt},
+            ],
+        )
+        reading = response.choices[0].message.content or ""
+    except AuthenticationError:
+        raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
+    except RateLimitError:
+        raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"AI service error: {exc}")
+
+    return {
+        "reading":              reading,
+        "dasha_transit":        dtc,
+        "overall_health":       oh,
+        "top_houses":           [{"house": h["house_num"], "name": h["name"],
+                                  "score": h["score"], "rag": h["rag"]} for h in top3],
+        "challenging_houses":   [{"house": h["house_num"], "name": h["name"],
+                                  "score": h["score"], "rag": h["rag"]} for h in bot3],
+        "transit_date":         scores["transit_date"],
+        "natal_moon":           scores.get("natal_moon_en", ""),
+    }

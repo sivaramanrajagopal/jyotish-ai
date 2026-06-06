@@ -138,6 +138,73 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError }) {
   )
 }
 
+// ── Daily Reading Card ────────────────────────────────────────────────────
+function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses }) {
+  if (!reading) return null
+  const dtcRag = dtc?.rag?.status || 'AMBER'
+  const rc     = RAG[dtcRag] || RAG.AMBER
+
+  return (
+    <div style={{
+      background: '#232F3E', borderRadius: 16, padding: '18px 20px',
+      marginBottom: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+    }}>
+      {/* Header row */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+        <div style={{ fontSize:14, fontWeight:800, color:'#FF9900' }}>
+          🔮 Your Daily Reading
+        </div>
+        <span style={{
+          background: rc.badge, color:'#FFF', borderRadius:20,
+          padding:'3px 10px', fontSize:11, fontWeight:700,
+        }}>
+          Dasha-Transit: {rc.label}
+        </span>
+      </div>
+
+      {/* Reading text */}
+      <p style={{ color:'rgba(255,255,255,0.88)', fontSize:13, lineHeight:1.75, margin:'0 0 14px' }}>
+        {reading}
+      </p>
+
+      {/* 3-column summary */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:14 }}>
+        <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
+          <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>Transit Health</div>
+          <div style={{ fontSize:16, fontWeight:800, color:'#FF9900' }}>{overall?.average_score}/100</div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{overall?.rag?.label}</div>
+        </div>
+        <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
+          <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>Strongest Today</div>
+          {(topHouses||[]).slice(0,2).map(h => (
+            <div key={h.house} style={{ fontSize:11, color:'#81C784', fontWeight:600 }}>
+              🟢 {h.name.split(' ')[0]}
+            </div>
+          ))}
+        </div>
+        <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
+          <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>Needs Care</div>
+          {(challengingHouses||[]).slice(0,2).map(h => (
+            <div key={h.house} style={{ fontSize:11, color:'#EF9A9A', fontWeight:600 }}>
+              🔴 {h.name.split(' ')[0]}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dasha-Transit correlation detail */}
+      {dtc?.summary && (
+        <div style={{
+          borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10,
+          fontSize:11, color:'rgba(255,255,255,0.55)', lineHeight:1.6,
+        }}>
+          {dtc.summary}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function ForecastPanel({ chart, gender = 'male' }) {
   const [scores,         setScores]         = useState(null)
@@ -147,15 +214,28 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
   const [insightLoading, setInsightLoading] = useState(false)
   const [insightError,   setInsightError]   = useState('')
   const [insightCache,   setInsightCache]   = useState({})
+  const [dailyReading,   setDailyReading]   = useState(null)
+  const [readingLoading, setReadingLoading] = useState(false)
 
   useEffect(() => {
     if (!chart) return
     setScoresLoading(true)
+    setReadingLoading(true)
     setScoresError('')
-    api.post('/forecast/scores', { natal_chart: chart })
-      .then(res => setScores(res.data))
-      .catch(err => setScoresError(err.response?.data?.detail || 'Could not load forecast.'))
-      .finally(() => setScoresLoading(false))
+
+    // Fetch scores and daily reading in parallel
+    Promise.all([
+      api.post('/forecast/scores', { natal_chart: chart }),
+      api.post('/forecast/daily-reading', { natal_chart: chart, gender }),
+    ]).then(([scoresRes, readingRes]) => {
+      setScores(scoresRes.data)
+      setDailyReading(readingRes.data)
+    }).catch(err => {
+      setScoresError(err.response?.data?.detail || 'Could not load forecast.')
+    }).finally(() => {
+      setScoresLoading(false)
+      setReadingLoading(false)
+    })
   }, [chart])
 
   const handleTagClick = async (houseNum) => {
@@ -182,7 +262,9 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
   if (scoresLoading) return (
     <div style={{ textAlign:'center', padding:'48px 0', color:'#FF9900' }}>
       <div style={{ fontSize:36, marginBottom:12 }}>🔮</div>
-      <div style={{ fontSize:14, fontWeight:600, color:'#555' }}>Calculating your 12 life areas…</div>
+      <div style={{ fontSize:14, fontWeight:600, color:'#555' }}>
+        Calculating your Gochara scores and daily reading…
+      </div>
     </div>
   )
 
@@ -199,26 +281,45 @@ export default function ForecastPanel({ chart, gender = 'male' }) {
 
   return (
     <div>
-      {/* Overall health banner */}
-      <div style={{
-        background:'#232F3E', borderRadius:16, padding:'16px 20px',
-        marginBottom:20, display:'flex', alignItems:'center', gap:16,
-      }}>
-        <div style={{ textAlign:'center', minWidth:60 }}>
-          <div style={{ fontSize:30, fontWeight:800, color:'#FF9900', lineHeight:1 }}>{oh.average_score}</div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', textTransform:'uppercase' }}>/100</div>
+      {/* Daily Reading Card (replaces plain banner) */}
+      {readingLoading && !dailyReading && (
+        <div style={{
+          background:'#232F3E', borderRadius:16, padding:'18px 20px',
+          marginBottom:20, color:'rgba(255,255,255,0.5)', fontSize:13,
+        }}>
+          <span style={{ color:'#FF9900' }}>✦</span> Generating your daily reading…
         </div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:'#FFF', marginBottom:6 }}>
-            {oh.rag?.emoji} Overall Transit Health — {oh.rag?.label}
+      )}
+      {dailyReading && (
+        <DailyReadingCard
+          reading={dailyReading.reading}
+          dtc={dailyReading.dasha_transit}
+          overall={dailyReading.overall_health}
+          topHouses={dailyReading.top_houses}
+          challengingHouses={dailyReading.challenging_houses}
+        />
+      )}
+      {!dailyReading && !readingLoading && (
+        <div style={{
+          background:'#232F3E', borderRadius:16, padding:'16px 20px',
+          marginBottom:20, display:'flex', alignItems:'center', gap:16,
+        }}>
+          <div style={{ textAlign:'center', minWidth:60 }}>
+            <div style={{ fontSize:30, fontWeight:800, color:'#FF9900', lineHeight:1 }}>{oh.average_score}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', textTransform:'uppercase' }}>/100</div>
           </div>
-          <div style={{ display:'flex', gap:12, fontSize:12, flexWrap:'wrap' }}>
-            <span style={{ color:'#81C784' }}>🟢 {oh.green_count} Favourable</span>
-            <span style={{ color:'#FFB74D' }}>🟡 {oh.amber_count} Mixed</span>
-            <span style={{ color:'#EF9A9A' }}>🔴 {oh.red_count} Challenging</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:'#FFF', marginBottom:6 }}>
+              {oh.rag?.emoji} Overall Transit Health — {oh.rag?.label}
+            </div>
+            <div style={{ display:'flex', gap:12, fontSize:12, flexWrap:'wrap' }}>
+              <span style={{ color:'#81C784' }}>🟢 {oh.green_count} Favourable</span>
+              <span style={{ color:'#FFB74D' }}>🟡 {oh.amber_count} Mixed</span>
+              <span style={{ color:'#EF9A9A' }}>🔴 {oh.red_count} Challenging</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <p style={{ fontSize:12, color:'#888', marginBottom:12, textAlign:'center' }}>
         Tap any life area tag to see your personalised forecast
