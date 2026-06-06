@@ -74,6 +74,21 @@ function detectTopics(text) {
 
 const TOPIC_MAP = Object.fromEntries(TOPICS.map(t => [t.key, t]))
 
+const CHAT_TR = {
+  english: {
+    header:      'Ask Your Chart',
+    chipHint:    'Tap a topic to ask a suggested question, or type your own below',
+    emptyState:  'Ask anything about your natal chart, Dasha, or life areas.',
+    placeholder: 'Ask about your chart…',
+  },
+  tamil: {
+    header:      'உங்கள் ஜாதகம் கேளுங்கள்',
+    chipHint:    'ஒரு தலைப்பை தட்டவும் அல்லது நீங்களே கேள்வி கேளுங்கள்',
+    emptyState:  'உங்கள் ஜாதகம், தசை அல்லது வாழ்க்கைத் துறைகள் பற்றி கேளுங்கள்.',
+    placeholder: 'உங்கள் ஜாதகம் பற்றி கேளுங்கள்…',
+  },
+}
+
 // ── Markdown renderer ────────────────────────────────────────────────────────
 function MarkdownText({ text }) {
   if (!text) return null
@@ -184,7 +199,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
       <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #EEE', background: '#232F3E' }}>
         <span className="text-base">🔮</span>
         <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#FF9900' }}>
-          Ask Your Chart
+          {(CHAT_TR[language] || CHAT_TR.english).header}
         </h3>
         <div className="ml-auto flex items-center gap-3">
           <LanguageToggle language={language} onChange={setLanguage} />
@@ -215,7 +230,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
         })}
       </div>
       <div className="px-5 pb-1 text-xs" style={{ color: '#AAA' }}>
-        Tap a topic to ask a suggested question, or type your own below
+        {(CHAT_TR[language] || CHAT_TR.english).chipHint}
       </div>
 
       {/* Messages */}
@@ -225,7 +240,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
         {messages.length === 0 && (
           <div className="text-center py-6">
             <p className="text-xs mb-1" style={{ color: '#BBB' }}>
-              Ask anything about your natal chart, Dasha, or life areas.
+              {(CHAT_TR[language] || CHAT_TR.english).emptyState}
             </p>
           </div>
         )}
@@ -284,7 +299,7 @@ export default function ChatPanel({ chart, placeOfBirth }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Ask about your chart…"
+          placeholder={(CHAT_TR[language] || CHAT_TR.english).placeholder}
           disabled={loading}
           className="flex-1 px-4 py-2.5 text-sm rounded-xl focus:outline-none transition-colors disabled:opacity-40"
           style={{ background: '#F5F5F5', border: '1px solid #DDD', color: '#1A1A1A' }}
