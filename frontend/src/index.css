@@ -535,3 +535,113 @@ input:focus, select:focus, textarea:focus {
     overflow-x: visible;
   }
 }
+
+/* ── Cosmos strip (static sky bar) ─────────────────────────────────────────── */
+.cosmos-strip-wrap {
+  border-bottom: 1px solid var(--card-border);
+  background: var(--surface-muted);
+}
+
+.cosmos-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cosmos-alert--warning {
+  background: rgba(209, 50, 18, 0.12);
+  color: var(--error-text);
+  border-bottom: 1px solid rgba(209, 50, 18, 0.25);
+}
+
+.cosmos-alert--info {
+  background: rgba(255, 153, 0, 0.12);
+  color: var(--orange-dark);
+  border-bottom: 1px solid var(--feature-chip-border);
+}
+
+.cosmos-alert__until {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.cosmos-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.cosmos-strip:hover {
+  background: var(--highlight-bg);
+}
+
+.cosmos-strip__live {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 6px var(--orange);
+  animation: cosmos-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes cosmos-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmos-strip__live { animation: none; opacity: 0.85; }
+}
+
+.cosmos-strip__inner {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cosmos-strip__inner::-webkit-scrollbar {
+  display: none;
+}
+
+.cosmos-strip__seg {
+  display: inline;
+}
+
+.cosmos-strip__dot {
+  display: inline;
+  margin: 0 5px;
+  opacity: 0.45;
+  user-select: none;
+}
+
+.cosmos-strip__chev {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .cosmos-strip { padding: 8px 16px; }
+  .cosmos-strip__inner { font-size: 0.75rem; }
+}

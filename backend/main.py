@@ -49,6 +49,7 @@ from agents.transit_score_agent import score_all_houses, build_house_context
 from agents.ashtakavarga_agent import (
     calculate_ashtakavarga, sav_for_transit_scoring, bav_context_for_narrator
 )
+from agents.sky_today_agent import build_sky_today
 from geopy.geocoders import Photon
 from pydantic import BaseModel
 
@@ -259,6 +260,36 @@ def panchangam_today(request: Request, location: str = Query("Chennai", descript
     """
     today = date.today().isoformat()
     return _get_panchangam(today, location)
+
+
+@app.get("/sky/today")
+@limiter.limit("120/minute")
+def sky_today(
+    request: Request,
+    location: str = Query("Chennai", description="Location for panchangam & kalam"),
+    moon_nak_index: Optional[int] = Query(None, ge=0, le=26, description="Natal Moon nakshatra index"),
+    moon_rasi_index: Optional[int] = Query(None, ge=0, le=11, description="Natal Moon rasi index"),
+    natal_asc_sign_index: Optional[int] = Query(None, ge=0, le=11, description="Natal ascendant sign index"),
+):
+    """
+    Compact cosmos strip: today's sky + optional personal Tara / Moon house / alerts.
+    """
+    if location not in LOCATIONS:
+        # Allow fuzzy place strings (e.g. "Chennai, India")
+        from agents.sky_today_agent import _resolve_location
+        location = _resolve_location(location)
+
+    try:
+        return build_sky_today(
+            location=location,
+            moon_nak_index=moon_nak_index,
+            moon_rasi_index=moon_rasi_index,
+            natal_asc_sign_index=natal_asc_sign_index,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("sky/today error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Sky data unavailable. Please try again.")
 
 
 @app.get("/panchangam/date")

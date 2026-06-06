@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
 import { APP_NAME, APP_SHORT, APP_TAGLINE, APP_FEATURE_LINKS } from '../constants/brand'
 import GaneshaIllustration from '../components/GaneshaIllustration'
+import CosmosStrip from '../components/CosmosStrip'
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
@@ -489,6 +490,14 @@ export default function Home() {
         </div>
       ) : (
         <GaneshaBanner />
+      )}
+
+      {activeTab !== 'home' && (
+        <CosmosStrip
+          location={form.place_of_birth}
+          chart={chart}
+          onOpenPanchangam={() => setTab('panchangam')}
+        />
       )}
 
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
