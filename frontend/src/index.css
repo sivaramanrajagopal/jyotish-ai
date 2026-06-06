@@ -667,3 +667,7 @@ input:focus, select:focus, textarea:focus {
   .cosmos-strip { padding: 8px 16px; }
   .cosmos-strip__inner { font-size: 0.75rem; }
 }
+
+#ashtakavarga {
+  scroll-margin-top: 5rem;
+}

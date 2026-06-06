@@ -144,6 +144,10 @@ const fieldStyle = {
 function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
+  const handleFeatureClick = ({ tab, section }) => {
+    onGoToTab(tab, section)
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
       {chart && form.name && (
@@ -192,18 +196,18 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
         </h1>
         <p className="home-hero__tagline">{APP_TAGLINE}</p>
         <div className="home-hero__features" aria-label="Features">
-          {APP_FEATURE_LINKS.map(({ label, tab }) =>
+          {APP_FEATURE_LINKS.map((link) =>
             chart ? (
               <button
-                key={label}
+                key={link.label}
                 type="button"
                 className="home-hero__chip home-hero__chip--link"
-                onClick={() => onGoToTab(tab)}
+                onClick={() => handleFeatureClick(link)}
               >
-                {label}
+                {link.label}
               </button>
             ) : (
-              <span key={label} className="home-hero__chip">{label}</span>
+              <span key={link.label} className="home-hero__chip">{link.label}</span>
             )
           )}
         </div>
@@ -370,8 +374,11 @@ function MyChartTab({ chart, onGoHome, placeOfBirth }) {
       <PersonalPanchangamCard chart={chart} />
 
       {/* Ashtakavarga */}
-      <div className="rounded-xl overflow-hidden mb-6 sm:mb-8"
-        style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}>
+      <div
+        id="ashtakavarga"
+        className="rounded-xl overflow-hidden mb-6 sm:mb-8 scroll-mt-20"
+        style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}
+      >
         <div className="px-4 sm:px-5 py-3" style={{ borderBottom:'1px solid var(--card-border)', background:'var(--table-header)' }}>
           <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color:'var(--text-secondary)' }}>
             Ashtakavarga — BAV &amp; SAV
@@ -416,16 +423,47 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
   const [chartRefreshing, setChartRefreshing] = useState(false)
+  const [scrollTarget, setScrollTarget] = useState(() => {
+    try {
+      const hash = window.location.hash.replace('#', '')
+      const tab = new URLSearchParams(window.location.search).get('tab')
+      return tab === 'chart' && hash ? hash : null
+    } catch { return null }
+  })
 
-  const setTab = useCallback((key) => {
+  const setTab = useCallback((key, section) => {
     setActiveTab(key)
+    if (section) setScrollTarget(section)
     try {
       const url = new URL(window.location.href)
-      if (key === 'home') url.searchParams.delete('tab')
-      else url.searchParams.set('tab', key)
+      if (key === 'home') {
+        url.searchParams.delete('tab')
+        url.hash = ''
+      } else {
+        url.searchParams.set('tab', key)
+        if (section) url.hash = section
+        else url.hash = ''
+      }
       window.history.replaceState({}, '', url)
     } catch {}
   }, [])
+
+  // Scroll to in-chart section after tab switch (e.g. Ashtakavarga from home chip)
+  useEffect(() => {
+    if (!scrollTarget || activeTab !== 'chart') return undefined
+    const id = scrollTarget
+    const timer = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        el.style.transition = 'box-shadow 0.3s'
+        el.style.boxShadow = '0 0 0 3px var(--orange), var(--card-shadow)'
+        setTimeout(() => { el.style.boxShadow = 'var(--card-shadow)' }, 1800)
+      }
+      setScrollTarget(null)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [activeTab, scrollTarget])
 
   // Refresh stale saved charts missing ISO dasha dates
   useEffect(() => {
