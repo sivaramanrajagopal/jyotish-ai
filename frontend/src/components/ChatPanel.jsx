@@ -128,7 +128,7 @@ function renderBoldSafe(text) {
   const parts = text.split(/\*\*(.+?)\*\*/g)
   return parts.map((part, i) =>
     i % 2 === 1
-      ? <strong key={i} style={{ color: '#232F3E', fontWeight: 700 }}>{part}</strong>
+      ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong>
       : part
   )
 }
@@ -188,17 +188,17 @@ export default function ChatPanel({ chart, placeOfBirth }) {
     }
   }
 
-  const cardBg    = { background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }
-  const userBubble = { background: '#FF9900', color: '#232F3E', borderRadius: '14px 14px 2px 14px', fontWeight: 500 }
-  const aiBubble   = { background: '#F5F5F5', border: '1px solid #E8E8E8', color: '#1A1A1A', borderRadius: '2px 14px 14px 14px' }
+  const cardBg    = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }
+  const userBubble = { background: 'var(--orange)', color: 'var(--accent-dark)', borderRadius: '14px 14px 2px 14px', fontWeight: 500 }
+  const aiBubble   = { background: 'var(--bubble-ai-bg)', border: '1px solid var(--bubble-ai-border)', color: 'var(--text-primary)', borderRadius: '2px 14px 14px 14px' }
 
   return (
     <div className="rounded-2xl overflow-hidden mb-8" style={cardBg}>
 
       {/* Header */}
-      <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #EEE', background: '#232F3E' }}>
+      <div className="px-4 sm:px-5 py-3 flex items-center gap-2 flex-wrap" style={{ borderBottom: '1px solid var(--card-border)', background: 'var(--nav-bg)' }}>
         <span className="text-base">🔮</span>
-        <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#FF9900' }}>
+        <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--orange)' }}>
           {(CHAT_TR[language] || CHAT_TR.english).header}
         </h3>
         <div className="ml-auto flex items-center gap-3">
@@ -218,9 +218,9 @@ export default function ChatPanel({ chart, placeOfBirth }) {
               disabled={loading}
               className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all disabled:opacity-40"
               style={{
-                background: isActive ? topic.bg : '#F5F5F5',
-                border: `1px solid ${isActive ? topic.border : '#DDD'}`,
-                color: isActive ? topic.color : '#555',
+                background: isActive ? topic.bg : 'var(--chip-bg)',
+                border: `1px solid ${isActive ? topic.border : 'var(--chip-border)'}`,
+                color: isActive ? topic.color : 'var(--text-secondary)',
                 transform: isActive ? 'scale(1.04)' : 'scale(1)',
               }}
             >
@@ -229,17 +229,17 @@ export default function ChatPanel({ chart, placeOfBirth }) {
           )
         })}
       </div>
-      <div className="px-5 pb-1 text-xs" style={{ color: '#AAA' }}>
+      <div className="px-5 pb-1 text-xs" style={{ color: 'var(--text-muted)' }}>
         {(CHAT_TR[language] || CHAT_TR.english).chipHint}
       </div>
 
       {/* Messages */}
-      <div className="px-4 py-4 space-y-3 min-h-[120px] max-h-[480px] overflow-y-auto" style={{ background: '#FAFAFA' }}>
+      <div className="px-3 sm:px-4 py-4 space-y-3 min-h-[120px] max-h-[50vh] sm:max-h-[480px] overflow-y-auto" style={{ background: 'var(--surface-chat)' }}>
 
         {/* Empty state */}
         {messages.length === 0 && (
           <div className="text-center py-6">
-            <p className="text-xs mb-1" style={{ color: '#BBB' }}>
+            <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
               {(CHAT_TR[language] || CHAT_TR.english).emptyState}
             </p>
           </div>
@@ -248,14 +248,14 @@ export default function ChatPanel({ chart, placeOfBirth }) {
         {/* Conversation */}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className="max-w-[82%] px-4 py-2.5 text-sm leading-relaxed" style={msg.role === 'user' ? userBubble : aiBubble}>
+            <div className="max-w-[88%] sm:max-w-[82%] px-4 py-2.5 text-sm leading-relaxed" style={msg.role === 'user' ? userBubble : aiBubble}>
               {msg.role === 'assistant'
                 ? <MarkdownText text={msg.content} />
                 : msg.content
               }
               {/* Auto-tag badges on AI replies */}
               {msg.role === 'assistant' && i === messages.length - 1 && activeTopics.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid #EEE' }}>
+                <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--card-border)' }}>
                   {activeTopics.map(key => {
                     const t = TOPIC_MAP[key]
                     if (!t) return null
@@ -294,21 +294,21 @@ export default function ChatPanel({ chart, placeOfBirth }) {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 flex gap-2" style={{ borderTop: '1px solid #EEE', background: '#FFFFFF' }}>
+      <div className="px-3 sm:px-4 py-3 flex gap-2" style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
           placeholder={(CHAT_TR[language] || CHAT_TR.english).placeholder}
           disabled={loading}
-          className="flex-1 px-4 py-2.5 text-sm rounded-xl focus:outline-none transition-colors disabled:opacity-40"
-          style={{ background: '#F5F5F5', border: '1px solid #DDD', color: '#1A1A1A' }}
+          className="flex-1 px-4 py-2.5 text-base sm:text-sm rounded-xl focus:outline-none transition-colors disabled:opacity-40"
+          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
         />
         <button
           onClick={() => sendMessage()}
           disabled={!input.trim() || loading}
-          className="px-4 py-2.5 rounded-xl transition-all text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: '#FF9900', color: '#232F3E' }}
+          className="px-4 py-2.5 rounded-xl transition-all text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          style={{ background: 'var(--orange)', color: 'var(--accent-dark)' }}
         >
           ↑
         </button>

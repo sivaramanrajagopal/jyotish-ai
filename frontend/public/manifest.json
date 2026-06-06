@@ -9,6 +9,7 @@
   "theme_color": "#f59e0b",
   "lang": "en",
   "categories": ["lifestyle", "education"],
+  "permissions": ["notifications"],
   "icons": [
     {
       "src": "/icons/icon-192.svg",

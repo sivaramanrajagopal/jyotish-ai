@@ -98,6 +98,18 @@ def get_personal_dasha(
     def _fmt(dt: datetime.datetime) -> str:
         return dt.strftime("%b %Y")
 
+    def _iso(dt: datetime.datetime) -> str:
+        return dt.strftime("%Y-%m-%d")
+
+    def _bhukti_entry(b: dict) -> dict:
+        return {
+            "planet": b["planet"],
+            "start":    _fmt(b["start"]),
+            "end":      _fmt(b["end"]),
+            "start_iso": _iso(b["start"]),
+            "end_iso":   _iso(b["end"]),
+        }
+
     return {
         "nakshatra": nak,
         "pada":      pada,
@@ -105,6 +117,8 @@ def get_personal_dasha(
             "planet":          cur_dasha["planet"],
             "start":           _fmt(cur_dasha["start"]),
             "end":             _fmt(cur_dasha["end"]),
+            "start_iso":       _iso(cur_dasha["start"]),
+            "end_iso":         _iso(cur_dasha["end"]),
             "years":           cur_dasha["years"],
             "focus":           DASHA_FOCUS.get(cur_dasha["planet"], ""),
             "remaining_years": remaining_dasha_y,
@@ -113,20 +127,17 @@ def get_personal_dasha(
             "planet":           cur_bhukti["planet"],
             "start":            _fmt(cur_bhukti["start"]),
             "end":              _fmt(cur_bhukti["end"]),
+            "start_iso":        _iso(cur_bhukti["start"]),
+            "end_iso":          _iso(cur_bhukti["end"]),
             "trigger":          BHUKTI_TRIGGER.get(cur_bhukti["planet"], ""),
             "remaining_months": remaining_bhukti_m,
         },
-        "antardasha_sequence": [
-            {"planet": b["planet"], "start": _fmt(b["start"]), "end": _fmt(b["end"])}
-            for b in bhuktis
-        ],
-        "upcoming_bhuktis": [
-            {"planet": b["planet"], "start": _fmt(b["start"]), "end": _fmt(b["end"])}
-            for b in upcoming
-        ],
+        "antardasha_sequence": [_bhukti_entry(b) for b in bhuktis],
+        "upcoming_bhuktis":    [_bhukti_entry(b) for b in upcoming],
         "next_dashas": [
             {"planet": d["planet"], "start": _fmt(d["start"]),
-             "end": _fmt(d["end"]), "years": d["years"]}
+             "end": _fmt(d["end"]), "start_iso": _iso(d["start"]),
+             "end_iso": _iso(d["end"]), "years": d["years"]}
             for d in next_dashas
         ],
         "relationship": get_relationship(cur_dasha["planet"], cur_bhukti["planet"]),

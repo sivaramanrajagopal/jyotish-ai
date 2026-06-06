@@ -1,19 +1,18 @@
 /**
  * LanguageToggle.jsx
  * Pill-style EN | தமிழ் toggle button.
- * Usage: <LanguageToggle language={lang} onChange={setLang} />
  */
 export default function LanguageToggle({ language, onChange }) {
-  const isEn = language !== 'tamil'
   return (
     <div
       style={{
         display: 'inline-flex',
-        background: '#F0F0F0',
+        background: 'var(--toggle-bg)',
         borderRadius: 20,
         padding: 3,
         gap: 2,
         userSelect: 'none',
+        border: '1px solid var(--chip-border)',
       }}
       title="Switch response language"
     >
@@ -33,8 +32,8 @@ export default function LanguageToggle({ language, onChange }) {
               cursor:       'pointer',
               fontSize:     key === 'tamil' ? 12 : 11,
               fontWeight:   700,
-              background:   active ? '#FF9900' : 'transparent',
-              color:        active ? '#232F3E' : '#888',
+              background:   active ? 'var(--orange)' : 'transparent',
+              color:        active ? 'var(--accent-dark)' : 'var(--text-muted)',
               transition:   'all 0.15s',
               lineHeight:   1.4,
             }}

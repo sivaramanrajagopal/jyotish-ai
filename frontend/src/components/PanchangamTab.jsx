@@ -36,11 +36,11 @@ const KALAM_CONFIG = [
 // ── Style helpers ────────────────────────────────────────────────────────────
 
 const S = {
-  label: { color: '#888' },
-  value: { color: '#232F3E' },
-  sub:   { color: '#AAA' },
-  card:  { background: '#FFFFFF', border: '1px solid #E8DDD0', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' },
-  input: { background: '#FFFFFF', border: '1px solid #C8BAA8', color: '#1A1A1A', borderRadius: '8px' },
+  label: { color: 'var(--text-muted)' },
+  value: { color: 'var(--text-primary)' },
+  sub:   { color: 'var(--text-muted)' },
+  card:  { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '12px', boxShadow: 'var(--card-shadow)' },
+  input: { background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)', borderRadius: '8px' },
 }
 
 // ── Utility formatters ────────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ function PanchangamLimbs({ data }) {
                     style={{ background: dotColor, opacity: active ? 1 : 0.5 }}
                   />
                   <span className="text-sm" style={{
-                    color: active ? activeColor : '#888',
+                    color: active ? activeColor : 'var(--text-muted)',
                     fontWeight: active ? 700 : 400,
                   }}>
                     {label}
@@ -202,14 +202,14 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
   const SYMS  = { Sun:'☉', Moon:'☽', Mars:'♂', Mercury:'☿', Jupiter:'♃', Venus:'♀', Saturn:'♄', Rahu:'☊', Ketu:'☋' }
 
   return (
-    <div className="mt-3 overflow-x-auto">
+    <div className="mt-3 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       <table style={{
-        width: '100%', borderCollapse: 'collapse',
+        width: '100%', minWidth: '520px', borderCollapse: 'collapse',
         fontFamily: "'Inter', system-ui, sans-serif",
-        fontSize: '0.72rem', color: '#1A1A1A',
+        fontSize: '0.72rem', color: 'var(--text-primary)',
       }}>
         <thead>
-          <tr style={{ background: '#FFF8F0', borderBottom: '2px solid #FF9900' }}>
+          <tr style={{ background: 'var(--table-header)', borderBottom: '2px solid var(--orange)' }}>
             <th style={th}>Planet</th>
             <th style={th}>Sign</th>
             <th style={{ ...th, textAlign: 'right' }}>Deg</th>
@@ -222,35 +222,35 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
         <tbody>
           {/* Ascendant row */}
           {ascendant && (
-            <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #EEE' }}>
-              <td style={td}><span style={{ color: '#FF9900', fontWeight: 700 }}>⬆ ASC</span></td>
-              <td style={{ ...td, fontWeight: 700, color: '#232F3E' }}>{ascendant.sign}</td>
-              <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: '#555' }}>
+            <tr style={{ background: 'var(--highlight-bg)', borderBottom: '1px solid var(--card-border)' }}>
+              <td style={td}><span style={{ color: 'var(--orange)', fontWeight: 700 }}>⬆ ASC</span></td>
+              <td style={{ ...td, fontWeight: 700, color: 'var(--text-primary)' }}>{ascendant.sign}</td>
+              <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                 {ascendant.degree_in_sign?.toFixed(2)}°
               </td>
-              <td style={{ ...td, textAlign: 'center', color: '#555' }}>{ascendant.pada}</td>
-              <td style={{ ...td, color: '#444' }}>{ascendant.nakshatra}</td>
-              <td style={{ ...td, textAlign: 'center', color: '#888' }}>—</td>
-              <td style={{ ...td, textAlign: 'center', color: '#888' }}>—</td>
+              <td style={{ ...td, textAlign: 'center', color: 'var(--text-secondary)' }}>{ascendant.pada}</td>
+              <td style={{ ...td, color: 'var(--text-secondary)' }}>{ascendant.nakshatra}</td>
+              <td style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>—</td>
+              <td style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>—</td>
             </tr>
           )}
           {ORDER.map(name => {
             const p = planetPositions?.[name]
             if (!p) return null
             return (
-              <tr key={name} style={{ borderBottom: '1px solid #EEE' }}>
+              <tr key={name} style={{ borderBottom: '1px solid var(--card-border)' }}>
                 <td style={td}>
                   <span style={{ marginRight: 4 }}>{SYMS[name]}</span>
-                  <span style={{ fontWeight: 600, color: '#232F3E' }}>{name}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{name}</span>
                 </td>
-                <td style={{ ...td, fontWeight: 600, color: '#232F3E' }}>{p.sign}</td>
-                <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: '#555' }}>
+                <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{p.sign}</td>
+                <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                   {p.degree_in_sign?.toFixed(2)}°
                 </td>
-                <td style={{ ...td, textAlign: 'center', color: '#555' }}>{p.pada}</td>
-                <td style={{ ...td, color: '#444' }}>{p.nakshatra}</td>
-                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: '#FF9900' }}>H{p.house}</td>
-                <td style={{ ...td, textAlign: 'center', color: p.retrograde ? '#D13212' : '#CCC', fontWeight: 700 }}>
+                <td style={{ ...td, textAlign: 'center', color: 'var(--text-secondary)' }}>{p.pada}</td>
+                <td style={{ ...td, color: 'var(--text-secondary)' }}>{p.nakshatra}</td>
+                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--orange)' }}>H{p.house}</td>
+                <td style={{ ...td, textAlign: 'center', color: p.retrograde ? 'var(--error-text)' : 'var(--text-muted)', fontWeight: 700 }}>
                   {p.retrograde ? '℞' : '—'}
                 </td>
               </tr>
@@ -265,7 +265,7 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
 const th = {
   padding: '6px 8px', fontWeight: 700, fontSize: '0.65rem',
   textTransform: 'uppercase', letterSpacing: '0.05em',
-  whiteSpace: 'nowrap', textAlign: 'left', color: '#444',
+  whiteSpace: 'nowrap', textAlign: 'left', color: 'var(--text-secondary)',
 }
 const td = { padding: '5px 8px', whiteSpace: 'nowrap' }
 
@@ -317,21 +317,21 @@ export default function PanchangamTab() {
   useEffect(() => { fetchAll() }, [fetchAll])
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
       {/* ── Controls ── */}
-      <div className="flex gap-3 mb-6">
+      <div className="panch-controls mb-6">
         <input
           type="date" value={date}
           min="2020-01-01" max="2030-12-31"
           onChange={e => setDate(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-sm focus:outline-none rounded-xl"
+          className="flex-1 px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl w-full"
           style={S.input}
         />
         <select
           value={location}
           onChange={e => setLocation(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-sm focus:outline-none rounded-xl"
+          className="flex-1 px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl w-full"
           style={S.input}
         >
           {LOCATIONS.map(l => (
@@ -350,13 +350,13 @@ export default function PanchangamTab() {
           </h2>
 
           {loadingP && (
-            <div className="text-sm py-6 text-center animate-pulse" style={{ color: '#FF9900' }}>
+            <div className="text-sm py-6 text-center animate-pulse" style={{ color: 'var(--orange)' }}>
               Loading Panchangam…
             </div>
           )}
           {errorP && (
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
-              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
+              style={{ color: 'var(--error-text)', background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}>
               {errorP}
             </div>
           )}
@@ -370,13 +370,13 @@ export default function PanchangamTab() {
           </h2>
 
           {loadingT && (
-            <div className="text-sm py-6 text-center animate-pulse" style={{ color: '#FF9900' }}>
+            <div className="text-sm py-6 text-center animate-pulse" style={{ color: 'var(--orange)' }}>
               Computing transit chart…
             </div>
           )}
           {errorT && (
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
-              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
+              style={{ color: 'var(--error-text)', background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}>
               {errorT}
             </div>
           )}
@@ -384,7 +384,7 @@ export default function PanchangamTab() {
           {transit && !loadingT && (
             <div>
               <div className="rounded-xl p-3 mb-4"
-                style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
                 <SouthIndianChart
                   title="Transit"
                   subtitle={`${date} · ${location} · Noon`}
@@ -396,12 +396,12 @@ export default function PanchangamTab() {
 
               {/* Planet details table */}
               <div className="rounded-xl overflow-hidden"
-                style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
-                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid #EEE', background: '#FFF8F0' }}>
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#888' }}>
+                style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
+                <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--card-border)', background: 'var(--table-header)' }}>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                     Planet Details
                   </span>
-                  <span className="text-xs ml-3" style={{ color: '#AAA' }}>
+                  <span className="text-xs ml-3" style={{ color: 'var(--text-muted)' }}>
                     Ayanamsa: Lahiri {transit.ayanamsa_value?.toFixed(4)}°
                   </span>
                 </div>

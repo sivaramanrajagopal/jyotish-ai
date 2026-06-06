@@ -46,6 +46,9 @@ from agents.narrator import generate_forecast
 from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
+from agents.ashtakavarga_agent import (
+    calculate_ashtakavarga, sav_for_transit_scoring, bav_context_for_narrator
+)
 from geopy.geocoders import Photon
 from pydantic import BaseModel
 
@@ -1031,3 +1034,37 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
         "transit_date":         scores["transit_date"],
         "natal_moon":           scores.get("natal_moon_en", ""),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ashtakavarga
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AshtakavargaRequest(BaseModel):
+    natal_chart: dict
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/ashtakavarga")
+@limiter.limit("30/minute")
+def ashtakavarga_endpoint(request: Request, req: AshtakavargaRequest):
+    """
+    Calculate Bhinnashtakavarga (BAV) + Sarvashtakavarga (SAV)
+    including Trikona Shodhana, Ekadhipatya Shodhana, and Shodhya Pinda.
+    Results are cached — same chart always returns instantly.
+    """
+    if not req.natal_chart or "birth_data" not in req.natal_chart:
+        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
+    try:
+        result = calculate_ashtakavarga(req.natal_chart)
+        if not result:
+            raise HTTPException(status_code=422, detail="Could not extract planet positions from natal chart.")
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Ashtakavarga error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Ashtakavarga calculation failed.")

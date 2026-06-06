@@ -6,38 +6,63 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api/client'
-
-// ── Render keep-alive: ping backend every 9 min to prevent 50s cold start ────
-const PING_INTERVAL_MS = 9 * 60 * 1000  // 9 minutes
-function useKeepAlive() {
-  useEffect(() => {
-    const ping = () => api.get('/ping').catch(() => {})
-    ping() // immediate ping on mount
-    const id = setInterval(ping, PING_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [])
-}
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
 import ChatPanel from '../components/ChatPanel'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
-// GaneshaIcon replaced by inline ॐ symbol in GaneshaBanner
+import AshtakavargaPanel from '../components/AshtakavargaPanel'
+import DashaRoadmap from '../components/DashaRoadmap'
+import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
+import NotificationSettings from '../components/NotificationSettings'
+import { startNotificationWatcher } from '../lib/notifications'
 
-// ── Shared colours — Amazon light + saffron ───────────────────────────────────
+// Apply persisted theme immediately on load
+applyStoredTheme()
+
+// ── localStorage helpers ───────────────────────────────────────────────────
+const LS_KEY = 'jyotish-chart-v1'
+
+function saveToStorage(form, chart) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      form, chart, savedAt: new Date().toISOString()
+    }))
+  } catch {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // Expire after 30 days
+    const age = Date.now() - new Date(parsed.savedAt).getTime()
+    if (age > 30 * 24 * 60 * 60 * 1000) { localStorage.removeItem(LS_KEY); return null }
+    return parsed
+  } catch { return null }
+}
+
+// ── Render keep-alive ──────────────────────────────────────────────────────
+const PING_INTERVAL_MS = 9 * 60 * 1000
+function useKeepAlive() {
+  useEffect(() => {
+    const ping = () => api.get('/ping').catch(() => {})
+    ping()
+    const id = setInterval(ping, PING_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [])
+}
+
+// ── Theme-aware style helpers (CSS variables from index.css) ─────────────────
 const G = {
-  bg:      '#FFF8F0',
-  card:    { background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 8px rgba(0,0,0,0.07)' },
-  input:   { background: '#FFFFFF', border: '1px solid #C8BAA8', color: '#1A1A1A' },
-  gold:    '#FF9900',
-  cream:   '#FFFFFF',
-  sub:     '#666666',
-  label:   '#444444',
-  btn:     { background: '#FF9900', color: '#232F3E', fontWeight: '700' },
-  nav:     { background: '#232F3E' },
-  orange:  '#FF9900',
-  dark:    '#232F3E',
+  card: {
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
+    boxShadow: 'var(--card-shadow)',
+  },
+  btn: { background: 'var(--orange)', color: 'var(--accent-dark)', fontWeight: '700' },
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
@@ -54,8 +79,8 @@ function NeedChart({ onGoHome }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       <div className="text-5xl mb-4">🪷</div>
-      <p className="text-base font-semibold mb-2" style={{ color: '#232F3E' }}>Your chart hasn't been calculated yet</p>
-      <p className="text-sm mb-6" style={{ color: '#888' }}>Go to Home and enter your birth details first.</p>
+      <p className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Your chart hasn't been calculated yet</p>
+      <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Go to Home and enter your birth details first.</p>
       <button
         onClick={onGoHome}
         className="font-bold px-6 py-2.5 rounded-lg text-sm"
@@ -71,28 +96,24 @@ function NeedChart({ onGoHome }) {
 function GaneshaBanner() {
   return (
     <div
-      className="flex items-center justify-center gap-4 py-3 px-4"
-      style={{ background: '#232F3E', borderBottom: '3px solid #FF9900' }}
+      className="flex items-center gap-3 sm:gap-4 py-3 px-3 sm:px-4"
+      style={{ background: 'var(--nav-bg)', borderBottom: '3px solid var(--banner-border)' }}
     >
-      {/* Om symbol */}
       <div style={{
-        fontSize: '44px',
-        lineHeight: 1,
-        color: '#FF9900',
-        fontFamily: 'serif',
-        filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.6))',
-        userSelect: 'none',
+        fontSize: 'clamp(32px, 8vw, 44px)', lineHeight: 1, color: 'var(--orange)', fontFamily: 'serif',
+        filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.6))', userSelect: 'none', flexShrink: 0,
       }}>
         ॐ
       </div>
-      <div className="text-left">
-        <div className="text-lg font-bold" style={{ color: '#FF9900', letterSpacing: '0.08em' }}>
-          ॐ महा गणपतये नमः
+      <div className="flex-1 text-left min-w-0">
+        <div className="text-sm sm:text-lg font-bold truncate" style={{ color: 'var(--orange)', letterSpacing: '0.08em' }}>
+          ॐ महா கணபதயே நமஹ
         </div>
         <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          Jyotish AI — Vedic Astrology • Om Maha Ganapathaye Namaha
+          Jyotish AI — Vedic Astrology
         </div>
       </div>
+      <DarkModeToggle small />
     </div>
   )
 }
@@ -106,13 +127,13 @@ const fieldStyle = {
   boxSizing: 'border-box',
   height: '46px',
   padding: '0 16px',
-  fontSize: '14px',
+  fontSize: '16px',  // 16px prevents iOS zoom on focus
   lineHeight: '46px',
   borderRadius: '8px',
-  border: '1px solid #C8BAA8',
-  background: '#FFFFFF',
-  color: '#1A1A1A',
-  WebkitAppearance: 'none',   // removes iOS native chrome on date/time
+  border: '1px solid var(--input-border)',
+  background: 'var(--input-bg)',
+  color: 'var(--input-text)',
+  WebkitAppearance: 'none',
   appearance: 'none',
   outline: 'none',
 }
@@ -121,26 +142,26 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-10">
+    <div className="max-w-lg mx-auto px-4 py-6 sm:py-10">
       {/* Hero */}
-      <div className="text-center mb-10">
+      <div className="text-center mb-8 sm:mb-10">
         <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 0 8px rgba(255,153,0,0.4))' }}>🪷</div>
-        <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ color: '#232F3E' }}>
-          Jyotish <span style={{ color: '#FF9900' }}>AI</span>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+          Jyotish <span style={{ color: 'var(--orange)' }}>AI</span>
         </h1>
-        <p className="text-base max-w-sm mx-auto" style={{ color: '#666' }}>
+        <p className="text-sm sm:text-base max-w-sm mx-auto" style={{ color: 'var(--text-secondary)' }}>
           Classical Vedic astrology powered by AI — precise charts, daily forecasts, and cosmic guidance.
         </p>
       </div>
 
       {/* Birth form */}
-      <div className="rounded-2xl p-6" style={G.card}>
-        <h2 className="text-lg font-semibold mb-1" style={{ color: '#232F3E' }}>Get Your Free Natal Chart</h2>
-        <p className="text-xs mb-5" style={{ color: '#888' }}>Enter your birth details below</p>
+      <div className="rounded-2xl p-4 sm:p-6" style={G.card}>
+        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Get Your Free Natal Chart</h2>
+        <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>Enter your birth details below</p>
         <form onSubmit={onChartReady} className="space-y-4">
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Full Name</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
             <input
               name="name" value={form.name} onChange={handleChange}
               placeholder="Your name" required
@@ -151,14 +172,14 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
           {/* Mobile: stack vertically; sm+: side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Date of Birth</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Date of Birth</label>
               <input
                 type="date" name="dob" value={form.dob} onChange={handleChange} required
                 style={{ ...fieldStyle }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Time of Birth</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Time of Birth</label>
               <input
                 type="time" name="tob" value={form.tob} onChange={handleChange} required
                 style={{ ...fieldStyle }}
@@ -167,7 +188,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Place of Birth</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Place of Birth</label>
             <input
               name="place_of_birth" value={form.place_of_birth} onChange={handleChange}
               placeholder="City, Country (e.g. Chennai, India)" required
@@ -176,7 +197,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Gender</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Gender</label>
             <select
               name="gender" value={form.gender} onChange={handleChange}
               style={{ ...fieldStyle, cursor: 'pointer' }}
@@ -189,7 +210,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
 
           {error && (
             <div className="text-sm rounded-lg px-4 py-3"
-              style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
+              style={{ color: 'var(--error-text)', background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}>
               {error}
             </div>
           )}
@@ -203,18 +224,47 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
           </button>
         </form>
       </div>
+
+      {/* Saved chart indicator */}
+      {(() => {
+        const s = loadFromStorage()
+        if (!s?.form?.name) return null
+        return (
+          <div style={{
+            marginTop:12, padding:'10px 14px', borderRadius:10,
+            background:'var(--card-bg)', border:'1px solid var(--card-border)',
+            display:'flex', justifyContent:'space-between', alignItems:'center',
+          }}>
+            <span style={{ fontSize:12, color:'var(--text-muted)' }}>
+              💾 Saved: <strong style={{ color:'var(--text-primary)' }}>{s.form.name}</strong>
+              {' '}— {s.form.dob}
+            </span>
+            <button onClick={() => {
+              try { localStorage.removeItem(LS_KEY) } catch {}
+              window.location.reload()
+            }} style={{
+              fontSize:11, color:'var(--error-text)', background:'none',
+              border:'none', cursor:'pointer', padding:'2px 6px',
+            }}>
+              Clear ✕
+            </button>
+          </div>
+        )
+      })()}
     </div>
   )
 }
 
 // ── MY CHART TAB ──────────────────────────────────────────────────────────────
-function MyChartTab({ chart, onGoHome }) {
+function MyChartTab({ chart, onGoHome, placeOfBirth }) {
   if (!chart) return <NeedChart onGoHome={onGoHome} />
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+
+      <NotificationSettings placeOfBirth={placeOfBirth} />
 
       {/* Big 3 */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="big-three-grid mb-6 sm:mb-8">
         {[
           { label: 'Ascendant (Lagna)', value: chart.ascendant.sign,
             sub: `${chart.ascendant.nakshatra} P${chart.ascendant.pada}` },
@@ -223,17 +273,17 @@ function MyChartTab({ chart, onGoHome }) {
           { label: 'Moon Sign', value: chart.planet_positions.Moon.sign,
             sub: chart.planet_positions.Moon.nakshatra },
         ].map(({ label, value, sub }) => (
-          <div key={label} className="rounded-xl p-4 text-center"
-            style={{ background: '#FFF8F0', border: '2px solid #FF9900', boxShadow: '0 2px 6px rgba(255,153,0,0.12)' }}>
-            <div className="text-xs mb-1 font-medium" style={{ color: '#888' }}>{label}</div>
-            <div className="text-lg font-bold" style={{ color: '#232F3E' }}>{value}</div>
-            <div className="text-xs mt-0.5" style={{ color: '#999' }}>{sub}</div>
+          <div key={label} className="rounded-xl p-3 sm:p-4 text-center"
+            style={{ background: 'var(--highlight-bg)', border: '2px solid var(--highlight-border)', boxShadow: 'var(--card-shadow)' }}>
+            <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>{label}</div>
+            <div className="text-base sm:text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{sub}</div>
           </div>
         ))}
       </div>
 
       {/* D1 + D9 Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {[
           { title: 'D1 — Rasi Chart (Janma Kundali)',
             sub: `${chart.birth_data.dob} · ${chart.birth_data.tob}`,
@@ -242,10 +292,10 @@ function MyChartTab({ chart, onGoHome }) {
             sub: `Lagna: ${chart.navamsa_ascendant?.sign}`,
             pos: chart.navamsa_positions, lagnaIdx: chart.navamsa_ascendant?.sign_index, nav: true },
         ].map(({ title, sub, pos, lagnaIdx, nav }) => (
-          <div key={title} className="rounded-xl p-4"
-            style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
-            <h3 className="text-sm font-semibold mb-3 text-center uppercase tracking-wide"
-              style={{ color: '#888' }}>{title}</h3>
+          <div key={title} className="rounded-xl p-3 sm:p-4"
+            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
+            <h3 className="text-xs sm:text-sm font-semibold mb-3 text-center uppercase tracking-wide"
+              style={{ color: 'var(--text-muted)' }}>{title}</h3>
             <SouthIndianChart title={nav ? 'D9' : 'D1'} subtitle={sub}
               planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav} />
           </div>
@@ -253,13 +303,13 @@ function MyChartTab({ chart, onGoHome }) {
       </div>
 
       {/* Planet Table */}
-      <div className="rounded-xl overflow-hidden mb-8"
-        style={{ background: '#FFFFFF', border: '1px solid #E8DDD0', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
-        <div className="px-5 py-3" style={{ borderBottom: '1px solid #EEE', background: '#FFF8F0' }}>
-          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#444' }}>
+      <div className="rounded-xl overflow-hidden mb-6 sm:mb-8"
+        style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
+        <div className="px-4 sm:px-5 py-3" style={{ borderBottom: '1px solid var(--card-border)', background: 'var(--table-header)' }}>
+          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
             Planet Details — D1 Rasi
           </h3>
-          <p className="text-xs mt-0.5" style={{ color: '#999' }}>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             Ayanamsa: {chart.ayanamsa} {chart.ayanamsa_value?.toFixed(4)}° &nbsp;·&nbsp; ★ Vargottama &nbsp;·&nbsp; ℞ Retrograde
           </p>
         </div>
@@ -269,16 +319,16 @@ function MyChartTab({ chart, onGoHome }) {
 
       {/* Yogas */}
       {chart.yogas?.length > 0 && (
-        <div className="rounded-xl p-5 mb-8"
-          style={{ background: '#FFFBF0', border: '2px solid #FF9900', boxShadow: '0 2px 6px rgba(255,153,0,0.1)' }}>
-          <h3 className="font-bold mb-3 text-sm uppercase tracking-wide" style={{ color: '#E47911' }}>
+        <div className="rounded-xl p-4 sm:p-5 mb-6 sm:mb-8"
+          style={{ background: 'var(--yoga-bg)', border: '2px solid var(--highlight-border)', boxShadow: 'var(--card-shadow)' }}>
+          <h3 className="font-bold mb-3 text-sm uppercase tracking-wide" style={{ color: 'var(--orange-dark)' }}>
             ✦ Yogas Detected
           </h3>
           <div className="space-y-2">
             {chart.yogas.map((y, i) => (
               <div key={i} className="text-sm">
-                <span className="font-semibold" style={{ color: '#232F3E' }}>{y.name}</span>
-                <span className="ml-2" style={{ color: '#666' }}>— {y.description}</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{y.name}</span>
+                <span className="ml-2" style={{ color: 'var(--text-secondary)' }}>— {y.description}</span>
               </div>
             ))}
           </div>
@@ -287,19 +337,72 @@ function MyChartTab({ chart, onGoHome }) {
 
       {/* Personal Panchangam */}
       <PersonalPanchangamCard chart={chart} />
+
+      {/* Ashtakavarga */}
+      <div className="rounded-xl overflow-hidden mb-6 sm:mb-8"
+        style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}>
+        <div className="px-4 sm:px-5 py-3" style={{ borderBottom:'1px solid var(--card-border)', background:'var(--table-header)' }}>
+          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color:'var(--text-secondary)' }}>
+            Ashtakavarga — BAV &amp; SAV
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color:'var(--text-muted)' }}>
+            Bindu scores per house • Sarvashtakavarga • Shodhya Pinda
+          </p>
+        </div>
+        <div className="px-4 sm:px-5 py-4">
+          <AshtakavargaPanel chart={chart} />
+        </div>
+      </div>
+
+      {/* Dasha Roadmap */}
+      <div className="rounded-xl overflow-hidden mb-6 sm:mb-8"
+        style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}>
+        <div className="px-4 sm:px-5 py-4">
+          <DashaRoadmap chart={chart} />
+        </div>
+      </div>
     </div>
   )
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function Home() {
-  useKeepAlive()  // ping backend every 9 min — keeps Render free tier warm
+  useKeepAlive()
 
-  const [activeTab, setActiveTab] = useState('home')
-  const [form, setForm]   = useState({ name: '', dob: '', tob: '', place_of_birth: '', gender: 'male' })
-  const [chart, setChart] = useState(null)
+  // Deep-link tabs from notification clicks (?tab=chart|panchangam|…)
+  const urlTab = (() => {
+    try {
+      const t = new URLSearchParams(window.location.search).get('tab')
+      return TABS.some(x => x.key === t) ? t : null
+    } catch { return null }
+  })()
+
+  // Restore from localStorage on first render
+  const saved = loadFromStorage()
+  const [activeTab, setActiveTab] = useState(urlTab || (saved?.chart ? 'chart' : 'home'))
+  const [form, setForm]   = useState(saved?.form  || { name:'', dob:'', tob:'', place_of_birth:'', gender:'male' })
+  const [chart, setChart] = useState(saved?.chart || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
+
+  // Cosmic alert watcher (while app is open / installed as PWA)
+  useEffect(() => {
+    if (!chart) return undefined
+    return startNotificationWatcher(chart, form.place_of_birth)
+  }, [chart, form.place_of_birth])
+
+  // Switch tab when user taps a notification while app is open
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return undefined
+    const onMsg = (e) => {
+      const tab = e.data?.tab
+      if (e.data?.type === 'NAV_TAB' && TABS.some(t => t.key === tab)) {
+        setActiveTab(tab)
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    return () => navigator.serviceWorker.removeEventListener('message', onMsg)
+  }, [])
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -309,6 +412,7 @@ export default function Home() {
     try {
       const { data } = await api.post('/natal-chart', form)
       setChart(data)
+      saveToStorage(form, data)   // ← persist to localStorage
       setActiveTab('chart')          // auto-navigate to chart tab
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -328,7 +432,7 @@ export default function Home() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: G.bg, color: '#1A1A1A' }}
+      style={{ background: 'var(--app-bg)', color: 'var(--text-primary)' }}
     >
       {/* Ganesha banner — always visible */}
       <GaneshaBanner />
@@ -336,16 +440,16 @@ export default function Home() {
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
         className="hidden sm:flex border-b sticky top-0 z-30"
-        style={{ background: '#FFFFFF', borderColor: '#E8DDD0', boxShadow: '0 2px 4px rgba(0,0,0,0.06)' }}
+        style={{ background: 'var(--nav-tab-bg)', borderColor: 'var(--nav-tab-border)', boxShadow: 'var(--card-shadow)' }}
       >
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className="flex items-center gap-1.5 px-5 py-3 text-sm font-semibold transition-all relative"
+            className="flex items-center gap-1.5 px-4 lg:px-5 py-3 text-sm font-semibold transition-all relative"
             style={{
-              color: activeTab === tab.key ? '#FF9900' : '#555',
-              borderBottom: activeTab === tab.key ? '3px solid #FF9900' : '3px solid transparent',
+              color: activeTab === tab.key ? 'var(--nav-tab-active)' : 'var(--nav-tab-text)',
+              borderBottom: activeTab === tab.key ? '3px solid var(--orange)' : '3px solid transparent',
             }}
           >
             <span>{tab.icon}</span>
@@ -353,11 +457,14 @@ export default function Home() {
             {chart && ['chart','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
-                style={{ background: '#FF9900' }}
+                style={{ background: 'var(--orange)' }}
               />
             )}
           </button>
         ))}
+        <div className="ml-auto flex items-center px-3">
+          <DarkModeToggle small onDarkBg={false} />
+        </div>
       </nav>
 
       {/* ── Tab content ── */}
@@ -371,7 +478,7 @@ export default function Home() {
         )}
 
         {activeTab === 'chart' && (
-          <MyChartTab chart={chart} onGoHome={goHome} />
+          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} />
         )}
 
         {activeTab === 'panchangam' && (
@@ -389,7 +496,7 @@ export default function Home() {
         {activeTab === 'forecast' && (
           chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
-                <ForecastPanel chart={chart} gender={form.gender} />
+                <ForecastPanel chart={chart} gender={form.gender} showDatePicker />
               </div>
             : <NeedChart onGoHome={goHome} />
         )}
@@ -399,8 +506,8 @@ export default function Home() {
       <nav
         className="sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
         style={{
-          background: '#FFFFFF',
-          borderTop: '1px solid #E8DDD0',
+          background: 'var(--nav-tab-bg)',
+          borderTop: '1px solid var(--nav-tab-border)',
           paddingBottom: 'env(safe-area-inset-bottom)',
           boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
         }}
@@ -409,25 +516,23 @@ export default function Home() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative"
-            style={{ color: activeTab === tab.key ? '#FF9900' : '#888' }}
+            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
+            style={{ color: activeTab === tab.key ? 'var(--orange)' : 'var(--text-muted)' }}
           >
             <span style={{ fontSize: '18px', lineHeight: 1 }}>{tab.icon}</span>
             <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.04em' }}>
               {tab.label}
             </span>
-            {/* active pill */}
             {activeTab === tab.key && (
               <span
                 className="absolute top-1 left-1/2 -translate-x-1/2 rounded-full"
-                style={{ width: '20px', height: '3px', background: '#f59e0b' }}
+                style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {/* dot when chart available */}
             {chart && ['chart','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
-                style={{ background: '#f59e0b' }}
+                style={{ background: 'var(--orange)' }}
               />
             )}
           </button>

@@ -620,15 +620,27 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
             lord_gochara * 0.50 + in_house_score * 0.35 + karaka_score * 0.15, 1
         )
 
+    # ── SAV refinement ────────────────────────────────────────────────────────
+    # Silently load SAV to refine transit scores (Ashtakavarga bindus per house)
+    try:
+        from agents.ashtakavarga_agent import sav_for_transit_scoring
+        sav_house = sav_for_transit_scoring(natal_chart)
+    except Exception:
+        sav_house = [28] * 12   # neutral default
+
     # ── Blended final house scores ─────────────────────────────────────────
-    # 60% natal house lord strength + 40% gochara transit score
+    # 55% natal house lord strength + 35% Gochara + 10% SAV normalised
     houses_out: dict[int, dict] = {}
 
     for h in range(1, 13):
-        hl    = house_lord_data.get(h, {})
+        hl        = house_lord_data.get(h, {})
         natal_s   = hl.get("natal_strength", 50.0)
         transit_s = gochara_house_scores.get(h, 50.0)
-        blended   = round(natal_s * 0.60 + transit_s * 0.40, 1)
+        # SAV normalised: 337 total / 12 houses ≈ 28 average
+        # Map to 0-100 scale: sav_pts / 56 * 100 (56 = max theoretical per house)
+        sav_pts   = sav_house[h - 1] if h <= len(sav_house) else 28
+        sav_norm  = round(min(100, (sav_pts / 42) * 100), 1)   # 42 = practical max
+        blended   = round(natal_s * 0.55 + transit_s * 0.35 + sav_norm * 0.10, 1)
 
         # "Transit Activity" — ONLY planets directly in or directly aspecting house
         house_sign  = RASIS[(RASIS.index(natal_data["Ascendant"]["rasi"]) + h - 1) % 12]
@@ -664,6 +676,9 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
                 gochara_scores.get(hl.get("lord",""), 50),
                 gochara_details.get(hl.get("lord",""), {}).get("vedha_blocked", False)
             ),
+            # Ashtakavarga
+            "sav_points":   sav_pts,
+            "sav_label":    "Strong" if sav_pts >= 30 else "Good" if sav_pts >= 25 else "Average" if sav_pts >= 20 else "Weak",
         }
 
     # ── Overall Gochara health ─────────────────────────────────────────────

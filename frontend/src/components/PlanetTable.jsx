@@ -1,5 +1,5 @@
 /**
- * PlanetTable.jsx — light Amazon theme
+ * PlanetTable.jsx — theme-aware planet details table
  */
 
 const PLANET_ORDER = ["Sun","Moon","Mars","Mercury","Jupiter","Venus","Saturn","Rahu","Ketu"]
@@ -13,11 +13,11 @@ const CRISIS_SET = new Set(["Mars","Rahu","Saturn","Ketu"])
 const GROWTH_SET = new Set(["Jupiter","Venus"])
 
 function planetRowColor(planet) {
-  if (GROWTH_SET.has(planet)) return "#F0FFF4"
-  if (CRISIS_SET.has(planet)) return "#FFF8F8"
-  if (planet === "Sun")  return "#FFFBF0"
-  if (planet === "Moon") return "#F0F8FF"
-  return "#FFFFFF"
+  if (GROWTH_SET.has(planet)) return "var(--row-growth)"
+  if (CRISIS_SET.has(planet)) return "var(--row-crisis)"
+  if (planet === "Sun")  return "var(--row-sun)"
+  if (planet === "Moon") return "var(--row-moon)"
+  return "var(--card-bg)"
 }
 
 const th = {
@@ -26,23 +26,24 @@ const th = {
   fontSize: "0.72rem",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
-  borderBottom: "2px solid #FF9900",
+  borderBottom: "2px solid var(--orange)",
   whiteSpace: "nowrap",
-  color: "#444",
-  background: "#FFF8F0",
+  color: "var(--text-secondary)",
+  background: "var(--table-header)",
 }
 
 const td = {
   padding: "7px 10px",
   whiteSpace: "nowrap",
-  color: "#1A1A1A",
+  color: "var(--text-primary)",
 }
 
 export default function PlanetTable({ planetPositions, navamsaPositions, ascendant }) {
   return (
-    <div style={{ overflowX:"auto" }}>
+    <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
       <table style={{
         width:"100%",
+        minWidth: "640px",
         borderCollapse:"collapse",
         fontFamily:"'Inter',system-ui,sans-serif",
         fontSize:"0.78rem",
@@ -62,22 +63,21 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
           </tr>
         </thead>
         <tbody>
-          {/* Ascendant row */}
-          <tr style={{ background:"#FFF8F0", borderBottom:"2px solid #FF9900" }}>
+          <tr style={{ background:"var(--highlight-bg)", borderBottom:"2px solid var(--orange)" }}>
             <td style={td}>
-              <span style={{ fontWeight:700, color:"#FF9900" }}>⬆ Ascendant</span>
+              <span style={{ fontWeight:700, color:"var(--orange)" }}>⬆ Ascendant</span>
             </td>
-            <td style={{...td, fontWeight:700, color:"#232F3E"}}>{ascendant.sign}</td>
-            <td style={{...td, color:"#888"}}>{ascendant.sign_lord}</td>
-            <td style={{...td, textAlign:"right", fontFamily:"monospace", color:"#555"}}>
+            <td style={{...td, fontWeight:700, color:"var(--text-primary)"}}>{ascendant.sign}</td>
+            <td style={{...td, color:"var(--text-muted)"}}>{ascendant.sign_lord}</td>
+            <td style={{...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)"}}>
               {ascendant.degree_in_sign?.toFixed(2)}°
             </td>
-            <td style={{...td, textAlign:"center", color:"#888"}}>—</td>
-            <td style={{...td, color:"#444"}}>{ascendant.nakshatra}</td>
-            <td style={{...td, color:"#888"}}>{ascendant.nakshatra_lord}</td>
-            <td style={{...td, textAlign:"center", color:"#555"}}>{ascendant.pada}</td>
-            <td style={{...td, color:"#888"}}>—</td>
-            <td style={{...td, textAlign:"center", color:"#888"}}>—</td>
+            <td style={{...td, textAlign:"center", color:"var(--text-muted)"}}>—</td>
+            <td style={{...td, color:"var(--text-secondary)"}}>{ascendant.nakshatra}</td>
+            <td style={{...td, color:"var(--text-muted)"}}>{ascendant.nakshatra_lord}</td>
+            <td style={{...td, textAlign:"center", color:"var(--text-secondary)"}}>{ascendant.pada}</td>
+            <td style={{...td, color:"var(--text-muted)"}}>—</td>
+            <td style={{...td, textAlign:"center", color:"var(--text-muted)"}}>—</td>
           </tr>
 
           {PLANET_ORDER.map(planet => {
@@ -89,35 +89,35 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
             return (
               <tr key={planet} style={{
                 background: planetRowColor(planet),
-                borderBottom:"1px solid #EEE",
+                borderBottom:"1px solid var(--card-border)",
               }}>
                 <td style={td}>
                   <span style={{ marginRight:"6px", fontSize:"1rem" }}>
                     {PLANET_SYMBOLS[planet]}
                   </span>
-                  <span style={{ fontWeight:600, color:"#232F3E" }}>{planet}</span>
+                  <span style={{ fontWeight:600, color:"var(--text-primary)" }}>{planet}</span>
                   {isVargo && (
                     <span title="Vargottama" style={{
                       marginLeft:"4px", fontSize:"0.6rem",
-                      color:"#E47911", fontWeight:700
+                      color:"var(--orange-dark)", fontWeight:700
                     }}>★V</span>
                   )}
                 </td>
-                <td style={{ ...td, fontWeight:600, color:"#232F3E" }}>{p.sign}</td>
-                <td style={{ ...td, color:"#888" }}>{p.sign_lord}</td>
-                <td style={{ ...td, textAlign:"right", fontFamily:"monospace", color:"#555" }}>
+                <td style={{ ...td, fontWeight:600, color:"var(--text-primary)" }}>{p.sign}</td>
+                <td style={{ ...td, color:"var(--text-muted)" }}>{p.sign_lord}</td>
+                <td style={{ ...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)" }}>
                   {p.degree_in_sign?.toFixed(2)}°
                 </td>
-                <td style={{ ...td, textAlign:"center", fontWeight:700, color:"#FF9900" }}>
+                <td style={{ ...td, textAlign:"center", fontWeight:700, color:"var(--orange)" }}>
                   H{p.house}
                 </td>
-                <td style={{...td, color:"#444"}}>{p.nakshatra}</td>
-                <td style={{ ...td, color:"#888" }}>{p.nakshatra_lord}</td>
-                <td style={{ ...td, textAlign:"center", color:"#555" }}>{p.pada}</td>
-                <td style={{ ...td, color: isVargo ? "#E47911" : "#888" }}>
+                <td style={{...td, color:"var(--text-secondary)"}}>{p.nakshatra}</td>
+                <td style={{ ...td, color:"var(--text-muted)" }}>{p.nakshatra_lord}</td>
+                <td style={{ ...td, textAlign:"center", color:"var(--text-secondary)" }}>{p.pada}</td>
+                <td style={{ ...td, color: isVargo ? "var(--orange-dark)" : "var(--text-muted)" }}>
                   {d9?.sign || "—"}
                 </td>
-                <td style={{ ...td, textAlign:"center", color: isRetro ? "#D13212" : "#CCC", fontWeight: isRetro ? 700 : 400 }}>
+                <td style={{ ...td, textAlign:"center", color: isRetro ? "var(--error-text)" : "var(--text-muted)", fontWeight: isRetro ? 700 : 400 }}>
                   {isRetro ? "℞" : "—"}
                 </td>
               </tr>

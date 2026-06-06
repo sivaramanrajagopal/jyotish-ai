@@ -143,9 +143,9 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
   const hasCrisis = planets.some(p => CRISIS_SET.has(p))
   const hasGrowth = planets.some(p => GROWTH_SET.has(p))
 
-  let bg = "#FFFFFF"
-  if (hasCrisis && !hasGrowth) bg = "#FFF8F8"
-  else if (hasGrowth && !hasCrisis) bg = "#F0FFF4"
+  let bg = "var(--chart-cell-bg)"
+  if (hasCrisis && !hasGrowth) bg = "var(--chart-cell-crisis)"
+  else if (hasGrowth && !hasCrisis) bg = "var(--chart-cell-growth)"
 
   const lagnaGrad = isLagna
     ? ", linear-gradient(45deg, transparent 46%, #FF9900 47%, #FF9900 53%, transparent 54%)"
@@ -154,7 +154,7 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
   return (
     <td style={{
       background: `${bg}${lagnaGrad}`,
-      border: "1px solid #E8DDD0",
+      border: "1px solid var(--card-border)",
       padding: "4px 3px 3px",
       verticalAlign: "top",
       width: "25%",
@@ -163,7 +163,7 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
       {/* Sign label top-right */}
       <div style={{
         fontSize: "0.5rem",
-        color: "#BBAA99",
+        color: "var(--text-muted)",
         textAlign: "right",
         lineHeight: 1,
         marginBottom: "2px",
@@ -242,8 +242,8 @@ export default function SouthIndianChart({
   })
 
   const centreStyle = {
-    background: "#FFF8F0",
-    border: "1px solid #E8DDD0",
+    background: "var(--chart-centre)",
+    border: "1px solid var(--card-border)",
     textAlign: "center",
     verticalAlign: "middle",
     padding: "8px",
@@ -267,18 +267,18 @@ export default function SouthIndianChart({
           <tr>
             <Cell {...cellProps(10)} />
             <td colSpan={2} rowSpan={2} style={centreStyle}>
-              <div style={{ color:"#E47911", fontWeight:700, fontSize:"0.85rem" }}>{title}</div>
+              <div style={{ color:"var(--orange-dark)", fontWeight:700, fontSize:"0.85rem" }}>{title}</div>
               {subtitle && (
-                <div style={{ color:"#AAA", fontSize:"0.6rem", marginTop:"4px", lineHeight:1.4 }}>
+                <div style={{ color:"var(--text-muted)", fontSize:"0.6rem", marginTop:"4px", lineHeight:1.4 }}>
                   {subtitle}
                 </div>
               )}
               {showDetails && (
-                <div style={{ marginTop:"8px", fontSize:"0.5rem", color:"#AAA", lineHeight:1.8 }}>
-                  <div><span style={{color:"#D13212"}}>℞</span> Retrograde</div>
-                  <div><span style={{color:"#E47911"}}>★</span> Vargottama</div>
-                  <div style={{color:"#AAA"}}>15.3° = degree</div>
-                  <div style={{color:"#AAA"}}>P2 = pada</div>
+                <div style={{ marginTop:"8px", fontSize:"0.5rem", color:"var(--text-muted)", lineHeight:1.8 }}>
+                  <div><span style={{color:"var(--error-text)"}}>℞</span> Retrograde</div>
+                  <div><span style={{color:"var(--orange-dark)"}}>★</span> Vargottama</div>
+                  <div>15.3° = degree</div>
+                  <div>P2 = pada</div>
                 </div>
               )}
             </td>
@@ -297,9 +297,9 @@ export default function SouthIndianChart({
         </tbody>
       </table>
       {!showDetails && (
-        <div style={{ fontSize:"0.55rem", color:"#AAA", marginTop:"4px", textAlign:"right" }}>
-          <span style={{color:"#D13212"}}>℞</span> Retrograde &nbsp;
-          <span style={{color:"#E47911"}}>★</span> Vargottama
+        <div style={{ fontSize:"0.55rem", color:"var(--text-muted)", marginTop:"4px", textAlign:"right" }}>
+          <span style={{color:"var(--error-text)"}}>℞</span> Retrograde &nbsp;
+          <span style={{color:"var(--orange-dark)"}}>★</span> Vargottama
         </div>
       )}
     </div>

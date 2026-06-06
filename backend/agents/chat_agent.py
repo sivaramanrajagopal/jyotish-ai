@@ -25,6 +25,7 @@ from agents.transit_score_agent import (
     compact_gochara_summary,
     dasha_transit_correlation,
 )
+from agents.ashtakavarga_agent import bav_context_for_narrator
 
 MODEL  = "gpt-4o-mini"
 TOKENS = 800   # per reply — keep responses concise
@@ -308,16 +309,23 @@ def _build_system(natal_chart, location: str = "Chennai") -> str:
 
 def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
     """
-    Silently compute Gochara scores and Dasha-Transit correlation,
+    Silently compute Gochara scores + Dasha-Transit correlation + Ashtakavarga,
     then return a compact text block to append to the system prompt.
     Errors are swallowed — chat should still work if scoring fails.
     """
     try:
-        scores = score_all_houses(natal_chart)
-        return "\n\n" + compact_gochara_summary(scores, dasha)
+        scores   = score_all_houses(natal_chart)
+        gochara  = compact_gochara_summary(scores, dasha)
     except Exception as e:
         print(f"[chat_agent] Gochara block error (non-fatal): {e}")
-        return ""
+        gochara  = ""
+
+    try:
+        bav_ctx = "\n\n" + bav_context_for_narrator(natal_chart)
+    except Exception:
+        bav_ctx = ""
+
+    return ("\n\n" + gochara if gochara else "") + bav_ctx
 
 
 _TAMIL_CHAT_SUFFIX = """
@@ -337,7 +345,7 @@ _TAMIL_CHAT_SUFFIX = """
 
 அனுமதிக்கப்படுவன (ALLOWED in English):
 H1…H12 (வீட்டு எண்கள்) | எண் மதிப்புகள் (scores)
-=== END INSTRUCTION ===""
+=== END INSTRUCTION ==="""
 
 
 def chat(
