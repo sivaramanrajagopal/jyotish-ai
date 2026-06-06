@@ -17,6 +17,7 @@ Security hardening (OWASP Top 10):
 import os
 import re
 from contextlib import asynccontextmanager
+import datetime as _dt_module
 from datetime import date, datetime
 from pathlib import Path
 from dotenv import load_dotenv
@@ -44,6 +45,7 @@ from agents.orchestrator import assemble_context
 from agents.narrator import generate_forecast
 from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
+from agents.transit_score_agent import score_all_houses, build_house_context
 from geopy.geocoders import Photon
 from pydantic import BaseModel
 
@@ -734,3 +736,137 @@ def chat_endpoint(request: Request, req: ChatRequest):
             "Chat endpoint error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Chat service temporarily unavailable.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deterministic Forecast — House Scores
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ForecastScoresRequest(BaseModel):
+    natal_chart: dict
+    transit_date: Optional[str] = None   # YYYY-MM-DD; defaults to today
+
+    model_config = {"str_strip_whitespace": True}
+
+
+class HouseInsightRequest(BaseModel):
+    natal_chart: dict
+    house_num:   int
+    gender:      str = "unspecified"   # "male" | "female" | "other"
+    transit_date: Optional[str] = None
+
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/forecast/scores")
+@limiter.limit("30/minute")
+def forecast_scores(request: Request, req: ForecastScoresRequest):
+    """
+    Return deterministic RAG scores for all 12 houses.
+    Cached in-process: same natal chart + same date = instant response.
+    """
+    if not req.natal_chart or "birth_data" not in req.natal_chart:
+        raise HTTPException(status_code=400,
+                            detail="natal_chart with birth_data is required.")
+    try:
+        result = score_all_houses(req.natal_chart, req.transit_date)
+        return result
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "forecast/scores error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Forecast scoring failed. Please try again.")
+
+
+@app.post("/forecast/house")
+@limiter.limit("20/minute")
+def forecast_house_insight(request: Request, req: HouseInsightRequest):
+    """
+    Return AI interpretation for a single house.
+    Uses deterministic scores + OpenAI narrator with age/gender context.
+    """
+    if not req.natal_chart or "birth_data" not in req.natal_chart:
+        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
+    if not 1 <= req.house_num <= 12:
+        raise HTTPException(status_code=400, detail="house_num must be 1–12.")
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+
+    try:
+        scores = score_all_houses(req.natal_chart, req.transit_date)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Scoring error: {exc}")
+
+    # Derive age from dob
+    dob_str = req.natal_chart.get("birth_data", {}).get("dob", "")
+    age = ""
+    try:
+        dob_dt = date.fromisoformat(dob_str)
+        today  = date.today()
+        age    = str(today.year - dob_dt.year -
+                     ((today.month, today.day) < (dob_dt.month, dob_dt.day)))
+    except Exception:
+        pass
+
+    house_context = build_house_context(scores, req.house_num)
+    dasha_info    = req.natal_chart.get("dasha", {})
+    md = dasha_info.get("mahadasha", {}) if dasha_info else {}
+    bh = dasha_info.get("bhukti", {})    if dasha_info else {}
+
+    gender_note = {
+        "male":   "Tailor advice for a man.",
+        "female": "Tailor advice for a woman.",
+    }.get(req.gender.lower(), "")
+
+    system = (
+        "You are Jyotish AI, a classical Vedic astrology advisor. "
+        "Provide a focused, specific forecast for ONE life area based on the data below. "
+        "Be direct and practical — 3 sentences max per section. "
+        "Never be vague. Always name specific planets, signs, or periods. "
+        f"{gender_note}"
+    )
+
+    user_prompt = (
+        f"Age: {age or 'unknown'}. Gender: {req.gender}.\n\n"
+        f"Current Dasha: {md.get('planet','')} Mahadasha / {bh.get('planet','')} Bhukti.\n\n"
+        f"{house_context}\n\n"
+        "Give a forecast with three short sections:\n"
+        "1. CURRENT SITUATION (what's happening now)\n"
+        "2. OPPORTUNITY (what to act on)\n"
+        "3. CAUTION (what to avoid or watch)"
+    )
+
+    try:
+        from openai import OpenAI, APIError, AuthenticationError, RateLimitError
+        client   = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            max_tokens=350,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": user_prompt},
+            ],
+        )
+        insight = response.choices[0].message.content or ""
+    except AuthenticationError:
+        raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
+    except RateLimitError:
+        raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"AI service error: {exc}")
+
+    house_data = scores["houses"].get(req.house_num, {})
+    return {
+        "house_num":   req.house_num,
+        "area":        house_data.get("area"),
+        "score":       house_data.get("score"),
+        "rag":         house_data.get("rag"),
+        "insight":     insight,
+        "lord":        house_data.get("lord"),
+        "lord_house":  house_data.get("lord_placed_house"),
+        "lord_dignity": house_data.get("lord_dignity"),
+        "transit_planets": house_data.get("transit_planets", []),
+    }

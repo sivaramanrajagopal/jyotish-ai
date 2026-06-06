@@ -175,6 +175,18 @@ function HomeTab({ form, setForm, onChartReady, loading, error }) {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: '#444' }}>Gender</label>
+            <select
+              name="gender" value={form.gender} onChange={handleChange}
+              style={{ ...fieldStyle, cursor: 'pointer' }}
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other / Prefer not to say</option>
+            </select>
+          </div>
+
           {error && (
             <div className="text-sm rounded-lg px-4 py-3"
               style={{ color: '#D13212', background: '#FFF5F3', border: '1px solid #FDBDAD' }}>
@@ -284,7 +296,7 @@ export default function Home() {
   useKeepAlive()  // ping backend every 9 min — keeps Render free tier warm
 
   const [activeTab, setActiveTab] = useState('home')
-  const [form, setForm]   = useState({ name: '', dob: '', tob: '', place_of_birth: '' })
+  const [form, setForm]   = useState({ name: '', dob: '', tob: '', place_of_birth: '', gender: 'male' })
   const [chart, setChart] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -377,7 +389,7 @@ export default function Home() {
         {activeTab === 'forecast' && (
           chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
-                <ForecastPanel chart={chart} placeOfBirth={form.place_of_birth} />
+                <ForecastPanel chart={chart} gender={form.gender} />
               </div>
             : <NeedChart onGoHome={goHome} />
         )}
