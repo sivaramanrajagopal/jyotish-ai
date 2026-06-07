@@ -9,7 +9,7 @@ Security hardening (OWASP Top 10):
   A03 Injection              — Supabase SDK (parameterised), Pydantic validation
   A05 Security Misconfiguration — CORS locked to env-defined origins
   A06 Vulnerable Components  — pinned versions in requirements.txt
-  A07 Auth Failures          — rate limiting on AI + geocoding endpoints
+  A07 Auth Failures          — JWT verification on user_id routes (Step 3)
   A08 Data Integrity         — input length caps on all free-text fields
   A09 Logging                — tracebacks never sent to client
 """
@@ -36,6 +36,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from rate_limit import limiter
+from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from security import (
     IS_PRODUCTION,
     check_content_length,
@@ -176,6 +177,17 @@ async def security_headers(request: Request, call_next):
     return response
 
 app.include_router(ashtama_router)
+
+# ─────────────────────────────────────────────
+# Auth (Step 3)
+# ─────────────────────────────────────────────
+
+@app.get("/auth/me")
+@limiter.limit("60/minute")
+def auth_me(request: Request, user: AuthUser = Depends(get_current_user)):
+    """Return the authenticated user from a valid Supabase JWT."""
+    return {"user_id": user.id, "email": user.email}
+
 
 # ── Input sanitiser (strip control chars + HTML tags from free-text) ──────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -481,13 +493,17 @@ def _geocode(place: str) -> tuple[float, float, str]:
 
 @app.post("/natal-chart")
 @limiter.limit("20/minute")
-def natal_chart(request: Request, req: NatalChartRequest):
+def natal_chart(
+    request: Request,
+    req: NatalChartRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Calculate a Vedic natal chart.
 
     - Geocodes place_of_birth to lat/lon/timezone
     - Computes full birth chart using pyswisseph + Lahiri ayanamsa
-    - Stores in natal_charts table (if user_id provided)
+    - Stores in natal_charts table when authenticated (user_id from JWT)
     - Returns planet positions, ascendant, yogas
     """
     cleaned = req.cleaned()
@@ -495,7 +511,7 @@ def natal_chart(request: Request, req: NatalChartRequest):
     dob            = cleaned["dob"]
     tob            = cleaned["tob"]
     place_of_birth = cleaned["place_of_birth"]
-    user_id        = cleaned["user_id"]
+    user_id        = resolve_user_id(cleaned["user_id"], auth_user)
 
     # Validate date + time formats strictly
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", dob):

@@ -50,6 +50,11 @@ def run_production_checks() -> None:
         if not os.getenv("SUPABASE_URL", "").strip():
             warnings.append("SUPABASE_URL not set — Panchangam cache disabled.")
 
+        if not os.getenv("SUPABASE_JWT_SECRET", "").strip():
+            warnings.append(
+                "SUPABASE_JWT_SECRET not set — authenticated user_id routes will reject tokens."
+            )
+
         if os.getenv("SUPABASE_SERVICE_KEY", "").strip():
             pass  # expected for backend
         else:

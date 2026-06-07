@@ -15,6 +15,7 @@ Open **Render → your service → Environment** and set:
 | `OPENAI_API_KEY` | `sk-proj-...` | Yes for AI features |
 | `SUPABASE_URL` | `https://xxx.supabase.co` | Yes for Panchangam cache |
 | `SUPABASE_SERVICE_KEY` | `eyJ...` (service role) | Yes for backend DB |
+| `SUPABASE_JWT_SECRET` | JWT Secret from Supabase API settings | Yes for Step 3 auth |
 | `ADMIN_TOKEN` | run `python3 -c "import secrets; print(secrets.token_urlsafe(32))"` | Yes for bulk preload |
 
 **Do NOT** put `SUPABASE_SERVICE_KEY` or `OPENAI_API_KEY` on Vercel.

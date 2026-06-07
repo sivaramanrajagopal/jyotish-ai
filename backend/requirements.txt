@@ -46,5 +46,8 @@ anyio==4.7.0
 # Rate limiting (OWASP A05 — security misconfiguration protection)
 slowapi==0.1.9
 
+# JWT verification (Supabase Auth — Step 3)
+PyJWT==2.10.1
+
 # Timezone
 timezonefinder==6.5.2

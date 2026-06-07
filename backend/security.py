@@ -35,8 +35,8 @@ def verify_admin_token(x_admin_token: str = Header(..., alias="X-Admin-Token")) 
 
 def block_unauthenticated_user_routes() -> None:
     """
-    Block user_id-scoped DB routes in production until Supabase Auth is wired.
-    Frontend only uses /personal-panchangam/anonymous today.
+    Legacy guard — replaced by JWT verification in auth.py (Step 3).
+    Kept for reference; user-scoped routes now use Depends(get_current_user).
     """
     if IS_PRODUCTION:
         raise HTTPException(

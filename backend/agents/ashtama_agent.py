@@ -28,11 +28,11 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from auth import AuthUser, get_current_user, require_path_user
 from rate_limit import limiter
-from security import block_unauthenticated_user_routes
 
 from agents.tara_engine import compute_all, NAKSHATRAS, SIGNS
 
@@ -173,13 +173,14 @@ def _parse_date(date_str: Optional[str]):
 def personal_panchangam_today(
     request: Request,
     user_id: str,
+    auth_user: AuthUser = Depends(get_current_user),
     date: Optional[str] = Query(None, description="YYYY-MM-DD, defaults to today"),
 ):
     """
     Get today's personal Panchangam for a registered user.
-    Disabled in production until Supabase Auth is enabled.
+    Requires Bearer token; path user_id must match JWT subject.
     """
-    block_unauthenticated_user_routes()
+    require_path_user(auth_user, user_id)
     nak_idx, rasi_idx, timezone = _get_natal_indices(user_id)
 
     target_date = _parse_date(date)
@@ -230,12 +231,17 @@ class LocationUpdate(BaseModel):
 
 @router.put("/location/{user_id}")
 @limiter.limit("20/minute")
-def update_user_location(request: Request, user_id: str, body: LocationUpdate):
+def update_user_location(
+    request: Request,
+    user_id: str,
+    body: LocationUpdate,
+    auth_user: AuthUser = Depends(get_current_user),
+):
     """
     Store or update the user's current location for Panchangam calculation.
-    Disabled in production until Supabase Auth is enabled.
+    Requires Bearer token; path user_id must match JWT subject.
     """
-    block_unauthenticated_user_routes()
+    require_path_user(auth_user, user_id)
     if not _SB:
         raise HTTPException(status_code=503, detail="Database not configured.")
     body.timezone = _valid_timezone(body.timezone)
