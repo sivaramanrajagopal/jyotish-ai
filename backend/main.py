@@ -62,6 +62,7 @@ from agents.ashtakavarga_agent import (
     calculate_ashtakavarga, sav_for_transit_scoring, bav_context_for_narrator
 )
 from agents.sky_today_agent import build_sky_today
+from admin_router import router as admin_router
 from geopy.geocoders import Photon
 from pydantic import BaseModel
 
@@ -179,6 +180,7 @@ async def security_headers(request: Request, call_next):
     return response
 
 app.include_router(ashtama_router)
+app.include_router(admin_router)
 
 # ─────────────────────────────────────────────
 # Auth (Step 3)
@@ -188,7 +190,13 @@ app.include_router(ashtama_router)
 @limiter.limit("60/minute")
 def auth_me(request: Request, user: AuthUser = Depends(get_current_user)):
     """Return the authenticated user from a valid Supabase JWT."""
-    return {"user_id": user.id, "email": user.email}
+    from admin_auth import is_admin_email
+
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "is_admin": is_admin_email(user.email),
+    }
 
 
 # ── Input sanitiser (strip control chars + HTML tags from free-text) ──────────

@@ -3,7 +3,7 @@
  * Tabbed layout: Home · My Chart · Panchangam · Ask AI · Forecast
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
 import { APP_NAME, APP_SHORT, APP_TAGLINE, APP_FEATURE_LINKS } from '../constants/brand'
 import GaneshaIllustration from '../components/GaneshaIllustration'
@@ -23,6 +23,8 @@ import NotificationSettings from '../components/NotificationSettings'
 import { useAuth } from '../hooks/useAuth'
 import { startNotificationWatcher } from '../lib/notifications'
 import { saveSessionChart, loadSessionChart, clearSessionChart } from '../lib/chartStorage'
+import AdminPanel from '../components/AdminPanel'
+import { useIsAdmin } from '../hooks/useIsAdmin'
 
 // Apply persisted theme immediately on load
 applyStoredTheme()
@@ -60,13 +62,14 @@ const G = {
 }
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
-const TABS = [
+const BASE_TABS = [
   { key: 'home',       label: 'Home',       icon: '🏠' },
   { key: 'chart',      label: 'My Chart',   icon: '⭐' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓' },
   { key: 'chat',       label: 'Ask AI',     icon: '🔮' },
   { key: 'forecast',   label: 'Forecast',   icon: '📊' },
 ]
+const ADMIN_TAB = { key: 'admin', label: 'Admin', icon: '⚙️' }
 
 // ── "No chart yet" placeholder ────────────────────────────────────────────────
 function NeedChart({ onGoHome }) {
@@ -418,13 +421,23 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
 export default function Home() {
   useKeepAlive()
   const { userId, email: userEmail } = useAuth()
+  const { isAdmin } = useIsAdmin(userId, userEmail)
+  const TABS = useMemo(
+    () => (isAdmin ? [...BASE_TABS, ADMIN_TAB] : BASE_TABS),
+    [isAdmin],
+  )
 
-  // Deep-link tabs from notification clicks (?tab=chart|panchangam|…)
-  const urlTab = (() => {
+  const requestedTab = useMemo(() => {
     try {
-      const t = new URLSearchParams(window.location.search).get('tab')
-      return TABS.some(x => x.key === t) ? t : null
+      return new URLSearchParams(window.location.search).get('tab')
     } catch { return null }
+  }, [])
+
+  // Deep-link tabs (?tab=chart|admin|…) — admin waits until owner check completes
+  const urlTab = (() => {
+    if (!requestedTab) return null
+    if (requestedTab === 'admin') return null
+    return BASE_TABS.some(x => x.key === requestedTab) ? requestedTab : null
   })()
 
   // Restore anonymous session chart (signed-in users fetch from server)
@@ -539,7 +552,14 @@ export default function Home() {
     }
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
-  }, [setTab])
+  }, [setTab, TABS])
+
+  // Deep-link ?tab=admin once owner status is confirmed
+  useEffect(() => {
+    if (isAdmin && requestedTab === 'admin') {
+      setActiveTab('admin')
+    }
+  }, [isAdmin, requestedTab])
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -675,6 +695,12 @@ export default function Home() {
             : <NeedChart onGoHome={goHome} />
           }
         </div>
+
+        {isAdmin && (
+          <div style={tabPane('admin')}>
+            <AdminPanel />
+          </div>
+        )}
       </main>
 
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
