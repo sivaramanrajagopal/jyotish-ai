@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
+import { isPlanetRetrograde } from '../lib/planetRetrograde'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -216,14 +217,14 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
             <th style={{ ...th, textAlign: 'center' }}>Pada</th>
             <th style={th}>Nakshatra</th>
             <th style={{ ...th, textAlign: 'center' }}>H</th>
-            <th style={{ ...th, textAlign: 'center' }}>℞</th>
+            <th style={{ ...th, textAlign: 'center' }}>R</th>
           </tr>
         </thead>
         <tbody>
           {/* Ascendant row */}
           {ascendant && (
-            <tr style={{ background: 'var(--highlight-bg)', borderBottom: '1px solid var(--card-border)' }}>
-              <td style={td}><span style={{ color: 'var(--orange)', fontWeight: 700 }}>⬆ ASC</span></td>
+            <tr className="transit-table__asc-row">
+              <td style={td}><span className="transit-table__asc-label">⬆ ASC</span></td>
               <td style={{ ...td, fontWeight: 700, color: 'var(--text-primary)' }}>{ascendant.sign}</td>
               <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                 {ascendant.degree_in_sign?.toFixed(2)}°
@@ -237,11 +238,15 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
           {ORDER.map(name => {
             const p = planetPositions?.[name]
             if (!p) return null
+            const retro = isPlanetRetrograde(name, p)
             return (
               <tr key={name} style={{ borderBottom: '1px solid var(--card-border)' }}>
                 <td style={td}>
                   <span style={{ marginRight: 4 }}>{SYMS[name]}</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{name}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {name}
+                    {retro && <sup className="retro-sup-r">R</sup>}
+                  </span>
                 </td>
                 <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{p.sign}</td>
                 <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
@@ -249,9 +254,11 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
                 </td>
                 <td style={{ ...td, textAlign: 'center', color: 'var(--text-secondary)' }}>{p.pada}</td>
                 <td style={{ ...td, color: 'var(--text-secondary)' }}>{p.nakshatra}</td>
-                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--orange)' }}>H{p.house}</td>
-                <td style={{ ...td, textAlign: 'center', color: p.retrograde ? 'var(--error-text)' : 'var(--text-muted)', fontWeight: 700 }}>
-                  {p.retrograde ? '℞' : '—'}
+                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>H{p.house}</td>
+                <td style={{ ...td, textAlign: 'center', fontWeight: 700 }}>
+                  {retro
+                    ? <sup className="retro-sup-r">R</sup>
+                    : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
               </tr>
             )
@@ -393,8 +400,8 @@ export default function PanchangamTab() {
                   showDetails={true}
                 />
                 <p className="si-chart__legend" style={{ marginTop: 8, textAlign: 'left' }}>
-                  <span style={{ color: 'var(--error-text)' }}>℞</span> Retrograde ·{' '}
-                  <span style={{ color: 'var(--orange-dark)' }}>★</span> Vargottama · deg = degree in sign · P = pada
+                  <sup className="retro-sup-r">R</sup> Retrograde ·{' '}
+                  <span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> Vargottama · deg = degree in sign · P = pada
                 </p>
               </div>
 

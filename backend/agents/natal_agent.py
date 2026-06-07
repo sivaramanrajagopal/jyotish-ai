@@ -155,6 +155,17 @@ def _is_retrograde(planet_id: int, jd: float) -> bool:
     return xx[3] < 0   # xx[3] = speed in longitude
 
 
+def _planet_retrograde(name: str, planet_id: int, jd: float, speed: float | None = None) -> bool:
+    """Retrograde flag — Rahu/Ketu always retrograde in Vedic convention."""
+    if name in ("Sun", "Moon"):
+        return False
+    if name in ("Rahu", "Ketu"):
+        return True
+    if speed is not None:
+        return speed < 0
+    return _is_retrograde(planet_id, jd)
+
+
 # ─────────────────────────────────────────────
 # Yoga detection
 # ─────────────────────────────────────────────
@@ -284,7 +295,7 @@ def calculate_natal_chart(
     for name, planet_id in PLANETS.items():
         xx, _ = swe.calc_ut(jd, planet_id, swe.FLG_SIDEREAL | swe.FLG_SPEED)
         p_lon = xx[0] % 360
-        retro = xx[3] < 0
+        retro = _planet_retrograde(name, planet_id, jd, xx[3])
 
         sign, deg_in_sign = _lon_to_sign(p_lon)
         sign_idx_val = SIGNS.index(sign)

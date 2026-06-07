@@ -758,7 +758,7 @@ def transit_chart(
     try:
         from agents.natal_agent import (
             _to_jd, _lon_to_sign, _lon_to_nakshatra, _navamsa_sign_idx,
-            _house_number, _is_retrograde,
+            _house_number, _planet_retrograde,
             PLANETS, SIGNS, SIGN_LORDS,
         )
         import ephemeris as swe
@@ -788,12 +788,12 @@ def transit_chart(
         # Planets
         planet_positions = {}
         for name, pid in PLANETS.items():
-            xx, _ = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL)
+            xx, _ = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
             sid_lon = xx[0] % 360
             sign, deg_in_sign = _lon_to_sign(sid_lon)
             nak, nak_lord, pada = _lon_to_nakshatra(sid_lon)
             sign_idx = SIGNS.index(sign)
-            retro    = _is_retrograde(pid, jd)
+            retro    = _planet_retrograde(name, pid, jd, xx[3])
             nav_idx  = _navamsa_sign_idx(sid_lon)
             vargo    = (nav_idx == sign_idx)
             planet_positions[name] = {
@@ -826,7 +826,7 @@ def transit_chart(
             "nakshatra_lord":k_nak_lord,
             "pada":          k_pada,
             "degree_in_sign":k_deg,
-            "retrograde":    False,
+            "retrograde":    True,  # Ketu always retrograde (Vedic)
             "vargottama":    _navamsa_sign_idx(ketu_lon) == k_sign_idx,
         }
 

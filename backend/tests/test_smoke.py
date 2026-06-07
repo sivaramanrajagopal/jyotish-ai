@@ -29,3 +29,12 @@ def test_nearest_panchangam_location():
 def test_resolve_panchangam_location_text():
     assert resolve_panchangam_location("Chennai, India") == "Chennai"
     assert resolve_panchangam_location("Unknown Town", lat=12.97, lon=77.59) == "Bangalore"
+
+
+def test_planet_retrograde_rahu_ketu():
+    from agents.natal_agent import _planet_retrograde
+    import ephemeris as swe
+
+    assert _planet_retrograde("Rahu", swe.TRUE_NODE, 2450000.0) is True
+    assert _planet_retrograde("Ketu", swe.TRUE_NODE, 2450000.0) is True
+    assert _planet_retrograde("Sun", swe.SUN, 2450000.0) is False

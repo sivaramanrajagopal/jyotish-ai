@@ -1,7 +1,11 @@
 /**
  * SouthIndianChart.jsx
  * South Indian fixed-sign layout (4×4 grid, centre 2×2 merged).
- *
+ */
+
+import { isPlanetRetrograde } from '../lib/planetRetrograde'
+
+/**
  * Props:
  *   title, subtitle       — centre cell text
  *   planetPositions       — { Planet: { sign_index, degree_in_sign, pada, retrograde, vargottama } }
@@ -55,13 +59,11 @@ function PlanetBadgeCompact({ planet, retrograde, vargottama }) {
       color: col.fg,
       lineHeight: 1.5,
       whiteSpace: "nowrap",
-      border: vargottama ? "1.5px solid var(--orange)" : "1px solid transparent",
+      border: vargottama ? "1.5px solid var(--chart-lagna-accent)" : "1px solid transparent",
     }}>
-      {retrograde && (
-        <sup style={{ fontSize:"0.55rem", color:"var(--error-text)", fontWeight:900, marginRight:"1px" }}>℞</sup>
-      )}
       {short}
-      {vargottama && <sup style={{ fontSize:"0.5rem", color:"var(--orange)", marginLeft:"1px" }}>★</sup>}
+      {retrograde && <sup className="retro-sup-r">R</sup>}
+      {vargottama && <sup style={{ fontSize:"0.5rem", color:"var(--chart-lagna-accent)", marginLeft:"1px" }}>★</sup>}
     </span>
   )
 }
@@ -75,11 +77,13 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
   return (
     <span
       className="si-chart__badge si-chart__badge--detail"
-      style={{ background: col.bg, color: col.fg, borderColor: vargottama ? 'var(--orange)' : 'var(--card-border)' }}
+      style={{ background: col.bg, color: col.fg, borderColor: vargottama ? 'var(--chart-lagna-accent)' : 'var(--card-border)' }}
       title={`${planet} ${deg}° Pada ${pada || '—'}${retrograde ? ' Retrograde' : ''}`}
     >
-      {retrograde && <span className="si-chart__badge-retro">℞</span>}
-      <span className="si-chart__badge-name">{short}</span>
+      <span className="si-chart__badge-name">
+        {short}
+        {retrograde && <sup className="retro-sup-r">R</sup>}
+      </span>
       <span className="si-chart__badge-deg">{deg}°</span>
       {pada != null && <span className="si-chart__badge-pada">P{pada}</span>}
       {vargottama && <span className="si-chart__badge-varga">★</span>}
@@ -154,8 +158,8 @@ export default function SouthIndianChart({
     if (!data || typeof data !== 'object') return
     const idx = data.sign_index
     if (idx >= 0 && idx <= 11) planetSignMap[idx].push(planet)
-    if (data.retrograde)  retroSet.add(planet)
-    if (data.vargottama)  vargottamaSet.add(planet)
+    if (isPlanetRetrograde(planet, data)) retroSet.add(planet)
+    if (data.vargottama) vargottamaSet.add(planet)
   })
 
   const cellProps = (signIdx) => ({
@@ -208,8 +212,8 @@ export default function SouthIndianChart({
       </table>
       {!showDetails && (
         <div className="si-chart__legend">
-          <span style={{ color: 'var(--error-text)' }}>℞</span> Retrograde &nbsp;
-          <span style={{ color: 'var(--orange-dark)' }}>★</span> Vargottama
+          <sup className="retro-sup-r">R</sup> Retrograde &nbsp;
+          <span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> Vargottama
         </div>
       )}
     </div>

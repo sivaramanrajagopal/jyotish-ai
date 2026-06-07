@@ -41,6 +41,8 @@
   --chart-cell-crisis:#FFF8F8;
   --chart-cell-growth:#F0FFF4;
   --chart-centre:    #FFF8F0;
+  --chart-lagna-accent: #4338ca;
+  --chart-lagna-bg:  rgba(67, 56, 202, 0.06);
   --row-sun:         #FFFBF0;
   --row-moon:        #F0F8FF;
   --row-growth:      #F0FFF4;
@@ -117,6 +119,8 @@
   --chart-cell-crisis:#2A1A1A;
   --chart-cell-growth:#1A2A1A;
   --chart-centre:    #232F3E;
+  --chart-lagna-accent: #818cf8;
+  --chart-lagna-bg:  rgba(129, 140, 248, 0.12);
   --row-sun:         #2A2418;
   --row-moon:        #182028;
   --row-growth:      #1A2A1A;
@@ -402,11 +406,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .si-chart__cell--lagna {
+  background-color: var(--chart-lagna-bg);
   background-image: linear-gradient(
     45deg,
     transparent 46%,
-    var(--orange) 47%,
-    var(--orange) 53%,
+    var(--chart-lagna-accent) 47%,
+    var(--chart-lagna-accent) 53%,
     transparent 54%
   );
 }
@@ -428,8 +433,8 @@ input:focus, select:focus, textarea:focus {
   left: 4px;
   font-size: 0.48rem;
   font-weight: 700;
-  color: var(--nav-text);
-  background: var(--orange);
+  color: #fff;
+  background: var(--chart-lagna-accent);
   border-radius: 3px;
   padding: 1px 4px;
   line-height: 1.2;
@@ -463,12 +468,6 @@ input:focus, select:focus, textarea:focus {
   white-space: nowrap;
 }
 
-.si-chart__badge-retro {
-  color: var(--error-text);
-  font-weight: 900;
-  font-size: 0.5rem;
-}
-
 .si-chart__badge-name {
   font-weight: 800;
   font-size: 0.625rem;
@@ -489,8 +488,27 @@ input:focus, select:focus, textarea:focus {
 }
 
 .si-chart__badge-varga {
-  color: var(--orange-dark);
+  color: var(--chart-lagna-accent);
   font-size: 0.5rem;
+}
+
+.retro-sup-r {
+  font-size: 0.55em;
+  font-weight: 900;
+  color: var(--error-text);
+  margin-left: 1px;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.transit-table__asc-row {
+  background: var(--chart-lagna-bg);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.transit-table__asc-label {
+  color: var(--chart-lagna-accent);
+  font-weight: 700;
 }
 
 .si-chart__centre-title {
