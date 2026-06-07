@@ -8,9 +8,9 @@ Backend JWT verification is **Step 3** — routes still work anonymously until t
 1. Open **Authentication → Providers → Email** and enable **Email**.
 2. Optional: disable **Confirm email** if you want instant magic-link access in dev.
 3. **Authentication → URL Configuration**:
-   - **Site URL**: your production Vercel URL, e.g. `https://your-app.vercel.app`
+   - **Site URL**: `https://jyotish-ai-zeta.vercel.app`
    - **Redirect URLs** (add all that apply):
-     - `https://your-app.vercel.app/**`
+     - `https://jyotish-ai-zeta.vercel.app/**`
      - `http://localhost:5173/**`
 
 ## B. Vercel environment variables

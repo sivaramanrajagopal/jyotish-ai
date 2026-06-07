@@ -82,7 +82,10 @@ const TABS = [
 // ── "No chart yet" placeholder ────────────────────────────────────────────────
 function NeedChart({ onGoHome }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center max-w-lg mx-auto">
+      <div className="w-full mb-6 text-left">
+        <AuthPanel variant="card" />
+      </div>
       <div className="text-5xl mb-4">🪷</div>
       <p className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Your chart hasn't been calculated yet</p>
       <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Go to Home and enter your birth details first.</p>
@@ -223,7 +226,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       </header>
 
       <div className="home-auth-block">
-        {!userId && <AuthPanel variant="card" />}
+        <AuthPanel variant="card" />
       </div>
 
       {/* Birth form */}
@@ -302,10 +305,16 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
 }
 
 // ── MY CHART TAB ──────────────────────────────────────────────────────────────
-function MyChartTab({ chart, onGoHome, placeOfBirth }) {
+function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
   if (!chart) return <NeedChart onGoHome={onGoHome} />
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+
+      {!userId && (
+        <div className="max-w-lg mx-auto mb-6">
+          <AuthPanel variant="card" />
+        </div>
+      )}
 
       <NotificationSettings placeOfBirth={placeOfBirth} />
 
@@ -555,9 +564,12 @@ export default function Home() {
     >
       {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
       {activeTab === 'home' ? (
-        <div className="banner-minimal">
-          <AuthPanel compact />
-          <DarkModeToggle small />
+        <div className={`banner-minimal${!userId ? ' banner-minimal--auth' : ''}`}>
+          <span className="banner-minimal__label">Parashara Jyotish</span>
+          <div className="banner-minimal__actions">
+            <AuthPanel compact />
+            <DarkModeToggle small />
+          </div>
         </div>
       ) : (
         <GaneshaBanner />
@@ -627,7 +639,7 @@ export default function Home() {
         </div>
 
         <div style={tabPane('chart')}>
-          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} />
+          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} />
         </div>
 
         <div style={tabPane('panchangam')}>

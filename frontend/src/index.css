@@ -537,16 +537,35 @@ input:focus, select:focus, textarea:focus {
 
 .banner-minimal {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
   background: var(--nav-bg);
   border-bottom: 1px solid var(--banner-border);
+  position: relative;
+}
+
+.banner-minimal__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 0.04em;
+}
+
+.banner-minimal__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (min-width: 640px) {
   .banner-minimal { display: none; }
+  .banner-minimal--auth {
+    display: flex;
+    padding: 8px 16px;
+  }
+  .banner-minimal__label { font-size: 13px; }
   .home-hero {
     padding: 1.75rem 0 2rem;
     margin-bottom: 1.5rem;
@@ -700,10 +719,6 @@ input:focus, select:focus, textarea:focus {
   padding: 10px;
   box-shadow: var(--card-shadow);
   min-width: 240px;
-}
-
-.banner-minimal {
-  position: relative;
 }
 
 .auth-panel__form {
