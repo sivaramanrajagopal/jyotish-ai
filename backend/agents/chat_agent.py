@@ -367,11 +367,7 @@ def chat(
     except Exception as e:
         import logging
         logging.getLogger(__name__).error("_build_system failed: %s", e, exc_info=True)
-        system_prompt = (
-            "You are Parashara Jyotish, a Vedic astrology advisor. "
-            "The user's natal chart could not be loaded. "
-            "Answer their question as best you can based on today's Panchangam alone."
-        )
+        raise RuntimeError("Could not load chart context for chat.")
 
     if language.lower() == "tamil":
         system_prompt += _TAMIL_CHAT_SUFFIX

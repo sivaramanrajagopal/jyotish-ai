@@ -28,8 +28,11 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Query, Request
+from pydantic import BaseModel, Field
+
+from rate_limit import limiter
+from security import block_unauthenticated_user_routes
 
 from agents.tara_engine import compute_all, NAKSHATRAS, SIGNS
 
@@ -93,7 +96,9 @@ def _get_natal_indices(user_id: str) -> tuple[int, int, str]:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+        import logging
+        logging.getLogger(__name__).exception("DB error fetching natal indices: %s", e)
+        raise HTTPException(status_code=500, detail="Database error.")
 
 
 def _serialize(result: dict) -> dict:
@@ -145,22 +150,39 @@ def _store_result(user_id: str, result: dict, target_date: datetime.date) -> Non
         print(f"[ashtama_agent] store error: {e}")
 
 
+def _valid_timezone(tz: str) -> str:
+    from zoneinfo import available_timezones
+    if tz not in available_timezones():
+        raise HTTPException(status_code=400, detail="Invalid timezone.")
+    return tz
+
+
+def _parse_date(date_str: Optional[str]):
+    if not date_str:
+        return datetime.date.today()
+    try:
+        return datetime.date.fromisoformat(date_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/today/{user_id}")
+@limiter.limit("30/minute")
 def personal_panchangam_today(
+    request: Request,
     user_id: str,
     date: Optional[str] = Query(None, description="YYYY-MM-DD, defaults to today"),
 ):
     """
     Get today's personal Panchangam for a registered user.
-    Requires natal chart with moon_nakshatra_index + moon_rasi_index in DB.
+    Disabled in production until Supabase Auth is enabled.
     """
+    block_unauthenticated_user_routes()
     nak_idx, rasi_idx, timezone = _get_natal_indices(user_id)
 
-    target_date = (
-        datetime.date.fromisoformat(date) if date else datetime.date.today()
-    )
+    target_date = _parse_date(date)
     # Use noon local time as the reference point for the day
     from zoneinfo import ZoneInfo
     dt = datetime.datetime(
@@ -174,7 +196,9 @@ def personal_panchangam_today(
 
 
 @router.get("/anonymous")
+@limiter.limit("60/minute")
 def personal_panchangam_anonymous(
+    request: Request,
     natal_nak_index:  int = Query(..., ge=0, le=26,
                                   description="Natal Moon nakshatra index 0–26"),
     natal_rasi_index: int = Query(..., ge=0, le=11,
@@ -185,12 +209,9 @@ def personal_panchangam_anonymous(
     """
     Compute personal Panchangam without a user account.
     Pass natal_nak_index and natal_rasi_index directly (from the natal chart response).
-
-    Use this endpoint until Supabase Auth is wired up.
     """
-    target_date = (
-        datetime.date.fromisoformat(date) if date else datetime.date.today()
-    )
+    timezone = _valid_timezone(timezone)
+    target_date = _parse_date(date)
     from zoneinfo import ZoneInfo
     dt = datetime.datetime(
         target_date.year, target_date.month, target_date.day,
@@ -201,31 +222,37 @@ def personal_panchangam_anonymous(
 
 
 class LocationUpdate(BaseModel):
-    city:     str
-    lat:      float
-    lon:      float
+    city:     str = Field(..., max_length=80)
+    lat:      float = Field(..., ge=-90, le=90)
+    lon:      float = Field(..., ge=-180, le=180)
     timezone: str = "Asia/Kolkata"
 
 
 @router.put("/location/{user_id}")
-def update_user_location(user_id: str, body: LocationUpdate):
+@limiter.limit("20/minute")
+def update_user_location(request: Request, user_id: str, body: LocationUpdate):
     """
     Store or update the user's current location for Panchangam calculation.
+    Disabled in production until Supabase Auth is enabled.
     """
+    block_unauthenticated_user_routes()
     if not _SB:
         raise HTTPException(status_code=503, detail="Database not configured.")
+    body.timezone = _valid_timezone(body.timezone)
     try:
         sb = get_supabase()
         sb.table("user_locations").upsert({
             "user_id":  user_id,
-            "city":     body.city,
+            "city":     body.city.strip()[:80],
             "lat":      body.lat,
             "lon":      body.lon,
             "timezone": body.timezone,
         }).execute()
         return {"status": "ok", "user_id": user_id, "city": body.city}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.getLogger(__name__).exception("location update failed: %s", e)
+        raise HTTPException(status_code=500, detail="Could not save location.")
 
 
 # ── Scheduler job (called by APScheduler in main.py) ─────────────────────────

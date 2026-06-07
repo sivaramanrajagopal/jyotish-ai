@@ -27,13 +27,22 @@ from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from rate_limit import limiter
+from security import (
+    IS_PRODUCTION,
+    check_content_length,
+    cors_origin_for_request,
+    validate_client_natal_chart,
+    verify_admin_token,
+)
 
 from agents.panchangam_agent import (
     LOCATIONS,
@@ -90,8 +99,7 @@ async def lifespan(app: FastAPI):
 # App setup
 # ─────────────────────────────────────────────
 
-# ── Rate limiter ──────────────────────────────────────────────────────────────
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/hour"])
+# ── Rate limiter (see rate_limit.py — X-Forwarded-For aware) ─────────────────
 
 # ── CORS: read allowed origins from env (NEVER use * in production) ───────────
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
@@ -109,16 +117,16 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Log validation errors to Render logs and return a readable 422."""
+    """Log validation errors without request body (PII)."""
     import logging
     logging.getLogger(__name__).error(
-        "422 validation error on %s %s: %s | body: %s",
-        request.method, request.url.path, exc.errors(), exc.body
+        "422 validation error on %s %s: %s",
+        request.method, request.url.path, exc.errors(),
     )
-    # Return human-readable messages to the client
     msgs = [f"{' → '.join(str(l) for l in e['loc'])}: {e['msg']}" for e in exc.errors()]
     return JSONResponse(status_code=422, content={"detail": " | ".join(msgs)})
 
@@ -127,8 +135,14 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS_LIST,
     allow_credentials=False,   # no cookies/sessions yet — keep False
     allow_methods=["GET", "POST", "PUT"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "X-Admin-Token"],
 )
+
+@app.middleware("http")
+async def limit_request_body_size(request: Request, call_next):
+    if request.method in ("POST", "PUT", "PATCH"):
+        check_content_length(request)
+    return await call_next(request)
 
 # ── Security headers middleware ────────────────────────────────────────────────
 # NOTE: @app.middleware("http") wraps outermost — runs before CORS.
@@ -140,19 +154,22 @@ async def security_headers(request: Request, call_next):
     except Exception:
         import logging
         logging.getLogger(__name__).exception("Unhandled error in request pipeline")
+        cors_headers = {}
+        origin = cors_origin_for_request(request, ALLOWED_ORIGINS_LIST)
+        if origin:
+            cors_headers["Access-Control-Allow-Origin"] = origin
         response = JSONResponse(
             status_code=500,
             content={"detail": "Internal server error"},
-            headers={
-                "Access-Control-Allow-Origin":  request.headers.get("origin", "*"),
-                "Access-Control-Allow-Credentials": "false",
-            },
+            headers=cors_headers,
         )
     response.headers["X-Content-Type-Options"]  = "nosniff"
     response.headers["X-Frame-Options"]         = "DENY"
     response.headers["X-XSS-Protection"]        = "1; mode=block"
     response.headers["Referrer-Policy"]         = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"]      = "geolocation=(), microphone=(), camera=()"
+    if IS_PRODUCTION:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 app.include_router(ashtama_router)
@@ -222,12 +239,14 @@ def _get_panchangam(date_str: str, location: str) -> dict:
 # ─────────────────────────────────────────────
 
 @app.get("/")
-def root():
+@limiter.limit("60/minute")
+def root(request: Request):
     return {"status": "ok", "service": "Parashara Jyotish", "version": "0.1.0"}
 
 
 @app.get("/ping")
-def ping():
+@limiter.limit("120/minute")
+def ping(request: Request):
     """
     Lightweight keep-alive endpoint for Render free tier.
     Frontend polls this every 10 minutes to prevent the 50s cold-start.
@@ -236,7 +255,8 @@ def ping():
 
 
 @app.get("/panchangam/locations")
-def list_locations():
+@limiter.limit("60/minute")
+def list_locations(request: Request):
     """List all supported locations."""
     return {
         "locations": [
@@ -314,21 +334,17 @@ def panchangam_by_date(
 
 
 @app.post("/panchangam/bulk-preload")
+@limiter.limit("5/hour")
 def bulk_preload(
     request: Request,
     days: int = Query(30, ge=1, le=365, description="Number of days to preload"),
     location: str = Query("Chennai", description="Location name"),
-    x_admin_token: Optional[str] = Query(None, alias="admin_token"),
+    _: None = Depends(verify_admin_token),
 ):
     """
     Pre-calculate and store Panchangam for the next N days for a location.
-    Useful to run after deployment or via cron.
+    Admin only — requires X-Admin-Token header (never query string).
     """
-    # Admin-only: require ADMIN_TOKEN env var
-    expected_token = os.getenv("ADMIN_TOKEN", "")
-    if not expected_token or x_admin_token != expected_token:
-        raise HTTPException(status_code=403, detail="Forbidden.")
-
     if location not in LOCATIONS:
         raise HTTPException(status_code=400, detail=f"Unknown location '{location}'.")
 
@@ -339,30 +355,31 @@ def bulk_preload(
     for i in range(days):
         d = (start + __import__("datetime").timedelta(days=i)).isoformat()
         try:
-            result = _get_panchangam(d, location)
+            _get_panchangam(d, location)
             results.append({"date": d, "status": "ok"})
-        except Exception as e:
-            errors.append({"date": d, "error": str(e)})
+        except Exception:
+            errors.append({"date": d, "status": "error"})
 
     return {
         "location": location,
         "requested_days": days,
         "success": len(results),
         "errors": len(errors),
-        "error_details": errors,
     }
 
 
 @app.get("/panchangam/validate-today", response_class=PlainTextResponse)
+@limiter.limit("10/minute")
 def validate_today(
+    request: Request,
     location: str = Query("Chennai", description="Location name"),
     force: bool = Query(False, description="Bypass Supabase cache and recalculate fresh"),
 ):
     """
-    Returns a formatted human-readable Panchangam output for today.
-    Add ?force=true to bypass Supabase cache and force fresh calculation.
-    Compare against Prokerala.com to validate.
+    Debug endpoint — disabled in production. Compare Panchangam against reference.
     """
+    if IS_PRODUCTION:
+        raise HTTPException(status_code=404, detail="Not found.")
     today = date.today().isoformat()
     if force:
         result = calculate_panchangam(today, location)
@@ -487,8 +504,8 @@ def natal_chart(request: Request, req: NatalChartRequest):
     try:
         datetime.strptime(dob, "%Y-%m-%d")
         datetime.strptime(tob, "%H:%M")
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid date/time: {exc}")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date or time format.")
 
     lat, lon, timezone = _geocode(place_of_birth)
 
@@ -580,8 +597,8 @@ def forecast(request: Request, req: ForecastRequest):
             "dasha_context": result.get("dasha_context", ""),
             "model":         result.get("model", ""),
         }
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="Forecast service temporarily unavailable.")
     except Exception:
         raise HTTPException(status_code=500, detail="Forecast service temporarily unavailable.")
 
@@ -760,11 +777,13 @@ def chat_endpoint(request: Request, req: ChatRequest):
     if not msgs:
         raise HTTPException(status_code=400, detail="No valid messages provided.")
 
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+
     try:
-        reply = jyotish_chat(natal_chart=req.natal_chart, messages=msgs, location=req.location, language=req.language)
+        reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)
         return {"reply": reply, "model": "gpt-4o-mini"}
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="Chat service temporarily unavailable.")
     except Exception as exc:
         import logging, traceback
         logging.getLogger(__name__).error(
@@ -831,15 +850,16 @@ def forecast_scores(request: Request, req: ForecastScoresRequest):
     if not req.natal_chart or "birth_data" not in req.natal_chart:
         raise HTTPException(status_code=400,
                             detail="natal_chart with birth_data is required.")
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
     try:
-        result = score_all_houses(req.natal_chart, req.transit_date)
+        result = score_all_houses(chart, req.transit_date)
         return result
     except Exception as exc:
         import logging, traceback
         logging.getLogger(__name__).error(
             "forecast/scores error: %s\n%s", exc, traceback.format_exc()
         )
-        raise HTTPException(status_code=500, detail="Forecast scoring failed. Please try again.")
+        raise HTTPException(status_code=500, detail="Forecast scoring failed.")
 
 
 @app.post("/forecast/house")
@@ -858,13 +878,17 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
     if not api_key:
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
 
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+
     try:
-        scores = score_all_houses(req.natal_chart, req.transit_date)
+        scores = score_all_houses(chart, req.transit_date)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Scoring error: {exc}")
+        import logging, traceback
+        logging.getLogger(__name__).error("forecast/house scoring: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Forecast scoring failed.")
 
     # Derive age from dob
-    dob_str = req.natal_chart.get("birth_data", {}).get("dob", "")
+    dob_str = chart.get("birth_data", {}).get("dob", "")
     age = ""
     try:
         dob_dt = date.fromisoformat(dob_str)
@@ -875,7 +899,7 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
         pass
 
     house_context = build_house_context(scores, req.house_num)
-    dasha_info    = req.natal_chart.get("dasha", {})
+    dasha_info    = chart.get("dasha", {})
     md = dasha_info.get("mahadasha", {}) if dasha_info else {}
     bh = dasha_info.get("bhukti", {})    if dasha_info else {}
 
@@ -920,7 +944,9 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
     except RateLimitError:
         raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"AI service error: {exc}")
+        import logging, traceback
+        logging.getLogger(__name__).error("forecast/house AI: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
 
     house_data = scores["houses"].get(req.house_num, {})
     return {
@@ -958,6 +984,8 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
     if not req.natal_chart or "birth_data" not in req.natal_chart:
         raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
 
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
@@ -967,14 +995,16 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
         from agents.transit_score_agent import (
             score_all_houses, dasha_transit_correlation, compact_gochara_summary
         )
-        scores = score_all_houses(req.natal_chart, req.transit_date)
-        dasha  = req.natal_chart.get("dasha", {}) or {}
+        scores = score_all_houses(chart, req.transit_date)
+        dasha  = chart.get("dasha", {}) or {}
         dtc    = dasha_transit_correlation(scores, dasha)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Scoring error: {exc}")
+        import logging, traceback
+        logging.getLogger(__name__).error("daily-reading scoring: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Forecast scoring failed.")
 
     # ── Derive age ─────────────────────────────────────────────────────────
-    dob_str = req.natal_chart.get("birth_data", {}).get("dob", "")
+    dob_str = chart.get("birth_data", {}).get("dob", "")
     age = ""
     try:
         dob_d = date.fromisoformat(dob_str)
@@ -995,9 +1025,9 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
     try:
         from agents.tara_engine import compute_all as _tara_all
         from zoneinfo import ZoneInfo
-        bd       = req.natal_chart.get("birth_data", {})
-        nak_idx  = req.natal_chart.get("moon_nakshatra_index")
-        rasi_idx = req.natal_chart.get("moon_rasi_index")
+        bd       = chart.get("birth_data", {})
+        nak_idx  = chart.get("moon_nakshatra_index")
+        rasi_idx = chart.get("moon_rasi_index")
         if nak_idx is not None and rasi_idx is not None:
             tz_id = bd.get("timezone", "Asia/Kolkata")
             td    = date.fromisoformat(req.transit_date) if req.transit_date else date.today()
@@ -1053,7 +1083,9 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
     except RateLimitError:
         raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"AI service error: {exc}")
+        import logging, traceback
+        logging.getLogger(__name__).error("forecast/house AI: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
 
     return {
         "reading":              reading,
@@ -1087,8 +1119,9 @@ def ashtakavarga_endpoint(request: Request, req: AshtakavargaRequest):
     """
     if not req.natal_chart or "birth_data" not in req.natal_chart:
         raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
     try:
-        result = calculate_ashtakavarga(req.natal_chart)
+        result = calculate_ashtakavarga(chart)
         if not result:
             raise HTTPException(status_code=422, detail="Could not extract planet positions from natal chart.")
         return result
