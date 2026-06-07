@@ -3,8 +3,9 @@
  * Always visible; shows setup hint when VITE_SUPABASE_* env vars are missing.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { readAuthCallbackError, clearAuthCallbackParams } from '../lib/authRedirect'
 
 function truncateEmail(email) {
   if (!email || email.length <= 24) return email
@@ -22,14 +23,20 @@ export default function AuthPanel({ compact = false, variant = compact ? 'compac
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState(false)
 
+  // Show friendly message when Supabase redirects back with otp_expired etc.
+  useEffect(() => {
+    const callbackError = readAuthCallbackError()
+    if (callbackError) {
+      setError(callbackError.message)
+      clearAuthCallbackParams()
+    }
+  }, [])
+
   const isCard = variant === 'card'
 
   const handleMagicLink = async (e) => {
     e.preventDefault()
-    if (!configured) {
-      setError('Sign-in is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-      return
-    }
+    if (!configured) return
     setBusy(true)
     setError('')
     setMessage('')
@@ -118,7 +125,7 @@ export default function AuthPanel({ compact = false, variant = compact ? 'compac
         <button
           type="submit"
           className="auth-panel__btn auth-panel__btn--primary"
-          disabled={busy || !inputEmail.trim()}
+          disabled={busy || !inputEmail.trim() || !configured}
         >
           {busy ? 'Sending…' : 'Send magic link'}
         </button>
@@ -137,7 +144,7 @@ export default function AuthPanel({ compact = false, variant = compact ? 'compac
       {error && <p className="auth-panel__error">{error}</p>}
       {!configured && (
         <p className="auth-panel__setup">
-          Sign-in needs <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> on Vercel (then redeploy).
+          Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in Vercel → Settings → Environment Variables, then redeploy.
         </p>
       )}
       {isCard && configured && (

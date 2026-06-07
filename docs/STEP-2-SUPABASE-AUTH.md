@@ -19,10 +19,25 @@ Backend JWT verification is **Step 3** — routes still work anonymously until t
 |----------|------------------|
 | `VITE_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon public |
+| `VITE_SITE_URL` | `https://jyotish-ai-zeta.vercel.app` — magic-link redirect (must match Supabase Site URL) |
 
 Keep using `VITE_API_URL` from Step 1. **Never** put the service role key on Vercel.
 
 Redeploy after saving variables.
+
+### Supabase URL Configuration (critical)
+
+In **Authentication → URL Configuration**, set:
+
+| Field | Value |
+|-------|--------|
+| **Site URL** | `https://jyotish-ai-zeta.vercel.app` |
+| **Redirect URLs** | `https://jyotish-ai-zeta.vercel.app/**` |
+| | `http://localhost:5173/**` (local dev only) |
+
+If **Site URL** is still `http://localhost:3001`, magic links will redirect there and fail in production.
+
+Magic links expire after ~1 hour — request a fresh link if you see `otp_expired`.
 
 ## C. Local development
 

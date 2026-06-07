@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getAuthRedirectUrl } from '../lib/authRedirect'
 
 export function useAuth() {
   const configured = isSupabaseConfigured()
@@ -36,7 +37,10 @@ export function useAuth() {
     if (!supabase) {
       throw new Error('Sign-in is not configured yet.')
     }
-    const redirectTo = `${window.location.origin}${window.location.pathname}`
+    const redirectTo = getAuthRedirectUrl()
+    if (!redirectTo) {
+      throw new Error('Could not determine redirect URL.')
+    }
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: redirectTo },
