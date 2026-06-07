@@ -4,23 +4,23 @@
       "source": "/(.*)",
       "headers": [
         {
-          "name": "X-Content-Type-Options",
+          "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
         {
-          "name": "X-Frame-Options",
+          "key": "X-Frame-Options",
           "value": "DENY"
         },
         {
-          "name": "Referrer-Policy",
+          "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "name": "Permissions-Policy",
+          "key": "Permissions-Policy",
           "value": "geolocation=(), microphone=(), camera=()"
         },
         {
-          "name": "Content-Security-Policy",
+          "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.onrender.com https://*.vercel.app https://*.supabase.co wss://*.supabase.co; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
