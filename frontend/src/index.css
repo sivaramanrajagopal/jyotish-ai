@@ -539,6 +539,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 8px;
   padding: 6px 12px;
   background: var(--nav-bg);
   border-bottom: 1px solid var(--banner-border);
@@ -671,3 +672,187 @@ input:focus, select:focus, textarea:focus {
 #ashtakavarga {
   scroll-margin-top: 5rem;
 }
+
+/* ── Supabase Auth (Step 2) ─────────────────────────────────────────────── */
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 320px;
+}
+
+.auth-panel--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: none;
+}
+
+.auth-panel--expanded {
+  position: absolute;
+  right: 12px;
+  top: 100%;
+  z-index: 40;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: var(--card-shadow);
+  min-width: 240px;
+}
+
+.banner-minimal {
+  position: relative;
+}
+
+.auth-panel__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-panel__input {
+  flex: 1 1 140px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+.auth-panel__btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-panel__btn--primary {
+  background: var(--orange);
+  color: var(--accent-dark);
+}
+
+.auth-panel__btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--card-border);
+}
+
+.auth-panel__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-panel__signed-in {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-panel__message {
+  font-size: 11px;
+  color: var(--orange);
+  margin: 0;
+}
+
+.auth-panel__error {
+  font-size: 11px;
+  color: #e57373;
+  margin: 0;
+}
+
+.auth-panel__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.auth-save-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--highlight-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.auth-save-hint strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: 16px;
+  padding: 1.25rem 1.25rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.auth-card__subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+  line-height: 1.45;
+}
+
+.auth-card .auth-panel__form {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.auth-card .auth-panel__input {
+  height: 44px;
+  font-size: 16px;
+  flex: none;
+  width: 100%;
+}
+
+.auth-card .auth-panel__btn--primary {
+  height: 44px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.auth-panel__setup {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+.auth-panel__setup code {
+  font-size: 10px;
+  background: var(--highlight-bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+@media (min-width: 640px) {
+  .home-auth-block {
+    max-width: 420px;
+    margin: 0 auto 16px;
+    padding: 0 16px;
+  }
+}
+

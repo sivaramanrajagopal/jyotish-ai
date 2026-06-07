@@ -76,6 +76,9 @@ except Exception:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start APScheduler on startup; shut it down cleanly on exit."""
+    from production_check import run_production_checks
+    run_production_checks()
+
     from agents.ashtama_agent import daily_personal_panchangam_job
 
     scheduler = BackgroundScheduler(timezone="Asia/Kolkata")

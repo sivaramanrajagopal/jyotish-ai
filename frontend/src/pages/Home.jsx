@@ -18,7 +18,9 @@ import AshtakavargaPanel from '../components/AshtakavargaPanel'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
+import AuthPanel from '../components/AuthPanel'
 import NotificationSettings from '../components/NotificationSettings'
+import { useAuth } from '../hooks/useAuth'
 import { startNotificationWatcher } from '../lib/notifications'
 
 // Apply persisted theme immediately on load
@@ -117,6 +119,7 @@ function GaneshaBanner() {
         </div>
       </div>
       <DarkModeToggle small />
+      <AuthPanel compact />
     </div>
   )
 }
@@ -141,7 +144,7 @@ const fieldStyle = {
   outline: 'none',
 }
 
-function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab }) {
+function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab, userId, userEmail }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
   const handleFeatureClick = ({ tab, section }) => {
@@ -150,6 +153,12 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
 
   return (
     <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
+      {userId && (
+        <div className="auth-save-hint">
+          Signed in as <strong>{userEmail}</strong> — new charts save to your account.
+        </div>
+      )}
+
       {chart && form.name && (
         <div className="welcome-back">
           <div className="welcome-back__text">
@@ -212,6 +221,10 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           )}
         </div>
       </header>
+
+      <div className="home-auth-block">
+        {!userId && <AuthPanel variant="card" />}
+      </div>
 
       {/* Birth form */}
       <div className="rounded-2xl p-4 sm:p-6" style={G.card}>
@@ -406,6 +419,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function Home() {
   useKeepAlive()
+  const { userId, email: userEmail } = useAuth()
 
   // Deep-link tabs from notification clicks (?tab=chart|panchangam|…)
   const urlTab = (() => {
@@ -471,14 +485,21 @@ export default function Home() {
     if (!s?.form?.dob || !s?.chart) return
     if (s.chart.dasha?.mahadasha?.start_iso) return
     setChartRefreshing(true)
-    api.post('/natal-chart', s.form)
+    const payload = userId ? { ...s.form, user_id: userId } : s.form
+    api.post('/natal-chart', payload)
       .then(({ data }) => {
         setChart(data)
         saveToStorage(s.form, data)
       })
       .catch(() => {})
       .finally(() => setChartRefreshing(false))
-  }, [])
+  }, [userId])
+
+  // When user signs in, sync existing chart to their account
+  useEffect(() => {
+    if (!userId || !chart || !form.dob) return
+    api.post('/natal-chart', { ...form, user_id: userId }).catch(() => {})
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cosmic alert watcher (while app is open / installed as PWA)
   useEffect(() => {
@@ -505,7 +526,8 @@ export default function Home() {
     setError('')
     setChart(null)
     try {
-      const { data } = await api.post('/natal-chart', form)
+      const payload = userId ? { ...form, user_id: userId } : form
+      const { data } = await api.post('/natal-chart', payload)
       setChart(data)
       saveToStorage(form, data)
       setTab('chart')
@@ -534,6 +556,7 @@ export default function Home() {
       {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
       {activeTab === 'home' ? (
         <div className="banner-minimal">
+          <AuthPanel compact />
           <DarkModeToggle small />
         </div>
       ) : (
@@ -573,7 +596,8 @@ export default function Home() {
             )}
           </button>
         ))}
-        <div className="ml-auto flex items-center px-3">
+        <div className="ml-auto flex items-center gap-2 px-3">
+          <AuthPanel compact />
           <DarkModeToggle small onDarkBg={false} />
         </div>
       </nav>
@@ -597,6 +621,8 @@ export default function Home() {
             loading={loading} error={error}
             chart={chart}
             onGoToTab={setTab}
+            userId={userId}
+            userEmail={userEmail}
           />
         </div>
 
