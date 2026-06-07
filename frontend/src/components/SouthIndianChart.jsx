@@ -109,10 +109,10 @@ function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, p
       isLagna && 'si-chart__cell--lagna',
       tone,
     ].filter(Boolean).join(' ')}>
-      <span className="si-chart__sign" aria-hidden="true">
+      <span className={`si-chart__sign${isLagna ? ' si-chart__sign--lagna' : ''}`} aria-hidden="true">
         {SIGN_SYM[signIdx]} {SIGN_ABBR[signIdx]}
       </span>
-      {isLagna && <span className="si-chart__asc">ASC</span>}
+      {isLagna && <span className="si-chart__asc">Asc</span>}
       <div className="si-chart__planets">
         {planets.map(p => {
           const pd = planetData?.[p] || {}
