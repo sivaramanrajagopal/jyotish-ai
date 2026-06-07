@@ -26,7 +26,7 @@ const TR = {
     dailyReading: '🔮 Your Daily Reading', dashaTransit: 'Dasha-Transit',
     overallHealth: 'Overall Transit Health', favourable: 'Favourable',
     mixed: 'Mixed', challenging: 'Challenging',
-    tapInstruction: 'Tap any life area to see your forecast',
+    tapInstruction: 'Tap any area below for AI insight',
     forecastDate: 'Forecast date',
     forecastDateHint: 'Pick any date — e.g. “Is Tuesday good for my interview?”',
     today: 'Today',
@@ -42,12 +42,13 @@ const TR = {
     atGlance: 'Your day at a glance',
     readFullNote: 'Read full daily note',
     hideFullNote: 'Hide daily note',
-    bestToday: 'Best today',
-    watchToday: 'Watch today',
     exploreAll: 'Explore all 12 life areas',
     hideAreas: 'Hide life areas',
     checkTomorrow: 'Check tomorrow',
-    startHere: 'Suggested',
+    leanIn: 'Lean in',
+    easeOff: 'Ease off',
+    askAi: 'Ask AI',
+    tapForAi: 'Tap any area below for AI insight',
   },
   tamil: {
     ragLabel: { GREEN:'சாதகமானது', AMBER:'கலப்பு', RED:'சவாலானது' },
@@ -55,7 +56,7 @@ const TR = {
     dailyReading: '🔮 இன்றைய கணிப்பு', dashaTransit: 'தசை-கோசாரம்',
     overallHealth: 'ஒட்டுமொத்த கோசார நிலை', favourable: 'சாதகம்',
     mixed: 'கலப்பு', challenging: 'சவால்',
-    tapInstruction: 'உங்கள் கணிப்பைப் பார்க்க ஒரு துறையை தட்டவும்',
+    tapInstruction: 'AI கணிப்புக்கு கீழே ஒரு துறையை தட்டவும்',
     forecastDate: 'கணிப்பு தேதி',
     forecastDateHint: 'எந்த தேதியையும் தேர்ந்தெடுக்கவும் — நேர்முகம், திருமணம் போன்றவற்றுக்கு',
     today: 'இன்று',
@@ -71,12 +72,13 @@ const TR = {
     atGlance: 'இன்றைய நிலை — ஒரு பார்வையில்',
     readFullNote: 'முழு தினசரி கணிப்பு',
     hideFullNote: 'கணிப்பை மறை',
-    bestToday: 'இன்று சிறந்தது',
-    watchToday: 'கவனம் தேவை',
     exploreAll: '12 துறைகளையும் பார்க்க',
     hideAreas: 'துறைகளை மறை',
     checkTomorrow: 'நாளை பார்க்க',
-    startHere: 'பரிந்துரை',
+    leanIn: 'வலுவாக',
+    easeOff: 'கவனமாக',
+    askAi: 'AI கேள்',
+    tapForAi: 'AI கணிப்புக்கு கீழே ஒரு துறையை தட்டவும்',
   },
 }
 
@@ -152,10 +154,14 @@ function firstSentence(text) {
   return m ? m[0].trim() : text.slice(0, 160).trim()
 }
 
+function isHeadlineTooDense(line) {
+  return line.length > 95 || /dash[aá]-?transit|correlation|mahadasha|bhukti|\d+\/100/i.test(line)
+}
+
 function buildHeadline({ reading, top2, watch2, overall, language }) {
   if (reading) {
     const line = firstSentence(reading)
-    if (line.length > 24) return line
+    if (line.length > 24 && !isHeadlineTooDense(line)) return line
   }
   const tx = t(language)
   const isTamil = language === 'tamil'
@@ -337,12 +343,36 @@ function dtcDetailText(dtc, isTamil) {
 
 function AtGlanceHero({
   overall, headline, language, onLanguageChange, isToday, onCheckTomorrow,
-  readingLoading, transitDate,
+  readingLoading, transitDate, top2, watch2, onHouseClick, onAskAi,
 }) {
   const tx = t(language)
+  const isTamil = language === 'tamil'
   const ohRag = overall?.rag?.status || 'AMBER'
   const rc = RAG[ohRag] || RAG.AMBER
   const score = roundScore(overall?.average_score)
+
+  const houseLink = (h, tone) => {
+    const num = h.house ?? h.house_num
+    const colour = tone === 'best' ? '#81C784' : '#EF9A9A'
+    return (
+      <button
+        key={`${tone}-${num}`}
+        type="button"
+        onClick={() => onHouseClick(num)}
+        style={{
+          background: 'none', border: 'none', padding: 0, margin: 0,
+          color: colour, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          textDecoration: 'underline', textUnderlineOffset: 2,
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        {HOUSE_ICONS[num]} {houseShortName(h, isTamil)} ({roundScore(h.score)})
+      </button>
+    )
+  }
+
+  const topPick = top2[0]
+  const topPickNum = topPick ? (topPick.house ?? topPick.house_num) : null
 
   return (
     <div style={{
@@ -377,6 +407,50 @@ function AtGlanceHero({
         ) : headline}
       </p>
 
+      {/* Inline focus — no card chips */}
+      {(top2.length > 0 || watch2.length > 0) && (
+        <div style={{ fontSize: 13, lineHeight: 1.65, marginBottom: 12, color: 'rgba(255,255,255,0.75)' }}>
+          {top2.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', marginBottom: 6 }}>
+              <span style={{ fontWeight: 700, color: '#81C784', fontSize: 12 }}>🟢 {tx.leanIn}:</span>
+              {top2.map((h, i) => (
+                <span key={h.house ?? h.house_num} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {i > 0 && <span style={{ color: 'rgba(255,255,255,0.35)' }}>·</span>}
+                  {houseLink(h, 'best')}
+                </span>
+              ))}
+            </div>
+          )}
+          {watch2.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px' }}>
+              <span style={{ fontWeight: 700, color: '#EF9A9A', fontSize: 12 }}>🔴 {tx.easeOff}:</span>
+              {watch2.map((h, i) => (
+                <span key={h.house ?? h.house_num} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {i > 0 && <span style={{ color: 'rgba(255,255,255,0.35)' }}>·</span>}
+                  {houseLink(h, 'watch')}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {topPick && topPickNum && onAskAi && (
+        <button
+          type="button"
+          onClick={() => onAskAi(topPickNum)}
+          style={{
+            width: '100%', marginBottom: 12, padding: '11px 14px', borderRadius: 10,
+            border: 'none', background: 'var(--orange)', color: '#FFF',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          🤖 {tx.askAi} · {houseShortName(topPick, isTamil)} →
+        </button>
+      )}
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11 }}>
         <span style={{ color: '#81C784' }}>🟢 {overall?.green_count ?? 0} {tx.favourable}</span>
         <span style={{ color: '#FFB74D' }}>🟡 {overall?.amber_count ?? 0} {tx.mixed}</span>
@@ -394,56 +468,6 @@ function AtGlanceHero({
             {tx.checkTomorrow} →
           </button>
         )}
-      </div>
-    </div>
-  )
-}
-
-function BestWatchStrip({ top2, watch2, language, onHouseClick, suggestedHouse }) {
-  const tx = t(language)
-  const isTamil = language === 'tamil'
-
-  const chip = (h, tone) => {
-    const num = h.house ?? h.house_num
-    const rc = RAG[h.rag?.status] || (tone === 'best' ? RAG.GREEN : RAG.RED)
-    const isSuggested = suggestedHouse === num
-    return (
-      <button
-        key={`${tone}-${num}`}
-        type="button"
-        onClick={() => onHouseClick(num)}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '8px 12px', borderRadius: 10, cursor: 'pointer',
-          border: `1.5px solid ${rc.border}`, background: rc.bg,
-          fontSize: 12, fontWeight: 600, color: rc.text,
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <span>{HOUSE_ICONS[num]}</span>
-        <span>{houseShortName(h, isTamil)}</span>
-        <span style={{ color: rc.badge, fontWeight: 800 }}>{roundScore(h.score)}</span>
-        {isSuggested && (
-          <span style={{
-            fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
-            background: rc.badge, color: '#FFF', borderRadius: 6, padding: '2px 6px',
-          }}>{tx.startHere}</span>
-        )}
-      </button>
-    )
-  }
-
-  if (!top2.length && !watch2.length) return null
-
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 72 }}>🟢 {tx.bestToday}</span>
-        {top2.map(h => chip(h, 'best'))}
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 72 }}>🔴 {tx.watchToday}</span>
-        {watch2.map(h => chip(h, 'watch'))}
       </div>
     </div>
   )
@@ -753,14 +777,10 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         onCheckTomorrow={isToday ? () => setTransitDate(tomorrowISO()) : undefined}
         readingLoading={readingLoading && !dailyReading?.reading}
         transitDate={scores.transit_date || transitDate}
-      />
-
-      <BestWatchStrip
         top2={top2}
         watch2={watch2}
-        language={language}
         onHouseClick={scrollToHouseDetail}
-        suggestedHouse={suggestedHouse}
+        onAskAi={scrollToHouseDetail}
       />
 
       {dailyReading?.reading && (
@@ -807,7 +827,6 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
               const rc       = RAG[status] || RAG.AMBER
               const isActive = selectedHouse === h.house_num
               const loaded   = !!insightCache[insightKey(h.house_num)]
-              const isSuggested = suggestedHouse === h.house_num
               return (
                 <button
                   key={h.house_num}
@@ -827,13 +846,6 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  {isSuggested && !isActive && (
-                    <span style={{
-                      position:'absolute', top:4, left:6,
-                      fontSize:8, fontWeight:800, textTransform:'uppercase',
-                      color: rc.badge, letterSpacing:'0.04em',
-                    }}>{tx.startHere}</span>
-                  )}
                   {loaded && !isActive && (
                     <span style={{
                       position:'absolute', top:4, right:6,
