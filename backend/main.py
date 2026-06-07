@@ -37,6 +37,8 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from rate_limit import limiter
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
+from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
+from ai_limits import check_ai_quota, moderate_messages
 from security import (
     IS_PRODUCTION,
     check_content_length,
@@ -432,6 +434,7 @@ class NatalChartRequest(BaseModel):
     dob: str                           # YYYY-MM-DD
     tob: str                           # HH:MM (24h, local time)
     place_of_birth: str                # max 120 chars
+    gender: Optional[str] = "male"
     user_id: Optional[str] = None      # if logged in
 
     model_config = {"str_strip_whitespace": True}
@@ -443,6 +446,7 @@ class NatalChartRequest(BaseModel):
             "dob":            self.dob,
             "tob":            self.tob,
             "place_of_birth": _sanitise(self.place_of_birth, 120),
+            "gender":         _sanitise(self.gender or "male", 20),
             "user_id":        self.user_id,
         }
 
@@ -553,25 +557,29 @@ def natal_chart(
 
     # Store in Supabase if user_id provided
     if user_id and SUPABASE_ENABLED:
-        try:
-            sb = get_supabase()
-            asc = chart["ascendant"]
-            db_row = {
-                "user_id":               user_id,
-                "sun_sign":              chart["planet_positions"]["Sun"]["sign"],
-                "moon_sign":             chart["planet_positions"]["Moon"]["sign"],
-                "ascendant":             asc["sign"],
-                "planet_positions":      chart["planet_positions"],
-                "yogas":                 chart["yogas"],
-                "ayanamsa":              chart["ayanamsa"],
-                "ayanamsa_value":        chart["ayanamsa_value"],
-                "moon_nakshatra_index":  chart["moon_nakshatra_index"],
-                "moon_rasi_index":       chart["moon_rasi_index"],
-            }
-            sb.table("natal_charts").upsert(db_row).execute()
-        except Exception as e:
-            print(f"[supabase natal write error] {e}")
+        birth_form = {
+            "name": name,
+            "dob": dob,
+            "tob": tob,
+            "place_of_birth": place_of_birth,
+            "gender": cleaned.get("gender", "male"),
+        }
+        chart["birth_data"]["name"] = name
+        save_natal_chart(user_id, chart, birth_form)
 
+    return chart
+
+
+@app.get("/natal-chart")
+@limiter.limit("60/minute")
+def get_natal_chart(
+    request: Request,
+    auth_user: AuthUser = Depends(get_current_user),
+):
+    """Return the authenticated user's saved natal chart from Supabase."""
+    chart = load_natal_chart(auth_user.id)
+    if not chart:
+        raise HTTPException(status_code=404, detail="No saved chart found.")
     return chart
 
 
@@ -580,14 +588,18 @@ def natal_chart(
 # ─────────────────────────────────────────────
 
 class ForecastRequest(BaseModel):
-    natal_chart: dict           # full /natal-chart response
+    natal_chart: Optional[dict] = None
     location: str = "Chennai"  # for panchangam
     date: Optional[str] = None  # YYYY-MM-DD, defaults to today
 
 
 @app.post("/forecast")
 @limiter.limit("10/minute")
-def forecast(request: Request, req: ForecastRequest):
+def forecast(
+    request: Request,
+    req: ForecastRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Generate a personalized daily Vedic forecast using Claude AI.
 
@@ -597,9 +609,11 @@ def forecast(request: Request, req: ForecastRequest):
     Requires ANTHROPIC_API_KEY in backend/.env.
     Get a key at: https://console.anthropic.com
     """
+    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     try:
         context = assemble_context(
-            natal_chart=req.natal_chart,
+            natal_chart=chart,
             location=req.location,
             target_date=req.date,
         )
@@ -631,7 +645,7 @@ class ChatMessage(BaseModel):
     content: str    # will be truncated to 2000 chars
 
 class ChatRequest(BaseModel):
-    natal_chart: dict
+    natal_chart: Optional[dict] = None
     messages: list[ChatMessage]
     location: str = "Chennai"
     language: str = "english"     # "english" | "tamil"
@@ -772,12 +786,17 @@ def transit_chart(
 
 @app.post("/chat")
 @limiter.limit("30/minute")
-def chat_endpoint(request: Request, req: ChatRequest):
+def chat_endpoint(
+    request: Request,
+    req: ChatRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Multi-turn Vedic astrology chat grounded in the user's natal chart.
     Pass the full conversation history with each request.
     Requires OPENAI_API_KEY in backend/.env.
     """
+    check_ai_quota(auth_user.id if auth_user else None, "chat")
     # Enforce message count and content length caps (cost control + DoS prevention)
     MAX_MESSAGES = 40
     MAX_MSG_LEN  = 2000
@@ -796,7 +815,8 @@ def chat_endpoint(request: Request, req: ChatRequest):
     if not msgs:
         raise HTTPException(status_code=400, detail="No valid messages provided.")
 
-    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+    moderate_messages(msgs)
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
 
     try:
         reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)
@@ -843,14 +863,14 @@ def _lang_suffix(language: str) -> str:
 
 
 class ForecastScoresRequest(BaseModel):
-    natal_chart: dict
+    natal_chart: Optional[dict] = None
     transit_date: Optional[str] = None
 
     model_config = {"str_strip_whitespace": True}
 
 
 class HouseInsightRequest(BaseModel):
-    natal_chart: dict
+    natal_chart: Optional[dict] = None
     house_num:   int
     gender:      str = "unspecified"
     transit_date: Optional[str] = None
@@ -861,15 +881,16 @@ class HouseInsightRequest(BaseModel):
 
 @app.post("/forecast/scores")
 @limiter.limit("30/minute")
-def forecast_scores(request: Request, req: ForecastScoresRequest):
+def forecast_scores(
+    request: Request,
+    req: ForecastScoresRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Return deterministic RAG scores for all 12 houses.
     Cached in-process: same natal chart + same date = instant response.
     """
-    if not req.natal_chart or "birth_data" not in req.natal_chart:
-        raise HTTPException(status_code=400,
-                            detail="natal_chart with birth_data is required.")
-    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     try:
         result = score_all_houses(chart, req.transit_date)
         return result
@@ -883,21 +904,24 @@ def forecast_scores(request: Request, req: ForecastScoresRequest):
 
 @app.post("/forecast/house")
 @limiter.limit("20/minute")
-def forecast_house_insight(request: Request, req: HouseInsightRequest):
+def forecast_house_insight(
+    request: Request,
+    req: HouseInsightRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Return AI interpretation for a single house.
     Uses deterministic scores + OpenAI narrator with age/gender context.
     """
-    if not req.natal_chart or "birth_data" not in req.natal_chart:
-        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
     if not 1 <= req.house_num <= 12:
         raise HTTPException(status_code=400, detail="house_num must be 1–12.")
+
+    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
-
-    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
 
     try:
         scores = score_all_houses(chart, req.transit_date)
@@ -986,7 +1010,7 @@ def forecast_house_insight(request: Request, req: HouseInsightRequest):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class DailyReadingRequest(BaseModel):
-    natal_chart:  dict
+    natal_chart:  Optional[dict] = None
     gender:       str = "unspecified"
     transit_date: Optional[str] = None
     language:     str = "english"
@@ -995,15 +1019,17 @@ class DailyReadingRequest(BaseModel):
 
 @app.post("/forecast/daily-reading")
 @limiter.limit("15/minute")
-def forecast_daily_reading(request: Request, req: DailyReadingRequest):
+def forecast_daily_reading(
+    request: Request,
+    req: DailyReadingRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Synthesise natal chart + Dasha + Gochara + Tara Balam into a
     3-5 sentence daily reading with a Dasha-Transit correlation score.
     """
-    if not req.natal_chart or "birth_data" not in req.natal_chart:
-        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
-
-    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -1124,21 +1150,23 @@ def forecast_daily_reading(request: Request, req: DailyReadingRequest):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class AshtakavargaRequest(BaseModel):
-    natal_chart: dict
+    natal_chart: Optional[dict] = None
     model_config = {"str_strip_whitespace": True}
 
 
 @app.post("/ashtakavarga")
 @limiter.limit("30/minute")
-def ashtakavarga_endpoint(request: Request, req: AshtakavargaRequest):
+def ashtakavarga_endpoint(
+    request: Request,
+    req: AshtakavargaRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Calculate Bhinnashtakavarga (BAV) + Sarvashtakavarga (SAV)
     including Trikona Shodhana, Ekadhipatya Shodhana, and Shodhya Pinda.
     Results are cached — same chart always returns instantly.
     """
-    if not req.natal_chart or "birth_data" not in req.natal_chart:
-        raise HTTPException(status_code=400, detail="natal_chart with birth_data is required.")
-    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     try:
         result = calculate_ashtakavarga(chart)
         if not result:

@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
+import { chartPayload } from '../lib/chartPayload'
 
 const HOUSE_ICONS = {
   1:'🧘', 2:'💰', 3:'💬', 4:'🏠', 5:'🎨', 6:'⚔️',
@@ -315,7 +316,7 @@ function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
 
-export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false }) {
+export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId }) {
   const [transitDate,  setTransitDate]  = useState(todayISO)
   const [scores,         setScores]         = useState(null)
   const [scoresLoading,  setScoresLoading]  = useState(false)
@@ -338,7 +339,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     setScoresError('')
     setSelectedHouse(null)
     setInsightCache({})
-    const body = { natal_chart: chart, transit_date: transitDate }
+    const body = chartPayload(chart, userId, { transit_date: transitDate })
     Promise.all([
       api.post('/forecast/scores', body),
       api.post('/forecast/daily-reading', { ...body, gender, language }),
@@ -353,7 +354,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       setScoresLoading(false)
       setReadingLoading(false)
     })
-  }, [chart, transitDate, gender, language])
+  }, [chart, transitDate, gender, language, userId])
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang)
@@ -368,13 +369,12 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
     setInsightLoading(true)
     try {
-      const res = await api.post('/forecast/house', {
-        natal_chart: chart,
+      const res = await api.post('/forecast/house', chartPayload(chart, userId, {
         house_num:   houseNum,
         gender,
         language,
         transit_date: transitDate,
-      })
+      }))
       setInsightCache(prev => ({ ...prev, [key]: res.data.insight || '' }))
     } catch (err) {
       setInsightError(err.response?.data?.detail || 'Could not load AI insight.')

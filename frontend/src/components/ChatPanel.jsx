@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect } from 'react'
 import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
+import { chartPayload } from '../lib/chartPayload'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -141,7 +142,7 @@ function guessLocation(place) {
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export default function ChatPanel({ chart, placeOfBirth }) {
+export default function ChatPanel({ chart, placeOfBirth, userId }) {
   const [messages, setMessages]     = useState([])
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
@@ -164,12 +165,11 @@ export default function ChatPanel({ chart, placeOfBirth }) {
     setLoading(true)
 
     try {
-      const { data } = await api.post('/chat', {
-        natal_chart: chart,
+      const { data } = await api.post('/chat', chartPayload(chart, userId, {
         messages: newMessages,
         location: guessLocation(placeOfBirth),
         language,
-      })
+      }))
       const reply = data.reply || ''
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
       setActive(detectTopics(reply))

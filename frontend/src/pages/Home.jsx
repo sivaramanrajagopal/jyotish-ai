@@ -22,31 +22,20 @@ import AuthPanel from '../components/AuthPanel'
 import NotificationSettings from '../components/NotificationSettings'
 import { useAuth } from '../hooks/useAuth'
 import { startNotificationWatcher } from '../lib/notifications'
+import { saveSessionChart, loadSessionChart, clearSessionChart } from '../lib/chartStorage'
 
 // Apply persisted theme immediately on load
 applyStoredTheme()
 
-// ── localStorage helpers ───────────────────────────────────────────────────
-const LS_KEY = 'jyotish-chart-v1'
-
-function saveToStorage(form, chart) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      form, chart, savedAt: new Date().toISOString()
-    }))
-  } catch {}
+// ── Session chart helpers (no localStorage PII — Step 6) ───────────────────
+function saveToStorage(form, chart, userId) {
+  if (userId) return
+  saveSessionChart(form, chart)
 }
 
-function loadFromStorage() {
-  try {
-    const raw = localStorage.getItem(LS_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    // Expire after 30 days
-    const age = Date.now() - new Date(parsed.savedAt).getTime()
-    if (age > 30 * 24 * 60 * 60 * 1000) { localStorage.removeItem(LS_KEY); return null }
-    return parsed
-  } catch { return null }
+function loadFromStorage(userId) {
+  if (userId) return null
+  return loadSessionChart()
 }
 
 // ── Render keep-alive ──────────────────────────────────────────────────────
@@ -101,7 +90,7 @@ function NeedChart({ onGoHome }) {
 }
 
 function clearStorage() {
-  try { localStorage.removeItem(LS_KEY) } catch {}
+  clearSessionChart()
   window.location.reload()
 }
 
@@ -393,7 +382,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
       )}
 
       {/* Personal Panchangam */}
-      <PersonalPanchangamCard chart={chart} />
+      <PersonalPanchangamCard chart={chart} userId={userId} />
 
       {/* Ashtakavarga */}
       <div
@@ -410,7 +399,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
           </p>
         </div>
         <div className="px-4 sm:px-5 py-4">
-          <AshtakavargaPanel chart={chart} />
+          <AshtakavargaPanel chart={chart} userId={userId} />
         </div>
       </div>
 
@@ -438,8 +427,8 @@ export default function Home() {
     } catch { return null }
   })()
 
-  // Restore from localStorage on first render
-  const saved = loadFromStorage()
+  // Restore anonymous session chart (signed-in users fetch from server)
+  const saved = loadFromStorage(null)
   const [activeTab, setActiveTab] = useState(urlTab || (saved?.chart ? 'chart' : 'home'))
   const [form, setForm]   = useState(saved?.form  || { name:'', dob:'', tob:'', place_of_birth:'', gender:'male' })
   const [chart, setChart] = useState(saved?.chart || null)
@@ -488,27 +477,50 @@ export default function Home() {
     return () => clearTimeout(timer)
   }, [activeTab, scrollTarget])
 
-  // Refresh stale saved charts missing ISO dasha dates
+  // Load chart from server when signed in; sync session chart if none saved yet
   useEffect(() => {
-    const s = loadFromStorage()
+    if (!userId) return
+    setChartRefreshing(true)
+    api.get('/natal-chart')
+      .then(({ data }) => {
+        setChart(data)
+        const bd = data?.birth_data || {}
+        setForm(f => ({
+          ...f,
+          name: bd.name || f.name,
+          dob: bd.dob || f.dob,
+          tob: bd.tob || f.tob,
+          place_of_birth: data.place_of_birth || f.place_of_birth,
+        }))
+      })
+      .catch(async (err) => {
+        if (err.response?.status !== 404) return
+        const s = loadSessionChart()
+        if (!s?.form?.dob || !s?.chart) return
+        try {
+          const { data } = await api.post('/natal-chart', { ...s.form, user_id: userId })
+          setChart(data)
+          setForm(s.form)
+        } catch {}
+      })
+      .finally(() => setChartRefreshing(false))
+  }, [userId])
+
+  // Refresh stale session charts missing ISO dasha dates (anonymous only)
+  useEffect(() => {
+    if (userId) return
+    const s = loadFromStorage(null)
     if (!s?.form?.dob || !s?.chart) return
     if (s.chart.dasha?.mahadasha?.start_iso) return
     setChartRefreshing(true)
-    const payload = userId ? { ...s.form, user_id: userId } : s.form
-    api.post('/natal-chart', payload)
+    api.post('/natal-chart', s.form)
       .then(({ data }) => {
         setChart(data)
-        saveToStorage(s.form, data)
+        saveToStorage(s.form, data, null)
       })
       .catch(() => {})
       .finally(() => setChartRefreshing(false))
   }, [userId])
-
-  // When user signs in, sync existing chart to their account
-  useEffect(() => {
-    if (!userId || !chart || !form.dob) return
-    api.post('/natal-chart', { ...form, user_id: userId }).catch(() => {})
-  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cosmic alert watcher (while app is open / installed as PWA)
   useEffect(() => {
@@ -538,7 +550,7 @@ export default function Home() {
       const payload = userId ? { ...form, user_id: userId } : form
       const { data } = await api.post('/natal-chart', payload)
       setChart(data)
-      saveToStorage(form, data)
+      saveToStorage(form, data, userId)
       setTab('chart')
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -649,7 +661,7 @@ export default function Home() {
         <div style={tabPane('chat')}>
           {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
-                <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} />
+                <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} userId={userId} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
@@ -658,7 +670,7 @@ export default function Home() {
         <div style={tabPane('forecast')}>
           {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
-                <ForecastPanel chart={chart} gender={form.gender} showDatePicker />
+                <ForecastPanel chart={chart} gender={form.gender} showDatePicker userId={userId} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }

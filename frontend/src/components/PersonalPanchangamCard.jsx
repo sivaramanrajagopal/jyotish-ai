@@ -25,7 +25,7 @@ function fmt(isoStr) {
   }
 }
 
-export default function PersonalPanchangamCard({ chart }) {
+export default function PersonalPanchangamCard({ chart, userId }) {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -34,17 +34,22 @@ export default function PersonalPanchangamCard({ chart }) {
   const rasiIdx = chart?.moon_rasi_index
 
   useEffect(() => {
-    if (nakIdx == null || rasiIdx == null) return
     setLoading(true)
-    api.get('/personal-panchangam/anonymous', {
-      params: { natal_nak_index: nakIdx, natal_rasi_index: rasiIdx, timezone: 'Asia/Kolkata' }
-    })
+    setError('')
+    const req = userId
+      ? api.get(`/personal-panchangam/today/${userId}`)
+      : (nakIdx == null || rasiIdx == null
+        ? Promise.reject(new Error('missing indices'))
+        : api.get('/personal-panchangam/anonymous', {
+            params: { natal_nak_index: nakIdx, natal_rasi_index: rasiIdx, timezone: 'Asia/Kolkata' },
+          }))
+    req
       .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load personal Panchangam.'))
+      .catch(e => setError(e.response?.data?.detail || e.message || 'Could not load personal Panchangam.'))
       .finally(() => setLoading(false))
-  }, [nakIdx, rasiIdx])
+  }, [userId, nakIdx, rasiIdx])
 
-  if (nakIdx == null) return null
+  if (!userId && nakIdx == null) return null
 
   const tara    = data?.tara
   const cb      = data?.chandrabalam

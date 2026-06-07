@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { chartPayload } from '../lib/chartPayload'
 
 const PLANET_LABELS = {
   SUN:'☉ Sun', MOON:'☽ Moon', MARS:'♂ Mars', MERCURY:'☿ Mercury',
@@ -42,7 +43,7 @@ function Bar({ value, max, col }) {
   )
 }
 
-export default function AshtakavargaPanel({ chart }) {
+export default function AshtakavargaPanel({ chart, userId }) {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -51,11 +52,11 @@ export default function AshtakavargaPanel({ chart }) {
   useEffect(() => {
     if (!chart) return
     setLoading(true)
-    api.post('/ashtakavarga', { natal_chart: chart })
+    api.post('/ashtakavarga', chartPayload(chart, userId))
       .then(r => setData(r.data))
       .catch(e => setError(e.response?.data?.detail || 'Could not load Ashtakavarga.'))
       .finally(() => setLoading(false))
-  }, [chart])
+  }, [chart, userId])
 
   if (loading) return (
     <div style={{ textAlign:'center', padding:'32px 0', color:'var(--orange)', fontSize:13 }}
