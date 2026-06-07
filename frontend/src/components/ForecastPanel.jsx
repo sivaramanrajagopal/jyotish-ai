@@ -39,6 +39,15 @@ const TR = {
     calculating: 'Calculating your Gochara scores and daily reading…',
     dignity: { Exalted:'Exalted', 'Own Sign':'Own Sign', Friend:'Friend',
                Neutral:'Neutral', Enemy:'Enemy', Debilitated:'Debilitated', 'N/A':'—' },
+    atGlance: 'Your day at a glance',
+    readFullNote: 'Read full daily note',
+    hideFullNote: 'Hide daily note',
+    bestToday: 'Best today',
+    watchToday: 'Watch today',
+    exploreAll: 'Explore all 12 life areas',
+    hideAreas: 'Hide life areas',
+    checkTomorrow: 'Check tomorrow',
+    startHere: 'Suggested',
   },
   tamil: {
     ragLabel: { GREEN:'சாதகமானது', AMBER:'கலப்பு', RED:'சவாலானது' },
@@ -59,6 +68,15 @@ const TR = {
     calculating: 'உங்கள் கோசார மதிப்புகளும் இன்றைய கணிப்பும் கணக்கிடப்படுகின்றன…',
     dignity: { Exalted:'உச்சம்', 'Own Sign':'சொந்த வீடு', Friend:'நட்பு வீடு',
                Neutral:'நடுநிலை', Enemy:'எதிரி வீடு', Debilitated:'நீசம்', 'N/A':'—' },
+    atGlance: 'இன்றைய நிலை — ஒரு பார்வையில்',
+    readFullNote: 'முழு தினசரி கணிப்பு',
+    hideFullNote: 'கணிப்பை மறை',
+    bestToday: 'இன்று சிறந்தது',
+    watchToday: 'கவனம் தேவை',
+    exploreAll: '12 துறைகளையும் பார்க்க',
+    hideAreas: 'துறைகளை மறை',
+    checkTomorrow: 'நாளை பார்க்க',
+    startHere: 'பரிந்துரை',
   },
 }
 
@@ -109,6 +127,50 @@ const RAG = {
 
 // Helper to get translations for current language
 const t = (lang) => TR[lang] || TR.english
+
+function tomorrowISO() {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+}
+
+function rankedHouses(houses) {
+  return Object.values(houses || {}).sort((a, b) => b.score - a.score)
+}
+
+function houseShortName(h, isTamil) {
+  const num = h.house ?? h.house_num
+  if (isTamil) {
+    return HOUSE_TAMIL[num]?.name?.split(' & ')[0] || h.name?.split(' & ')[0] || h.name?.split(' ')[0] || ''
+  }
+  return h.name?.split(' & ')[0]?.split(' ')[0] || h.name?.split(' ')[0] || ''
+}
+
+function firstSentence(text) {
+  if (!text) return ''
+  const m = text.match(/^[^.!?]+[.!?]?/)
+  return m ? m[0].trim() : text.slice(0, 160).trim()
+}
+
+function buildHeadline({ reading, top2, watch2, overall, language }) {
+  if (reading) {
+    const line = firstSentence(reading)
+    if (line.length > 24) return line
+  }
+  const tx = t(language)
+  const isTamil = language === 'tamil'
+  const label = tx.ragLabel[overall?.rag?.status] || tx.mixed
+  const top = top2.map(h => houseShortName(h, isTamil)).join(isTamil ? ' · ' : ' & ')
+  const watch = watch2.map(h => houseShortName(h, isTamil)).join(isTamil ? ' · ' : ' & ')
+  if (isTamil) {
+    return `${label} நாள் — ${top} வலுவாக; ${watch} கவனமாக இருங்கள்.`
+  }
+  return `${label} day — favour ${top}; pace yourself around ${watch}.`
+}
+
+function toHouseChip(h) {
+  return { house: h.house_num ?? h.house, name: h.name, score: h.score, rag: h.rag }
+}
 
 function ScoreBar({ score, status, language = 'english' }) {
   const colour = RAG[status]?.badge || '#999'
@@ -273,7 +335,146 @@ function dtcDetailText(dtc, isTamil) {
   return dtc.summary || dtc.overall || ''
 }
 
-function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses, language = 'english' }) {
+function AtGlanceHero({
+  overall, headline, language, onLanguageChange, isToday, onCheckTomorrow,
+  readingLoading, transitDate,
+}) {
+  const tx = t(language)
+  const ohRag = overall?.rag?.status || 'AMBER'
+  const rc = RAG[ohRag] || RAG.AMBER
+  const score = roundScore(overall?.average_score)
+
+  return (
+    <div style={{
+      background: 'var(--daily-card-bg)', borderRadius: 16, padding: '16px 18px',
+      marginBottom: 14, boxShadow: 'var(--card-shadow)',
+    }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {tx.atGlance}{!isToday ? ` · ${transitDate}` : ''}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+            <span style={{ fontSize: 34, fontWeight: 800, color: 'var(--orange)', lineHeight: 1 }}>{score}</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>/100</span>
+            <span style={{
+              background: rc.badge, color: '#FFF', borderRadius: 20,
+              padding: '4px 10px', fontSize: 11, fontWeight: 700,
+            }}>
+              {overall?.rag?.emoji} {tx.ragLabel[ohRag] || ohRag}
+            </span>
+          </div>
+        </div>
+        <LanguageToggle language={language} onChange={onLanguageChange} />
+      </div>
+
+      <p style={{
+        color: readingLoading ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.88)',
+        fontSize: 14, lineHeight: 1.6, margin: '0 0 12px', fontStyle: readingLoading ? 'italic' : 'normal',
+      }}>
+        {readingLoading && !headline ? (
+          <><span style={{ color: 'var(--orange)' }}>✦</span> {tx.generatingReading}</>
+        ) : headline}
+      </p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 11 }}>
+        <span style={{ color: '#81C784' }}>🟢 {overall?.green_count ?? 0} {tx.favourable}</span>
+        <span style={{ color: '#FFB74D' }}>🟡 {overall?.amber_count ?? 0} {tx.mixed}</span>
+        <span style={{ color: '#EF9A9A' }}>🔴 {overall?.red_count ?? 0} {tx.challenging}</span>
+        {isToday && onCheckTomorrow && (
+          <button
+            type="button"
+            onClick={onCheckTomorrow}
+            style={{
+              marginLeft: 'auto', padding: '6px 12px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            {tx.checkTomorrow} →
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function BestWatchStrip({ top2, watch2, language, onHouseClick, suggestedHouse }) {
+  const tx = t(language)
+  const isTamil = language === 'tamil'
+
+  const chip = (h, tone) => {
+    const num = h.house ?? h.house_num
+    const rc = RAG[h.rag?.status] || (tone === 'best' ? RAG.GREEN : RAG.RED)
+    const isSuggested = suggestedHouse === num
+    return (
+      <button
+        key={`${tone}-${num}`}
+        type="button"
+        onClick={() => onHouseClick(num)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '8px 12px', borderRadius: 10, cursor: 'pointer',
+          border: `1.5px solid ${rc.border}`, background: rc.bg,
+          fontSize: 12, fontWeight: 600, color: rc.text,
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <span>{HOUSE_ICONS[num]}</span>
+        <span>{houseShortName(h, isTamil)}</span>
+        <span style={{ color: rc.badge, fontWeight: 800 }}>{roundScore(h.score)}</span>
+        {isSuggested && (
+          <span style={{
+            fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+            background: rc.badge, color: '#FFF', borderRadius: 6, padding: '2px 6px',
+          }}>{tx.startHere}</span>
+        )}
+      </button>
+    )
+  }
+
+  if (!top2.length && !watch2.length) return null
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 72 }}>🟢 {tx.bestToday}</span>
+        {top2.map(h => chip(h, 'best'))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', minWidth: 72 }}>🔴 {tx.watchToday}</span>
+        {watch2.map(h => chip(h, 'watch'))}
+      </div>
+    </div>
+  )
+}
+
+function DailyReadingExpandable({ expanded, onToggle, children, language, hasReading }) {
+  const tx = t(language)
+  if (!hasReading) return null
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
+          border: '1px solid var(--card-border)', background: 'var(--card-bg)',
+          color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
+          boxShadow: 'var(--card-shadow)', marginBottom: expanded ? 10 : 0,
+        }}
+      >
+        <span>{expanded ? tx.hideFullNote : tx.readFullNote}</span>
+        <span style={{ fontSize: 10, opacity: 0.6 }}>{expanded ? '▲' : '▼'}</span>
+      </button>
+      {expanded && children}
+    </div>
+  )
+}
+
+function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses, language = 'english', compact = false }) {
   if (!reading) return null
   const dtcRag  = dtc?.rag?.status || 'AMBER'
   const rc      = RAG[dtcRag] || RAG.AMBER
@@ -290,22 +491,32 @@ function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses,
   return (
     <div style={{
       background:'var(--daily-card-bg)', borderRadius:16, padding:'18px 20px',
-      marginBottom:20, boxShadow:'var(--card-shadow)',
+      boxShadow:'var(--card-shadow)',
     }}>
-      {/* Header row */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-        <div style={{ fontSize:14, fontWeight:800, color:'#FF9900' }}>{tx.dailyReading}</div>
-        <span style={{ background:rc.badge, color:'#FFF', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700 }}>
-          {tx.dashaTransit}: {tx.ragLabel[dtcRag] || dtcRag}
-        </span>
-      </div>
+      {/* Header row — hidden in compact mode (hero already shows score) */}
+      {!compact && (
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+          <div style={{ fontSize:14, fontWeight:800, color:'#FF9900' }}>{tx.dailyReading}</div>
+          <span style={{ background:rc.badge, color:'#FFF', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700 }}>
+            {tx.dashaTransit}: {tx.ragLabel[dtcRag] || dtcRag}
+          </span>
+        </div>
+      )}
+
+      {compact && (
+        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:10 }}>
+          <span style={{ background:rc.badge, color:'#FFF', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700 }}>
+            {tx.dashaTransit}: {tx.ragLabel[dtcRag] || dtcRag}
+          </span>
+        </div>
+      )}
 
       {/* Reading text */}
       <p style={{ color:'rgba(255,255,255,0.88)', fontSize:13, lineHeight:1.75, margin:'0 0 14px' }}>
         {reading}
       </p>
 
-      {/* 3-column summary */}
+      {/* 3-column summary — only when expanded full view */}
       <div className="daily-summary-grid" style={{ marginBottom:14 }}>
         <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
           <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>{tx.transitHealth}</div>
@@ -354,6 +565,18 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
   const [readingLoading, setReadingLoading] = useState(false)
   const [readingError,   setReadingError]   = useState('')
   const [language,       setLanguage]       = useState('english')
+  const [readingExpanded, setReadingExpanded] = useState(false)
+  const [gridExpanded, setGridExpanded] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)')
+    const sync = () => { if (mq.matches) setGridExpanded(true) }
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   const insightKey = (houseNum) => `${houseNum}:${transitDate}:${language}`
 
@@ -364,6 +587,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     setScoresError('')
     setSelectedHouse(null)
     setInsightCache({})
+    setReadingExpanded(false)
     const body = chartPayload(chart, userId, { transit_date: transitDate })
     api.post('/forecast/scores', body)
       .then(r => setScores(r.data))
@@ -424,6 +648,14 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     }
   }
 
+  const scrollToHouseDetail = (houseNum) => {
+    setGridExpanded(true)
+    handleTagClick(houseNum)
+    setTimeout(() => {
+      document.getElementById('forecast-house-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, 200)
+  }
+
   const tx      = t(language)
   const isTamil = language === 'tamil'
   const isToday = transitDate === todayISO()
@@ -445,6 +677,17 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
   const oh     = scores.overall_health || {}
   const houses = scores.houses || {}
+  const ranked = rankedHouses(houses)
+  const top2   = (dailyReading?.top_houses?.slice(0, 2) || ranked.slice(0, 2).map(toHouseChip))
+  const watch2 = (dailyReading?.challenging_houses?.slice(0, 2) || ranked.slice(-2).reverse().map(toHouseChip))
+  const overallForHero = dailyReading?.overall_health || oh
+  const headline = buildHeadline({
+    reading: dailyReading?.reading,
+    top2, watch2,
+    overall: overallForHero,
+    language,
+  })
+  const suggestedHouse = top2[0]?.house ?? top2[0]?.house_num ?? null
 
   return (
     <div>
@@ -493,18 +736,38 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         </div>
       )}
 
-      {/* Daily Reading Card */}
+      {/* At-a-glance hero + best/watch strip */}
       {readingError && (
         <div style={{ color:'var(--error-text)', background:'var(--error-bg)', border:'1px solid var(--error-border)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:13 }}>
           ⚠️ {readingError}
         </div>
       )}
-      {readingLoading && !dailyReading && (
-        <div style={{ background:'var(--daily-card-bg)', borderRadius:16, padding:'18px 20px', marginBottom:20, color:'rgba(255,255,255,0.5)', fontSize:13 }}>
-          <span style={{ color:'var(--orange)' }}>✦</span> {tx.generatingReading}
-        </div>
-      )}
-      {dailyReading && (
+
+      <AtGlanceHero
+        overall={overallForHero}
+        headline={headline}
+        language={language}
+        onLanguageChange={handleLanguageChange}
+        isToday={isToday}
+        onCheckTomorrow={isToday ? () => setTransitDate(tomorrowISO()) : undefined}
+        readingLoading={readingLoading && !dailyReading?.reading}
+        transitDate={scores.transit_date || transitDate}
+      />
+
+      <BestWatchStrip
+        top2={top2}
+        watch2={watch2}
+        language={language}
+        onHouseClick={scrollToHouseDetail}
+        suggestedHouse={suggestedHouse}
+      />
+
+      <DailyReadingExpandable
+        expanded={readingExpanded}
+        onToggle={() => setReadingExpanded(v => !v)}
+        language={language}
+        hasReading={!!dailyReading?.reading}
+      >
         <DailyReadingCard
           reading={dailyReading.reading}
           dtc={dailyReading.dasha_transit}
@@ -512,97 +775,104 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
           topHouses={dailyReading.top_houses}
           challengingHouses={dailyReading.challenging_houses}
           language={language}
+          compact
         />
-      )}
-      {!dailyReading && !readingLoading && (
-        <div style={{ background:'var(--daily-card-bg)', borderRadius:16, padding:'16px 20px', marginBottom:20, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
-          <div style={{ textAlign:'center', minWidth:60 }}>
-            <div style={{ fontSize:30, fontWeight:800, color:'var(--orange)', lineHeight:1 }}>{roundScore(oh.average_score)}</div>
-            <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', textTransform:'uppercase' }}>/100</div>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:'#FFF', marginBottom:6 }}>
-              {oh.rag?.emoji} {tx.overallHealth} — {tx.ragLabel[oh.rag?.status] || ''}
-            </div>
-            <div style={{ display:'flex', gap:12, fontSize:12, flexWrap:'wrap' }}>
-              <span style={{ color:'#81C784' }}>🟢 {oh.green_count} {tx.favourable}</span>
-              <span style={{ color:'#FFB74D' }}>🟡 {oh.amber_count} {tx.mixed}</span>
-              <span style={{ color:'#EF9A9A' }}>🔴 {oh.red_count} {tx.challenging}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      </DailyReadingExpandable>
 
-      {/* Language toggle + instruction row */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
-        <p style={{ fontSize:12, color:'var(--text-muted)', margin:0 }}>{tx.tapInstruction}</p>
-        <LanguageToggle language={language} onChange={handleLanguageChange} />
-      </div>
+      {/* Life areas grid — collapsible on mobile */}
+      <button
+        type="button"
+        onClick={() => setGridExpanded(v => !v)}
+        aria-expanded={gridExpanded}
+        className="forecast-grid-toggle"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 0', marginBottom: gridExpanded ? 10 : 4,
+          border: 'none', background: 'transparent', cursor: 'pointer',
+          color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700,
+        }}
+      >
+        <span>{gridExpanded ? tx.hideAreas : tx.exploreAll}</span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{gridExpanded ? '▲' : '▼'}</span>
+      </button>
 
-      {/* 12 tags: responsive grid */}
-      <div className="forecast-tag-grid" style={{ marginBottom:8 }}>
-        {Object.values(houses).map(h => {
-          const status   = h.rag?.status || 'AMBER'
-          const rc       = RAG[status] || RAG.AMBER
-          const isActive = selectedHouse === h.house_num
-          const loaded   = !!insightCache[insightKey(h.house_num)]
-          return (
-            <button
-              key={h.house_num}
-              onClick={() => handleTagClick(h.house_num)}
-              style={{
-                background:   isActive ? rc.badge : 'var(--card-bg)',
-                border:       `2px solid ${isActive ? rc.badge : rc.border}`,
-                borderRadius: 12,
-                padding:      '12px 8px',
-                minHeight:    88,
-                cursor:       'pointer',
-                textAlign:    'center',
-                transition:   'all 0.18s',
-                transform:    isActive ? 'scale(1.02)' : 'scale(1)',
-                boxShadow:    isActive ? `0 4px 12px ${rc.badge}55` : 'var(--card-shadow)',
-                position:     'relative',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              {/* loaded indicator */}
-              {loaded && !isActive && (
-                <span style={{
-                  position:'absolute', top:4, right:6,
-                  width:6, height:6, borderRadius:'50%',
-                  background: rc.badge, display:'block',
-                }} />
-              )}
-              <div style={{ fontSize:22, lineHeight:1, marginBottom:4 }}>{HOUSE_ICONS[h.house_num]}</div>
-              <div style={{
-                fontSize:10, fontWeight:700,
-                color: isActive ? '#FFF' : 'var(--text-secondary)',
-                textTransform:'uppercase', letterSpacing:'0.03em',
-                lineHeight:1.3, marginBottom:3,
-              }}>
-                H{h.house_num}<br/>
-                {isTamil
-                  ? (HOUSE_TAMIL[h.house_num]?.name?.split(' & ')[0] || h.name.split(' & ')[0])
-                  : h.name.split(' & ')[0].split(' ')[0]
-                }
-              </div>
-              <div style={{ fontSize:12, fontWeight:800, color: isActive ? '#FFF' : rc.badge }}>
-                {h.rag?.emoji} {roundScore(h.score)}
-              </div>
-            </button>
-          )
-        })}
-      </div>
+      {gridExpanded && (
+        <>
+          <p style={{ fontSize:12, color:'var(--text-muted)', margin:'0 0 12px' }}>{tx.tapInstruction}</p>
+          <div className="forecast-tag-grid" style={{ marginBottom:8 }}>
+            {Object.values(houses).map(h => {
+              const status   = h.rag?.status || 'AMBER'
+              const rc       = RAG[status] || RAG.AMBER
+              const isActive = selectedHouse === h.house_num
+              const loaded   = !!insightCache[insightKey(h.house_num)]
+              const isSuggested = suggestedHouse === h.house_num
+              return (
+                <button
+                  key={h.house_num}
+                  onClick={() => handleTagClick(h.house_num)}
+                  style={{
+                    background:   isActive ? rc.badge : 'var(--card-bg)',
+                    border:       `2px solid ${isActive ? rc.badge : rc.border}`,
+                    borderRadius: 12,
+                    padding:      '12px 8px',
+                    minHeight:    88,
+                    cursor:       'pointer',
+                    textAlign:    'center',
+                    transition:   'all 0.18s',
+                    transform:    isActive ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow:    isActive ? `0 4px 12px ${rc.badge}55` : 'var(--card-shadow)',
+                    position:     'relative',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  {isSuggested && !isActive && (
+                    <span style={{
+                      position:'absolute', top:4, left:6,
+                      fontSize:8, fontWeight:800, textTransform:'uppercase',
+                      color: rc.badge, letterSpacing:'0.04em',
+                    }}>{tx.startHere}</span>
+                  )}
+                  {loaded && !isActive && (
+                    <span style={{
+                      position:'absolute', top:4, right:6,
+                      width:6, height:6, borderRadius:'50%',
+                      background: rc.badge, display:'block',
+                    }} />
+                  )}
+                  <div style={{ fontSize:22, lineHeight:1, marginBottom:4 }}>{HOUSE_ICONS[h.house_num]}</div>
+                  <div style={{
+                    fontSize:10, fontWeight:700,
+                    color: isActive ? '#FFF' : 'var(--text-secondary)',
+                    textTransform:'uppercase', letterSpacing:'0.03em',
+                    lineHeight:1.3, marginBottom:3,
+                  }}>
+                    H{h.house_num}<br/>
+                    {isTamil
+                      ? (HOUSE_TAMIL[h.house_num]?.name?.split(' & ')[0] || h.name.split(' & ')[0])
+                      : h.name.split(' & ')[0].split(' ')[0]
+                    }
+                  </div>
+                  <div style={{ fontSize:12, fontWeight:800, color: isActive ? '#FFF' : rc.badge }}>
+                    {h.rag?.emoji} {roundScore(h.score)}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {/* Detail card */}
       {selectedHouse && houses[selectedHouse] && (
-        <HouseDetailCard
-          houseData={houses[selectedHouse]}
-          insight={insightCache[insightKey(selectedHouse)] || ''}
-          insightLoading={insightLoading && !insightCache[insightKey(selectedHouse)]}
-          insightError={insightError}
-          language={language}
-        />
+        <div id="forecast-house-detail">
+          <HouseDetailCard
+            houseData={houses[selectedHouse]}
+            insight={insightCache[insightKey(selectedHouse)] || ''}
+            insightLoading={insightLoading && !insightCache[insightKey(selectedHouse)]}
+            insightError={insightError}
+            language={language}
+          />
+        </div>
       )}
 
       <div style={{ marginTop:20, textAlign:'center', fontSize:11, color:'var(--text-muted)' }}>

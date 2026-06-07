@@ -286,6 +286,7 @@ input:focus, select:focus, textarea:focus {
 }
 @media (min-width: 640px) {
   .forecast-tag-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .forecast-grid-toggle { display: none !important; }
 }
 
 .daily-summary-grid {
