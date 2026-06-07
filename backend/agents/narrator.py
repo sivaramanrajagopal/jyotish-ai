@@ -40,6 +40,7 @@ Rules:
 - Do NOT add disclaimers or "consult a professional" caveats.
 - When Chandra Ashtama is active, prominently mention it in timing_advice and health.
 - When Tara Balam is inauspicious (Vipat/Pratyak/Naidhana), warn against new ventures.
+- When Ashtakavarga (SAV) data is provided, cite strong/weak houses in career, finance, and timing_advice.
 - Output ONLY the XML tags below, nothing else.
 
 Output format (XML):
@@ -129,6 +130,9 @@ Tara Balam           : {pp.get('tara_name', '')} (Tara {pp.get('tara_position', 
                        {pp.get('tara_meaning', '')}
 Chandrabalam         : {cb_line}
 Chandra Ashtama      : {ashtama_line}
+
+=== ASHTAKAVARGA (SARVASHTAKAVARGA) ===
+{ctx.get('ashtakavarga_context') or 'not available'}
 
 Now generate the daily forecast. Remember: output ONLY the XML tags.
 """

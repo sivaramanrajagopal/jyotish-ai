@@ -38,6 +38,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
+from chart_utils import round_score
 from ai_limits import check_ai_quota, moderate_messages
 from security import (
     IS_PRODUCTION,
@@ -58,9 +59,7 @@ from agents.narrator import generate_forecast
 from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
-from agents.ashtakavarga_agent import (
-    calculate_ashtakavarga, sav_for_transit_scoring, bav_context_for_narrator
-)
+from agents.ashtakavarga_agent import calculate_ashtakavarga, bav_context_for_narrator
 from agents.sky_today_agent import build_sky_today
 from admin_router import router as admin_router
 from geopy.geocoders import Photon
@@ -1094,11 +1093,19 @@ def forecast_daily_reading(
     except Exception:
         pass
 
+    # ── Ashtakavarga (SAV) context ─────────────────────────────────────────
+    sav_context = ""
+    try:
+        sav_context = bav_context_for_narrator(chart)
+    except Exception:
+        pass
+
     system = (
         "You are Parashara Jyotish, a classical Vedic astrology advisor. "
         "Write a concise daily reading (4–5 sentences) synthesising ALL available data: "
-        "natal chart strength, current Dasha period, Gochara transit health, and Tara Balam. "
-        "Be specific — name planets, houses, and periods. No disclaimers. No generic statements. "
+        "natal chart strength, current Dasha period, Gochara transit health, "
+        "Ashtakavarga (SAV) house bindus, and Tara Balam. "
+        "Be specific — name planets, houses, SAV scores, and periods. No disclaimers. No generic statements. "
         f"{'Tailor the language for a man.' if req.gender.lower()=='male' else 'Tailor the language for a woman.' if req.gender.lower()=='female' else ''}"
         + _lang_suffix(req.language)
     )
@@ -1107,15 +1114,16 @@ def forecast_daily_reading(
         f"Age: {age or 'unknown'}. Gender: {req.gender}.\n"
         f"Current Dasha: {md.get('planet','')} Mahadasha ({md.get('remaining_years','')} yrs left) / "
         f"{bh.get('planet','')} Bhukti ({bh.get('remaining_months','')} months left).\n"
-        f"Dasha-Transit correlation: {dtc['rag']['label']} ({dtc['correlation_score']}/100). {dtc['overall']}\n"
+        f"Dasha-Transit correlation: {dtc['rag']['label']} ({round_score(dtc['correlation_score'])}/100). {dtc['overall']}\n"
         f"{dtc['summary']}\n\n"
-        f"Overall transit health: {oh['average_score']}/100 [{oh['rag']['label']}]\n"
+        f"Overall transit health: {round_score(oh['average_score'])}/100 [{oh['rag']['label']}]\n"
         f"Strongest areas today: {', '.join(h['name'] for h in top3)}\n"
         f"Most challenging areas: {', '.join(h['name'] for h in bot3)}\n"
         f"{tara_context}\n\n"
-        "Write the daily reading as a single flowing paragraph. "
+        + (f"{sav_context}\n\n" if sav_context else "")
+        + "Write the daily reading as a single flowing paragraph. "
         "Start with the Dasha-Transit correlation, then the strongest/weakest areas, "
-        "then practical guidance for today."
+        "mention any notable SAV-strong or SAV-weak houses, then practical guidance for today."
     )
 
     try:

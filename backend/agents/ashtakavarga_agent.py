@@ -21,99 +21,102 @@ import datetime
 from pathlib import Path
 from typing import Optional
 
-import swisseph as swe
 from dotenv import load_dotenv
+
+from chart_utils import chart_fingerprint
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Ashtakavarga contribution rules (from Parasara Hora Shastra)
-# Format: for target planet, from each contributor, these relative positions
-# (counted from contributor's sign) receive a bindu.
+# Tamil/South Indian BAV rules (ashtakavarga_calculator_final.py — Ashtavargam)
 # ─────────────────────────────────────────────────────────────────────────────
 
 BAV_RULES: dict[str, dict[str, list[int]]] = {
     "SUN": {
-        "SUN":       [1, 4, 7, 10, 8, 2, 9, 11],
-        "MOON":      [3, 6, 10, 11],
-        "MARS":      [1, 4, 7, 10, 8, 2, 9, 11],
-        "MERCURY":   [3, 6, 10, 11, 5, 9, 12],
-        "JUPITER":   [5, 6, 9, 11],
-        "VENUS":     [6, 7, 12],
-        "SATURN":    [1, 4, 7, 10, 8, 2, 9, 11],
+        "SUN": [1, 2, 4, 7, 8, 9, 10, 11],
+        "MOON": [3, 6, 10, 11],
+        "MARS": [1, 2, 4, 7, 8, 9, 10, 11],
+        "MERCURY": [3, 5, 6, 9, 10, 11, 12],
+        "JUPITER": [5, 6, 9, 11],
+        "VENUS": [6, 7, 12],
+        "SATURN": [1, 2, 4, 7, 8, 9, 10, 11],
         "ASCENDANT": [3, 4, 6, 10, 11, 12],
     },
     "MOON": {
-        "SUN":       [3, 6, 7, 8, 10, 11],
-        "MOON":      [1, 3, 6, 7, 10, 11],
-        "MARS":      [2, 3, 5, 6, 9, 10, 11],
-        "MERCURY":   [1, 3, 4, 5, 7, 8, 10, 11],
-        "JUPITER":   [1, 4, 7, 8, 10, 11, 12],
-        "VENUS":     [3, 4, 5, 7, 9, 10, 11],
-        "SATURN":    [3, 5, 6, 11],
+        "SUN": [3, 6, 7, 8, 10, 11],
+        "MOON": [1, 3, 6, 7, 10, 11],
+        "MARS": [2, 3, 5, 6, 9, 10, 11],
+        "MERCURY": [1, 3, 4, 5, 7, 8, 10, 11],
+        "JUPITER": [1, 4, 7, 8, 10, 11, 12],
+        "VENUS": [3, 4, 5, 7, 9, 10, 11],
+        "SATURN": [3, 5, 6, 11],
         "ASCENDANT": [3, 6, 10, 11],
     },
     "MARS": {
-        "SUN":       [3, 5, 6, 10, 11],
-        "MOON":      [3, 6, 11],
-        "MARS":      [1, 2, 4, 7, 8, 10, 11],
-        "MERCURY":   [3, 5, 6, 11],
-        "JUPITER":   [6, 10, 11, 12],
-        "VENUS":     [6, 8, 11, 12],
-        "SATURN":    [1, 4, 7, 8, 9, 10, 11],
+        "SUN": [3, 5, 6, 10, 11],
+        "MOON": [3, 6, 11],
+        "MARS": [1, 2, 4, 7, 8, 10, 11],
+        "MERCURY": [3, 5, 6, 11],
+        "JUPITER": [6, 10, 11, 12],
+        "VENUS": [6, 8, 11, 12],
+        "SATURN": [1, 4, 7, 8, 9, 10, 11],
         "ASCENDANT": [1, 3, 6, 10, 11],
     },
     "MERCURY": {
-        "SUN":       [1, 3, 5, 6, 9, 10, 11, 12],
-        "MOON":      [2, 4, 6, 8, 10, 11],
-        "MARS":      [1, 2, 4, 7, 8, 9, 10, 11],
-        "MERCURY":   [1, 3, 5, 6, 9, 10, 11, 12],
-        "JUPITER":   [6, 8, 11, 12],
-        "VENUS":     [1, 2, 3, 4, 5, 9, 10, 11],
-        "SATURN":    [1, 2, 4, 7, 8, 9, 10, 11],
+        "SUN": [5, 6, 9, 11, 12],
+        "MOON": [2, 4, 6, 8, 10, 11],
+        "MARS": [1, 2, 4, 7, 8, 9, 10, 11],
+        "MERCURY": [1, 3, 5, 6, 9, 10, 11, 12],
+        "JUPITER": [6, 8, 11, 12],
+        "VENUS": [1, 2, 3, 4, 5, 8, 9, 11],
+        "SATURN": [1, 2, 4, 7, 8, 9, 10, 11],
         "ASCENDANT": [1, 2, 4, 6, 8, 10, 11],
     },
     "JUPITER": {
-        "SUN":       [1, 2, 3, 4, 7, 8, 9, 10, 11],
-        "MOON":      [2, 5, 7, 9, 11],
-        "MARS":      [1, 2, 4, 7, 8, 10, 11],
-        "MERCURY":   [1, 2, 4, 5, 6, 9, 10, 11],
-        "JUPITER":   [1, 2, 3, 4, 7, 8, 10, 11],
-        "VENUS":     [2, 5, 6, 9, 10, 11],
-        "SATURN":    [3, 5, 6, 12],
+        "SUN": [1, 2, 3, 4, 7, 8, 9, 10, 11],
+        "MOON": [2, 5, 7, 9, 11],
+        "MARS": [1, 2, 4, 7, 8, 10, 11],
+        "MERCURY": [1, 2, 4, 5, 6, 9, 10, 11],
+        "JUPITER": [1, 2, 3, 4, 7, 8, 10, 11],
+        "VENUS": [2, 5, 6, 9, 10, 11],
+        "SATURN": [3, 5, 6, 12],
         "ASCENDANT": [1, 2, 4, 5, 6, 7, 9, 10, 11],
     },
     "VENUS": {
-        "SUN":       [8, 11, 12],
-        "MOON":      [1, 2, 3, 4, 5, 8, 9, 11, 12],
-        "MARS":      [3, 5, 6, 9, 11, 12],
-        "MERCURY":   [3, 5, 6, 9, 11],
-        "JUPITER":   [5, 8, 9, 10, 11],
-        "VENUS":     [1, 2, 3, 4, 5, 8, 9, 10, 11],
-        "SATURN":    [3, 4, 5, 8, 9, 10, 11],
+        "SUN": [8, 11, 12],
+        "MOON": [1, 2, 3, 4, 5, 8, 9, 11, 12],
+        "MARS": [3, 5, 6, 9, 11, 12],
+        "MERCURY": [3, 5, 6, 9, 11],
+        "JUPITER": [5, 8, 9, 10, 11],
+        "VENUS": [1, 2, 3, 4, 5, 8, 9, 10, 11],
+        "SATURN": [3, 4, 5, 8, 9, 10, 11],
         "ASCENDANT": [1, 2, 3, 4, 5, 8, 9, 11],
     },
     "SATURN": {
-        "SUN":       [1, 2, 4, 7, 8, 10, 11],
-        "MOON":      [3, 6, 11],
-        "MARS":      [3, 5, 6, 10, 11, 12],
-        "MERCURY":   [6, 8, 9, 10, 11, 12],
-        "JUPITER":   [5, 6, 11, 12],
-        "VENUS":     [6, 11, 12],
-        "SATURN":    [3, 5, 6, 11],
+        "SUN": [1, 2, 4, 7, 8, 10, 11],
+        "MOON": [3, 6, 11],
+        "MARS": [3, 5, 6, 10, 11, 12],
+        "MERCURY": [6, 8, 9, 10, 11, 12],
+        "JUPITER": [5, 6, 11, 12],
+        "VENUS": [6, 11, 12],
+        "SATURN": [3, 5, 6, 11],
         "ASCENDANT": [1, 3, 4, 6, 10, 11],
     },
     "ASCENDANT": {
-        "SUN":       [3, 4, 6, 10, 11, 12],
-        "MOON":      [3, 6, 10, 11],
-        "MARS":      [1, 3, 6, 10, 11],
-        "MERCURY":   [1, 2, 4, 6, 8, 10, 11],
-        "JUPITER":   [1, 2, 4, 5, 6, 7, 9, 10, 11],
-        "VENUS":     [1, 2, 3, 4, 5, 8, 9, 11],
-        "SATURN":    [1, 3, 4, 6, 10, 11],
+        "SUN": [3, 4, 6, 10, 11, 12],
+        "MOON": [3, 6, 10, 11],
+        "MARS": [1, 3, 6, 10, 11],
+        "MERCURY": [1, 2, 4, 6, 8, 10, 11],
+        "JUPITER": [1, 2, 4, 5, 6, 7, 9, 10, 11],
+        "VENUS": [1, 2, 3, 4, 5, 8, 9, 11],
+        "SATURN": [1, 3, 4, 6, 10, 11],
         "ASCENDANT": [3, 6, 10, 11],
     },
 }
+
+BAV_CONTRIBUTORS = [
+    "SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN", "ASCENDANT",
+]
 
 # Planets included in SAV (ASCENDANT excluded from SAV sum)
 SAV_PLANETS = ["SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN"]
@@ -184,6 +187,7 @@ def _planet_positions_from_natal(natal_chart: dict) -> dict[str, int]:
 def _calc_bav_sign_wise(target_planet: str, positions: dict[str, int]) -> list[int]:
     """
     Returns 12-element list: bindu count per sign (index 0=Aries … 11=Pisces).
+    Tamil rules; max 8 bindus per rasi (Parasara cap).
     """
     chart = [0] * 12
     rules = BAV_RULES.get(target_planet, {})
@@ -192,10 +196,9 @@ def _calc_bav_sign_wise(target_planet: str, positions: dict[str, int]) -> list[i
             continue
         contrib_pos = positions[contributor]   # 0-based sign index
         for offset in house_offsets:
-            # offset is relative house (1-based), compute absolute sign index
             target_idx = (contrib_pos + offset - 1) % 12
             chart[target_idx] += 1
-    return chart
+    return [min(v, 8) for v in chart]
 
 
 def _sign_to_house_wise(sign_chart: list[int], lagna_sign_idx: int) -> list[int]:
@@ -287,9 +290,36 @@ def _shodhya_pinda(reduced_bav: list[int], occupancy: dict[int, list[str]], plan
 
 _bav_cache: dict[str, dict] = {}
 
+def _build_matrix_8x8(
+    target_planet: str,
+    positions: dict[str, int],
+    lagna_idx: int,
+) -> list[list[int]]:
+    """8×12 contribution matrix (contributors × houses) for one BAV planet."""
+    rows: list[list[int]] = []
+    rules = BAV_RULES.get(target_planet, {})
+    for contributor in BAV_CONTRIBUTORS:
+        row = [0] * 12
+        if contributor not in positions:
+            rows.append(row)
+            continue
+        ref_rasi = positions[contributor] + 1  # 1-based
+        benefic = rules.get(contributor, [])
+        for house in range(1, 13):
+            house_rasi = ((lagna_idx + house - 1) % 12) + 1
+            rel = house_rasi - ref_rasi + 1
+            if rel <= 0:
+                rel += 12
+            if rel in benefic:
+                row[house - 1] = 1
+        rows.append(row)
+    return rows
+
+
 def _natal_key(natal_chart: dict) -> str:
     bd = natal_chart.get("birth_data", {})
-    return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}"
+    fp = chart_fingerprint(natal_chart)
+    return f"tamil-v2|{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{fp}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -336,12 +366,15 @@ def calculate_ashtakavarga(natal_chart: dict) -> dict:
         occupancy.setdefault(sign_num, []).append(planet)
 
     bav_out: dict[str, dict] = {}
+    matrix_out: dict[str, list[list[int]]] = {}
     sav_sign = [0] * 12
 
     for planet in ["SUN","MOON","MARS","MERCURY","JUPITER","VENUS","SATURN","ASCENDANT"]:
         sign_wise  = _calc_bav_sign_wise(planet, positions)
         house_wise = _sign_to_house_wise(sign_wise, lagna_idx)
         total      = sum(sign_wise)
+
+        matrix_out[planet] = _build_matrix_8x8(planet, positions, lagna_idx)
 
         # Shodhana (only for 7 planets, not Ascendant)
         trikona   = _trikona_shodhana(sign_wise) if planet != "ASCENDANT" else sign_wise
@@ -363,6 +396,7 @@ def calculate_ashtakavarga(natal_chart: dict) -> dict:
                 sav_sign[i] += sign_wise[i]
 
     sav_house = _sign_to_house_wise(sav_sign, lagna_idx)
+    sav_house = [min(v, 54) for v in sav_house]
 
     by_house = [
         {
@@ -375,16 +409,22 @@ def calculate_ashtakavarga(natal_chart: dict) -> dict:
         for h in range(12)
     ]
 
+    # Positions for Prokerala grid (1-based rasi numbers)
+    planetary_positions = {k: v + 1 for k, v in positions.items()}
+
     result = {
         "bav":           bav_out,
         "sav": {
             "sign_wise":  sav_sign,
             "house_wise": sav_house,
-            "total":      sum(sav_sign),
+            "total":      sum(sav_house),
             "by_house":   by_house,
         },
+        "matrix_8x8":    matrix_out,
+        "planetary_positions": planetary_positions,
         "lagna_sign_idx": lagna_idx,
         "lagna_sign":     RASIS_EN[lagna_idx],
+        "rules":          "tamil",
     }
 
     _bav_cache[key] = result

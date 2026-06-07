@@ -1232,3 +1232,457 @@ input:focus, select:focus, textarea:focus {
   margin-top: 8px;
 }
 
+/* ── Ashtakavarga Prokerala grids ─────────────────────────────────────────── */
+.av-pro-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.av-pro-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+}
+
+.av-pro-heading {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.av-pro-meta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.av-pro-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 2px solid var(--card-border);
+  padding-bottom: 8px;
+}
+
+.av-pro-tab {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.av-pro-tab:hover {
+  color: var(--orange);
+}
+
+.av-pro-tab--active {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+
+.av-pro-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.av-pro-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.av-pro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 88px));
+  grid-template-rows: repeat(4, minmax(64px, 88px));
+  gap: 4px;
+  background: var(--surface-muted);
+  padding: 8px;
+  border-radius: 10px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.av-pro-cell {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  padding: 4px;
+}
+
+.av-pro-cell__label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.av-pro-cell__value {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.av-pro-cell__sub {
+  font-size: 0.5625rem;
+  color: var(--text-muted);
+}
+
+.av-pro-cell__hint {
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.av-pro-cell--high {
+  background: var(--rag-green-bg);
+  border-color: var(--rag-green-border);
+}
+.av-pro-cell--high .av-pro-cell__value { color: var(--rag-green-text); }
+
+.av-pro-cell--medium {
+  background: #fff9c4;
+  border-color: #f9a825;
+}
+.av-pro-cell--medium .av-pro-cell__value { color: #e65100; }
+
+.av-pro-cell--low {
+  background: var(--chart-cell-crisis);
+  border-color: #ef5350;
+}
+.av-pro-cell--low .av-pro-cell__value { color: #b71c1c; }
+
+.av-pro-cell--natural {
+  box-shadow: 0 0 0 2px var(--rag-green-border);
+}
+
+.av-pro-cell--central {
+  grid-column: 2 / 4;
+  grid-row: 2 / 4;
+  background: var(--chart-centre);
+  border: 3px solid var(--orange);
+  padding: 8px;
+}
+
+.av-pro-cell__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--orange-dark);
+  text-align: center;
+}
+
+.av-pro-cell__total {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.av-pro-cell--top-1 { grid-column: 1; grid-row: 1; }
+.av-pro-cell--top-2 { grid-column: 2; grid-row: 1; }
+.av-pro-cell--top-3 { grid-column: 3; grid-row: 1; }
+.av-pro-cell--top-4 { grid-column: 4; grid-row: 1; }
+.av-pro-cell--middle-left { grid-column: 1; grid-row: 2; }
+.av-pro-cell--middle-right { grid-column: 4; grid-row: 2; }
+.av-pro-cell--row3-left { grid-column: 1; grid-row: 3; }
+.av-pro-cell--row3-right { grid-column: 4; grid-row: 3; }
+.av-pro-cell--bottom-1 { grid-column: 1; grid-row: 4; }
+.av-pro-cell--bottom-2 { grid-column: 2; grid-row: 4; }
+.av-pro-cell--bottom-3 { grid-column: 3; grid-row: 4; }
+.av-pro-cell--bottom-4 { grid-column: 4; grid-row: 4; }
+
+.av-pro-totals {
+  width: 100%;
+  max-width: 420px;
+}
+
+.av-pro-totals__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.av-pro-totals__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.av-pro-total-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+}
+
+.av-pro-total-row strong {
+  margin-left: auto;
+  color: var(--text-primary);
+}
+
+.av-pro-total-row--ok {
+  border-color: var(--rag-green-border);
+  background: var(--rag-green-bg);
+}
+
+.av-pro-total-exp {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+}
+
+.av-pro-pinda {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.av-pro-matrix-toggle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.av-pro-matrix-toggle:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.av-pro-table-wrap {
+  width: 100%;
+  max-width: 640px;
+}
+
+.av-pro-table-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+
+.av-pro-table-scroll {
+  overflow-x: auto;
+}
+
+.av-pro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.av-pro-table th {
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.av-pro-table td {
+  padding: 4px 6px;
+  text-align: center;
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+}
+
+.av-pro-table-rashi {
+  text-align: left !important;
+  font-weight: 600;
+  color: var(--text-secondary) !important;
+  white-space: nowrap;
+}
+
+.av-pro-table-one {
+  background: var(--rag-green-bg);
+  color: var(--rag-green-text) !important;
+  font-weight: 700;
+}
+
+.av-pro-table-total {
+  font-weight: 700;
+  color: var(--text-primary) !important;
+}
+
+.av-pro-loading,
+.av-pro-error {
+  text-align: center;
+  padding: 24px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.av-pro-error {
+  color: var(--error-text);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .av-pro-cell--medium {
+    background: rgba(249, 168, 37, 0.15);
+    border-color: #f9a825;
+  }
+  .av-pro-cell--medium .av-pro-cell__value { color: #ffb74d; }
+}
+
+/* Ashtakavarga outer card — clip corners without clipping scrollable tabs */
+.av-pro-section-wrap {
+  overflow: hidden;
+}
+
+/* ── Mobile / touch (matches app breakpoint at 639px) ─────────────────────── */
+@media (max-width: 639px) {
+  .av-pro-section-wrap .av-pro-panel {
+    gap: 12px;
+  }
+
+  .av-pro-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .av-pro-meta {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  /* Scrollable planet tabs — no wrap clutter on small screens */
+  .av-pro-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 10px;
+    margin: 0 -4px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .av-pro-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .av-pro-tab {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .av-pro-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(52px, 1fr));
+    width: 100%;
+    max-width: 100%;
+    gap: 3px;
+    padding: 6px;
+  }
+
+  .av-pro-cell__value {
+    font-size: 1.0625rem;
+  }
+
+  .av-pro-cell__title {
+    font-size: 0.8125rem;
+  }
+
+  .av-pro-cell__total {
+    font-size: 0.75rem;
+  }
+
+  .av-pro-cell--central {
+    padding: 6px;
+  }
+
+  .av-pro-totals {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .av-pro-totals__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .av-pro-matrix-toggle {
+    min-height: 44px;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .av-pro-table-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .av-pro-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px 4px;
+  }
+}
+
+@media (max-width: 380px) {
+  .av-pro-cell__value { font-size: 0.9375rem; }
+  .av-pro-cell__label { font-size: 0.5625rem; }
+}
+
+/* Stale chart banner — full-width tap target on phones */
+.stale-chart-banner__action {
+  margin-top: 10px;
+}
+
+.stale-chart-banner__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orange);
+  color: var(--accent-dark);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stale-chart-banner__btn:active {
+  opacity: 0.9;
+}
+

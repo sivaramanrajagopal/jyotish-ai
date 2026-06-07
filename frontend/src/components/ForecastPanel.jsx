@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
 import { chartPayload } from '../lib/chartPayload'
+import { roundScore } from '../lib/scoreFormat'
 
 const HOUSE_ICONS = {
   1:'🧘', 2:'💰', 3:'💬', 4:'🏠', 5:'🎨', 6:'⚔️',
@@ -109,14 +110,15 @@ const t = (lang) => TR[lang] || TR.english
 
 function ScoreBar({ score, status, language = 'english' }) {
   const colour = RAG[status]?.badge || '#999'
+  const pct = roundScore(score)
   return (
     <div style={{ marginTop:8 }}>
       <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text-muted)', marginBottom:3 }}>
         <span>{t(language).strengthScore}</span>
-        <span style={{ fontWeight:700, color:colour }}>{score}/100</span>
+        <span style={{ fontWeight:700, color:colour }}>{pct}/100</span>
       </div>
       <div style={{ background:'var(--card-border)', borderRadius:6, height:8, overflow:'hidden' }}>
-        <div style={{ width:`${score}%`, height:'100%', background:colour, borderRadius:6, transition:'width 0.6s ease' }} />
+        <div style={{ width:`${pct}%`, height:'100%', background:colour, borderRadius:6, transition:'width 0.6s ease' }} />
       </div>
     </div>
   )
@@ -182,17 +184,18 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
       boxShadow:'0 4px 16px rgba(0,0,0,0.08)',
     }}>
       {/* Header */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
-        <div>
-          <div style={{ fontSize:18, fontWeight:800, color:'var(--text-primary)' }}>
+      <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:12 }}>
+        <div style={{ flex:'1 1 180px', minWidth:0 }}>
+          <div style={{ fontSize:'clamp(15px, 4vw, 18px)', fontWeight:800, color:'var(--text-primary)', lineHeight:1.3, wordBreak:'break-word' }}>
             {HOUSE_ICONS[houseData.house_num]} H{houseData.house_num} — {houseName}
           </div>
           <div style={{ fontSize:13, color:'var(--text-secondary)', marginTop:3 }}>{houseSimple}</div>
         </div>
         <span style={{
           background:rc.badge, color:'#FFF',
-          borderRadius:20, padding:'4px 12px',
-          fontSize:12, fontWeight:700, whiteSpace:'nowrap', marginLeft:8,
+          borderRadius:20, padding:'6px 12px',
+          fontSize:12, fontWeight:700, whiteSpace:'nowrap',
+          flexShrink:0, minHeight:32, display:'inline-flex', alignItems:'center',
         }}>
           {houseData.rag?.emoji} {ragLabel}
         </span>
@@ -201,7 +204,7 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
       <ScoreBar score={houseData.score} status={status} language={language} />
 
       {/* Key facts grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px,1fr))', gap:8, margin:'14px 0' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap:8, margin:'14px 0' }}>
         {[
           { label: tx.houseLord,       value:`${houseData.lord} → H${houseData.lord_placed_house}` },
           { label: tx.lordDignity,     value: dignityVal },
@@ -214,7 +217,7 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
         ].map(({ label, value }) => (
           <div key={label} style={{ background:'var(--card-bg)', borderRadius:8, padding:'8px 10px', border:'1px solid var(--card-border)' }}>
             <div style={{ fontSize:10, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:2 }}>{label}</div>
-            <div style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)' }}>{value}</div>
+            <div style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', wordBreak:'break-word' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -284,7 +287,7 @@ function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses,
       <div className="daily-summary-grid" style={{ marginBottom:14 }}>
         <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
           <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>{tx.transitHealth}</div>
-          <div style={{ fontSize:16, fontWeight:800, color:'#FF9900' }}>{overall?.average_score}/100</div>
+          <div style={{ fontSize:16, fontWeight:800, color:'#FF9900' }}>{roundScore(overall?.average_score)}/100</div>
           <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{overallLabel}</div>
         </div>
         <div style={{ background:'rgba(255,255,255,0.07)', borderRadius:8, padding:'8px 10px' }}>
@@ -425,7 +428,8 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
               max="2035-12-31"
               onChange={e => setTransitDate(e.target.value)}
               style={{
-                flex:'1 1 160px', height:42, padding:'0 12px', fontSize:16,
+                flex:'1 1 160px', minWidth:0, width:'100%', maxWidth:'100%',
+                height:44, padding:'0 12px', fontSize:16,
                 borderRadius:8, border:'1px solid var(--input-border)',
                 background:'var(--input-bg)', color:'var(--input-text)',
               }}
@@ -435,7 +439,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
                 type="button"
                 onClick={() => setTransitDate(todayISO())}
                 style={{
-                  padding:'8px 12px', borderRadius:8, border:'1px solid var(--chip-border)',
+                  padding:'10px 14px', minHeight:44, borderRadius:8, border:'1px solid var(--chip-border)',
                   background:'var(--chip-bg)', color:'var(--text-secondary)',
                   fontSize:12, fontWeight:600, cursor:'pointer',
                 }}
@@ -469,7 +473,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       {!dailyReading && !readingLoading && (
         <div style={{ background:'var(--daily-card-bg)', borderRadius:16, padding:'16px 20px', marginBottom:20, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
           <div style={{ textAlign:'center', minWidth:60 }}>
-            <div style={{ fontSize:30, fontWeight:800, color:'var(--orange)', lineHeight:1 }}>{oh.average_score}</div>
+            <div style={{ fontSize:30, fontWeight:800, color:'var(--orange)', lineHeight:1 }}>{roundScore(oh.average_score)}</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', textTransform:'uppercase' }}>/100</div>
           </div>
           <div style={{ flex:1 }}>
@@ -506,13 +510,15 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
                 background:   isActive ? rc.badge : 'var(--card-bg)',
                 border:       `2px solid ${isActive ? rc.badge : rc.border}`,
                 borderRadius: 12,
-                padding:      '10px 6px',
+                padding:      '12px 8px',
+                minHeight:    88,
                 cursor:       'pointer',
                 textAlign:    'center',
                 transition:   'all 0.18s',
-                transform:    isActive ? 'scale(1.04)' : 'scale(1)',
+                transform:    isActive ? 'scale(1.02)' : 'scale(1)',
                 boxShadow:    isActive ? `0 4px 12px ${rc.badge}55` : 'var(--card-shadow)',
                 position:     'relative',
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
               {/* loaded indicator */}
@@ -537,7 +543,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
                 }
               </div>
               <div style={{ fontSize:12, fontWeight:800, color: isActive ? '#FFF' : rc.badge }}>
-                {h.rag?.emoji} {h.score}
+                {h.rag?.emoji} {roundScore(h.score)}
               </div>
             </button>
           )

@@ -15,6 +15,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
+from agents.ashtakavarga_agent import bav_context_for_narrator
 from agents.dasha_agent import get_personal_dasha
 from agents.panchangam_agent import calculate_panchangam, LOCATIONS
 from agents.tara_engine import compute_all as compute_personal_panchangam
@@ -190,7 +191,14 @@ def assemble_context(
         except Exception as e:
             print(f"[orchestrator] personal panchangam error: {e}")
 
-    # ── 5. Assemble ──────────────────────────────────────────────────────────
+    # ── 5. Ashtakavarga (SAV) ─────────────────────────────────────────────────
+    ashtakavarga_context = ""
+    try:
+        ashtakavarga_context = bav_context_for_narrator(natal_chart)
+    except Exception as e:
+        print(f"[orchestrator] ashtakavarga error: {e}")
+
+    # ── 6. Assemble ──────────────────────────────────────────────────────────
     return {
         "date":          target_date,
         "location":      location,
@@ -239,4 +247,7 @@ def assemble_context(
             "rahu_kalam_start": panchangam.get("rahu_kalam_start", ""),
             "rahu_kalam_end":   panchangam.get("rahu_kalam_end", ""),
         },
+
+        # Sarvashtakavarga (Tamil rules)
+        "ashtakavarga_context": ashtakavarga_context,
     }

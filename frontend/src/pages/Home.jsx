@@ -15,6 +15,7 @@ import ChatPanel from '../components/ChatPanel'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
 import AshtakavargaPanel from '../components/AshtakavargaPanel'
+import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
@@ -314,6 +315,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
 
       <NotificationSettings placeOfBirth={placeOfBirth} />
 
+      <StaleChartBanner chart={chart} onRecalculate={onGoHome} />
+
       <DashaSummaryCard chart={chart} />
 
       {/* Big 3 */}
@@ -394,7 +397,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
       {/* Ashtakavarga */}
       <div
         id="ashtakavarga"
-        className="rounded-xl overflow-hidden mb-6 sm:mb-8 scroll-mt-20"
+        className="rounded-xl mb-6 sm:mb-8 scroll-mt-20 av-pro-section-wrap"
         style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}
       >
         <div className="px-4 sm:px-5 py-3" style={{ borderBottom:'1px solid var(--card-border)', background:'var(--table-header)' }}>
@@ -684,6 +687,7 @@ export default function Home() {
         <div style={tabPane('chat')}>
           {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} userId={userId} />
               </div>
             : <NeedChart onGoHome={goHome} />
@@ -693,6 +697,7 @@ export default function Home() {
         <div style={tabPane('forecast')}>
           {chart
             ? <div className="max-w-3xl mx-auto px-4 py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <ForecastPanel chart={chart} gender={form.gender} showDatePicker userId={userId} />
               </div>
             : <NeedChart onGoHome={goHome} />

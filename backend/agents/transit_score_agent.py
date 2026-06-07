@@ -10,7 +10,7 @@ CORRECT APPROACH:
   - Each planet has specific auspicious positions counted from natal Moon
   - Vedha (obstruction): another planet at the Vedha point cancels the benefit
   - Sun–Saturn and Moon–Mercury are exempt from mutual Vedha
-  - House scores = 60% natal lord strength + 40% Gochara result
+  - House scores = 55% natal lord strength + 35% Gochara + 10% SAV (Ashtakavarga)
   - "Transit Activity" shows only planets DIRECTLY in or DIRECTLY aspecting a house
 
 Main entry point:
@@ -26,6 +26,7 @@ from typing import Optional
 
 import ephemeris as swe
 from ephemeris import RAHU_NODE
+from chart_utils import chart_fingerprint, round_score
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -473,7 +474,8 @@ _score_cache: dict[str, dict] = {}
 
 def _cache_key(natal_chart: dict, transit_date: str) -> str:
     bd = natal_chart.get("birth_data", {})
-    return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{transit_date}"
+    fp = chart_fingerprint(natal_chart)
+    return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{transit_date}|{fp}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -485,8 +487,9 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
     Score all 12 houses using Parasara's Gochara rules.
 
     Blend:
-        60% natal house lord strength (from Lagna — permanent strength)
-        40% Gochara transit score     (from natal Moon — current timing)
+        55% natal house lord strength (from Lagna — permanent strength)
+        35% Gochara transit score     (from natal Moon — current timing)
+        10% SAV normalised            (Ashtakavarga bindus per house)
 
     Parameters
     ----------
@@ -575,7 +578,7 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
             "auspicious":      pos in GOCHARA_AUSPICIOUS.get(p, set()),
             "vedha_blocked":   vedha,
             "vedha_by":        vedha_by,
-            "score":           round(score, 1),
+            "score":           round_score(score),
             "rag":             _rag(score),
             "result":          _gochara_result_label(score, vedha),
         }
@@ -658,9 +661,9 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
             "name":               HOUSE_EXPLANATIONS[h]["name"],
             "simple":             HOUSE_EXPLANATIONS[h]["simple"],
             "themes":             HOUSE_SIGNIFICATIONS[h]["themes"],
-            "score":              blended,
-            "natal_score":        natal_s,
-            "transit_score":      transit_s,
+            "score":              round_score(blended),
+            "natal_score":        round_score(natal_s),
+            "transit_score":      round_score(transit_s),
             "rag":                _rag(blended),
             "lord":               hl.get("lord", ""),
             "lord_placed_house":  hl.get("lord_placed_in_house", ""),
@@ -684,7 +687,7 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
 
     # ── Overall Gochara health ─────────────────────────────────────────────
     all_scores = [d["score"] for d in gochara_details.values()]
-    avg  = round(sum(all_scores) / len(all_scores), 1) if all_scores else 50.0
+    avg  = round_score(sum(all_scores) / len(all_scores)) if all_scores else 50
     overall = {
         "average_score": avg,
         "rag":           _rag(avg),
@@ -728,14 +731,20 @@ def build_house_context(scores: dict, house_num: int) -> str:
     lines = [
         f"HOUSE {house_num}: {h.get('name')} ({h.get('simple')})",
         f"House sign: {h.get('house_sign_en')}",
-        f"Blended score: {h.get('score')}/100  [{h.get('rag', {}).get('label')}]",
-        f"  └ Natal strength: {h.get('natal_score')}/100",
-        f"  └ Gochara score:  {h.get('transit_score')}/100",
+        f"Blended score: {round_score(h.get('score'))}/100  [{h.get('rag', {}).get('label')}]",
+        f"  └ Natal strength: {round_score(h.get('natal_score'))}/100",
+        f"  └ Gochara score:  {round_score(h.get('transit_score'))}/100",
         "",
         f"Natal house lord: {h.get('lord')} in H{h.get('lord_placed_house')} ({h.get('lord_dignity')}"
         + (", Retrograde" if h.get("lord_retrograde") else "") + ")",
         f"Lord Gochara (from natal Moon): position {h.get('lord_gochara_pos')} from Moon → {h.get('lord_gochara_result')}",
     ]
+
+    if h.get("sav_points") is not None:
+        lines.append(
+            f"Ashtakavarga SAV: {h['sav_points']} bindus [{h.get('sav_label', '')}]"
+        )
+        lines.append("(Higher SAV = stronger results when planets transit this house)")
 
     if h.get("planets_in_house"):
         lines.append(f"Natal planets in this house: {', '.join(h['planets_in_house'])}")
@@ -749,7 +758,7 @@ def build_house_context(scores: dict, house_num: int) -> str:
             if d:
                 lines.append(
                     f"  {p}: {d['transit_sign_en']} {d['transit_degree']:.1f}°  "
-                    f"pos {d['pos_from_moon']} from natal Moon → {d['result']} (score {d['score']})"
+                    f"pos {d['pos_from_moon']} from natal Moon → {d['result']} (score {round_score(d['score'])})"
                 )
     else:
         lines.append("No planets directly transiting or aspecting this house right now.")
@@ -757,7 +766,7 @@ def build_house_context(scores: dict, house_num: int) -> str:
     lines += [
         "",
         f"Natal Moon sign: {scores.get('natal_moon_en')} (Gochara reference)",
-        f"Overall transit health today: {oh['average_score']}/100 [{oh['rag']['label']}]",
+        f"Overall transit health today: {round_score(oh['average_score'])}/100 [{oh['rag']['label']}]",
     ]
 
     return "\n".join(lines)
@@ -801,7 +810,7 @@ def dasha_transit_correlation(scores: dict, dasha: dict) -> dict:
     bh = _detail(bh_planet)
 
     # Weighted average: Mahadasha lord carries more weight
-    avg_score = round(md["score"] * 0.60 + bh["score"] * 0.40, 1)
+    avg_score = round_score(md["score"] * 0.60 + bh["score"] * 0.40)
     corr_rag  = _rag(avg_score)
 
     # Human-readable summary
@@ -860,14 +869,14 @@ def compact_gochara_summary(scores: dict, dasha: dict) -> str:
 
     lines = [
         f"=== GOCHARA TRANSIT SCORES — {date} (ref: {moon} natal Moon) ===",
-        f"Overall transit health: {oh['average_score']}/100 [{oh['rag']['label']}]  "
+        f"Overall transit health: {round_score(oh['average_score'])}/100 [{oh['rag']['label']}]  "
         f"({oh['green_count']}🟢 {oh['amber_count']}🟡 {oh['red_count']}🔴)",
         "",
-        f"DASHA-TRANSIT CORRELATION ({dtc['rag']['label']} — {dtc['correlation_score']}/100):",
+        f"DASHA-TRANSIT CORRELATION ({dtc['rag']['label']} — {round_score(dtc['correlation_score'])}/100):",
         dtc["summary"],
         dtc["overall"],
         "",
-        "12-HOUSE SCORES (natal strength 60% + Gochara 40%):",
+        "12-HOUSE SCORES (55% natal + 35% Gochara + 10% SAV):",
     ]
 
     for h in range(1, 13):
@@ -878,8 +887,9 @@ def compact_gochara_summary(scores: dict, dasha: dict) -> str:
         rag  = hd.get("rag", {}).get("emoji", "")
         tp   = ", ".join(hd.get("transit_planets", [])) or "none"
         lines.append(
-            f"  H{h:02d} {hd.get('name',''):<28} {rag} {hd.get('score',0):5.1f}  "
+            f"  H{h:02d} {hd.get('name',''):<28} {rag} {round_score(hd.get('score', 0)):5d}  "
             f"lord={lord} pos{lpos}→{lres}  direct_transit=[{tp}]"
+            + (f"  SAV={hd.get('sav_points', '?')}" if hd.get('sav_points') is not None else "")
         )
 
     lines += [

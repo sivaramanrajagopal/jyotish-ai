@@ -1,157 +1,151 @@
 /**
- * AshtakavargaPanel.jsx
- * Displays BAV planet totals + SAV house-wise chart with colour coding.
+ * AshtakavargaPanel — Prokerala-style South Indian BAV/SAV grids.
  */
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
+import { BavSouthGrid, SavSouthGrid } from './AshtakavargaSouthGrid'
+import { BAV_CONTRIBUTOR_LABELS, RASHI_NAMES, houseWiseToRasiWise } from '../lib/ashtakavargaGrid'
 
 const PLANET_LABELS = {
-  SUN:'☉ Sun', MOON:'☽ Moon', MARS:'♂ Mars', MERCURY:'☿ Mercury',
-  JUPITER:'♃ Jupiter', VENUS:'♀ Venus', SATURN:'♄ Saturn', ASCENDANT:'⬆ Lagna',
+  SUN: '☉ Sun', MOON: '☽ Moon', MARS: '♂ Mars', MERCURY: '☿ Mercury',
+  JUPITER: '♃ Jupiter', VENUS: '♀ Venus', SATURN: '♄ Saturn', ASCENDANT: '⬆ Lagna',
 }
 
-const SAV_EXPECTED_TOTALS = {
-  SUN:48, MOON:49, MARS:39, MERCURY:54, JUPITER:56, VENUS:52, SATURN:39,
+const BAV_PLANETS = ['SUN', 'MOON', 'MARS', 'MERCURY', 'JUPITER', 'VENUS', 'SATURN', 'ASCENDANT']
+const SAV_PLANETS = ['SUN', 'MOON', 'MARS', 'MERCURY', 'JUPITER', 'VENUS', 'SATURN']
+const EXPECTED_TOTALS = {
+  SUN: 48, MOON: 49, MARS: 39, MERCURY: 54, JUPITER: 56, VENUS: 52, SATURN: 39,
 }
 
-function colour(pts, isSav = false) {
-  if (isSav) {
-    if (pts >= 30) return '#27ae60'
-    if (pts >= 25) return '#f39c12'
-    if (pts >= 20) return '#e67e22'
-    return '#e74c3c'
+const TAB_LIST = [
+  { key: 'sav', label: 'Sarva (SAV)' },
+  ...BAV_PLANETS.filter(p => p !== 'ASCENDANT').map(p => ({ key: p, label: PLANET_LABELS[p] })),
+  { key: 'ASCENDANT', label: PLANET_LABELS.ASCENDANT },
+]
+
+function houseForRasiNum(rasiNum, ascRasi) {
+  for (let h = 1; h <= 12; h++) {
+    if (((ascRasi - 1 + h - 1) % 12) + 1 === rasiNum) return h
   }
-  if (pts >= 5) return '#27ae60'
-  if (pts >= 3) return '#f39c12'
-  return '#e74c3c'
+  return rasiNum
 }
 
-function Bar({ value, max, col }) {
+function MatrixTable({ planet, matrix, ascRasi, houseWise }) {
+  if (!matrix?.length) return null
+  const rasiWise = houseWiseToRasiWise(houseWise, ascRasi)
+
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-      <div style={{
-        flex:1, height:8, background:'var(--card-border)', borderRadius:4, overflow:'hidden'
-      }}>
-        <div style={{
-          width:`${Math.round((value/max)*100)}%`, height:'100%',
-          background:col, borderRadius:4, transition:'width 0.4s'
-        }}/>
+    <div className="av-pro-table-wrap">
+      <h4 className="av-pro-table-title">{PLANET_LABELS[planet]} — contribution matrix</h4>
+      <div className="av-pro-table-scroll">
+        <table className="av-pro-table">
+          <thead>
+            <tr>
+              <th>Rashi</th>
+              {BAV_CONTRIBUTOR_LABELS.map(c => (
+                <th key={c.key}>{c.short}</th>
+              ))}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {RASHI_NAMES.map((name, i) => {
+              const h = houseForRasiNum(i + 1, ascRasi)
+              return (
+                <tr key={name}>
+                  <td className="av-pro-table-rashi">{name}</td>
+                  {matrix.map((row, ri) => (
+                    <td key={ri} className={row[h - 1] ? 'av-pro-table-one' : ''}>
+                      {row[h - 1] ? '1' : '·'}
+                    </td>
+                  ))}
+                  <td className="av-pro-table-total">{rasiWise[i]}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
-      <span style={{ fontSize:12, fontWeight:700, color:col, minWidth:20 }}>{value}</span>
     </div>
   )
 }
 
 export default function AshtakavargaPanel({ chart, userId }) {
-  const [data,    setData]    = useState(null)
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [view,    setView]    = useState('sav')  // 'sav' | planet key
+  const [error, setError] = useState('')
+  const [view, setView] = useState('sav')
+  const [showMatrix, setShowMatrix] = useState(false)
 
   useEffect(() => {
     if (!chart) return
     setLoading(true)
+    setError('')
     api.post('/ashtakavarga', chartPayload(chart, userId))
       .then(r => setData(r.data))
       .catch(e => setError(e.response?.data?.detail || 'Could not load Ashtakavarga.'))
       .finally(() => setLoading(false))
   }, [chart, userId])
 
-  if (loading) return (
-    <div style={{ textAlign:'center', padding:'32px 0', color:'var(--orange)', fontSize:13 }}
-      className="animate-pulse">
-      Calculating Ashtakavarga…
-    </div>
-  )
-  if (error) return (
-    <div style={{ color:'var(--error-text)', background:'var(--error-bg)',
-      border:`1px solid var(--error-border)`, borderRadius:10, padding:'12px 16px', fontSize:13 }}>
-      ⚠️ {error}
-    </div>
-  )
+  if (loading) {
+    return (
+      <div className="av-pro-loading">Calculating Ashtakavarga…</div>
+    )
+  }
+  if (error) {
+    return <div className="av-pro-error">⚠️ {error}</div>
+  }
   if (!data) return null
 
-  const bav   = data.bav   || {}
-  const sav   = data.sav   || {}
-  const savHW = sav.house_wise || []
-  const lagna = data.lagna_sign || ''
+  const bav = data.bav || {}
+  const sav = data.sav || {}
+  const ascRasi = data.planetary_positions?.ASCENDANT
+    ?? (data.lagna_sign_idx != null ? data.lagna_sign_idx + 1 : 1)
+  const positions = data.planetary_positions || {}
+  const matrix = data.matrix_8x8 || {}
 
-  const planets = ['SUN','MOON','MARS','MERCURY','JUPITER','VENUS','SATURN']
+  const activePlanet = view === 'sav' ? null : view
+  const pData = activePlanet ? bav[activePlanet] : null
 
   return (
-    <div style={{ marginTop:8 }}>
-      {/* Section header */}
-      <div style={{
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        marginBottom:14
-      }}>
-        <h3 style={{ fontSize:14, fontWeight:700, color:'var(--text-secondary)',
-          textTransform:'uppercase', letterSpacing:'0.07em', margin:0 }}>
-          ✦ Ashtakavarga
-        </h3>
-        <span style={{ fontSize:11, color:'var(--text-muted)' }}>
-          SAV Total: {sav.total || 0} · Lagna: {lagna} · feeds Gochara scores
+    <div className="av-pro-panel">
+      <div className="av-pro-header">
+        <h3 className="av-pro-heading">✦ Ashtakavarga</h3>
+        <span className="av-pro-meta">
+          SAV {sav.total ?? 0} / 337 · Lagna {data.lagna_sign}
+          {data.rules === 'tamil' && ' · Tamil rules'}
         </span>
       </div>
 
-      {/* View tabs */}
-      <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:14 }}>
-        {[{key:'sav', label:'Sarva (SAV)'}, ...planets.map(p=>({key:p, label:PLANET_LABELS[p]}))].map(({key,label}) => (
-          <button key={key} onClick={() => setView(key)}
-            style={{
-              padding:'4px 10px', borderRadius:14, cursor:'pointer',
-              fontSize:11, fontWeight:600,
-              background: view===key ? 'var(--orange)' : 'var(--chip-bg)',
-              color: view===key ? 'var(--accent-dark)' : 'var(--text-secondary)',
-              border: view===key ? 'none' : '1px solid var(--chip-border)',
-            }}>
+      <div className="av-pro-tabs">
+        {TAB_LIST.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            className={`av-pro-tab${view === key ? ' av-pro-tab--active' : ''}`}
+            onClick={() => { setView(key); setShowMatrix(false) }}
+          >
             {label}
           </button>
         ))}
       </div>
 
-      {/* SAV chart */}
       {view === 'sav' && (
-        <div>
-          <div className="av-house-grid" style={{ marginBottom:12 }}>
-            {savHW.map((pts, i) => {
-              const col = colour(pts, true)
-              return (
-                <div key={i} style={{
-                  background:'var(--card-bg)', border:`2px solid ${col}`,
-                  borderRadius:10, padding:'8px 10px', textAlign:'center',
-                }}>
-                  <div style={{ fontSize:10, color:'var(--text-muted)', marginBottom:2 }}>H{i+1}</div>
-                  <div style={{ fontSize:20, fontWeight:800, color:col }}>{pts}</div>
-                  <div style={{ fontSize:9, color:'var(--text-muted)' }}>
-                    {pts>=30?'Strong':pts>=25?'Good':pts>=20?'Avg':'Weak'}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          {/* SAV planet totals summary */}
-          <div style={{
-            background:'var(--card-bg)', border:'1px solid var(--card-border)',
-            borderRadius:10, padding:'12px 14px',
-          }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'var(--text-muted)',
-              textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10 }}>
-              Planet Totals (expected in parentheses)
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {planets.map(p => {
-                const pData = bav[p] || {}
-                const total = pData.total || 0
-                const exp   = SAV_EXPECTED_TOTALS[p] || 48
-                const col   = colour(total >= exp * 0.9 ? 4 : total >= exp * 0.7 ? 3 : 1)
+        <div className="av-pro-section">
+          <SavSouthGrid houseWise={sav.house_wise || []} total={sav.total} />
+          <div className="av-pro-totals">
+            <div className="av-pro-totals__title">Planet BAV totals</div>
+            <div className="av-pro-totals__grid">
+              {SAV_PLANETS.map(p => {
+                const total = bav[p]?.total ?? 0
+                const exp = EXPECTED_TOTALS[p]
+                const ok = total === exp
                 return (
-                  <div key={p} style={{ display:'grid', gridTemplateColumns:'90px 1fr', alignItems:'center', gap:8 }}>
-                    <span style={{ fontSize:12, color:'var(--text-secondary)' }}>
-                      {PLANET_LABELS[p]}
-                    </span>
-                    <Bar value={total} max={exp+5} col={col} />
+                  <div key={p} className={`av-pro-total-row${ok ? ' av-pro-total-row--ok' : ''}`}>
+                    <span>{PLANET_LABELS[p]}</span>
+                    <strong>{total}</strong>
+                    <span className="av-pro-total-exp">({exp})</span>
                   </div>
                 )
               })}
@@ -160,52 +154,44 @@ export default function AshtakavargaPanel({ chart, userId }) {
         </div>
       )}
 
-      {/* Individual BAV chart */}
-      {view !== 'sav' && bav[view] && (() => {
-        const pData = bav[view]
-        const hw    = pData.house_wise || []
-        const pinda = pData.shodhya_pinda || {}
-        return (
-          <div>
-            <div className="av-house-grid" style={{ marginBottom:12 }}>
-              {hw.map((pts, i) => {
-                const col = colour(pts)
-                return (
-                  <div key={i} style={{
-                    background:'var(--card-bg)', border:`2px solid ${col}`,
-                    borderRadius:10, padding:'8px', textAlign:'center',
-                  }}>
-                    <div style={{ fontSize:10, color:'var(--text-muted)', marginBottom:2 }}>H{i+1}</div>
-                    <div style={{ fontSize:20, fontWeight:800, color:col }}>{pts}</div>
-                  </div>
-                )
-              })}
+      {activePlanet && pData && (
+        <div className="av-pro-section">
+          <BavSouthGrid
+            houseWise={pData.house_wise || []}
+            ascRasi={ascRasi}
+            planetKey={activePlanet}
+            planetLabel={PLANET_LABELS[activePlanet]}
+            planetRasi={positions[activePlanet]}
+            total={pData.total}
+          />
+
+          {pData.shodhya_pinda?.shodhya_pinda && (
+            <div className="av-pro-pinda">
+              <span>Shodhya Pinda: <strong>{pData.shodhya_pinda.shodhya_pinda}</strong></span>
+              {pData.shodhya_pinda.trigger_nakshatra && (
+                <span> · Trigger: {pData.shodhya_pinda.trigger_nakshatra}</span>
+              )}
             </div>
-            {/* Pinda info */}
-            {pinda.shodhya_pinda && (
-              <div style={{
-                background:'var(--card-bg)', border:'1px solid var(--card-border)',
-                borderRadius:10, padding:'12px 14px', fontSize:12,
-              }}>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(90px, 1fr))', gap:8 }}>
-                  {[
-                    { label:'Total BAV', value: pData.total },
-                    { label:'Shodhya Pinda', value: pinda.shodhya_pinda },
-                    { label:'Trigger Nakshatra', value: pinda.trigger_nakshatra },
-                  ].map(({label, value}) => (
-                    <div key={label} style={{
-                      background:'var(--table-header)', borderRadius:8, padding:'8px 10px'
-                    }}>
-                      <div style={{ fontSize:10, color:'var(--text-muted)', marginBottom:3 }}>{label}</div>
-                      <div style={{ fontWeight:700, color:'var(--text-primary)' }}>{value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })()}
+          )}
+
+          <button
+            type="button"
+            className="av-pro-matrix-toggle"
+            onClick={() => setShowMatrix(v => !v)}
+          >
+            {showMatrix ? 'Hide' : 'Show'} 8×8 matrix
+          </button>
+
+          {showMatrix && (
+            <MatrixTable
+              planet={activePlanet}
+              matrix={matrix[activePlanet]}
+              ascRasi={ascRasi}
+              houseWise={pData.house_wise}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }
