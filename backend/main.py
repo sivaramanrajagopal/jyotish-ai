@@ -697,7 +697,7 @@ def transit_chart(
             _house_number, _is_retrograde,
             PLANETS, SIGNS, SIGN_LORDS,
         )
-        import swisseph as swe
+        import ephemeris as swe
         from zoneinfo import ZoneInfo
 
         loc        = LOCATIONS[location]
@@ -710,8 +710,7 @@ def transit_chart(
         dt_noon = datetime(year, month, day, 12, 0, 0, tzinfo=tz)
         jd = _to_jd(dt_noon)
 
-        # Ayanamsa
-        swe.set_sid_mode(swe.SIDM_LAHIRI)
+        # Ayanamsa (Lahiri — enforced in ephemeris wrapper)
         ayanamsa_val = swe.get_ayanamsa_ut(jd)
 
         # Ascendant at noon for this location

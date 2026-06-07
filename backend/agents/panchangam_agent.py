@@ -22,7 +22,7 @@ import math
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
+import ephemeris as swe
 
 # ─────────────────────────────────────────────
 # Constants & lookup tables
@@ -95,13 +95,7 @@ GULIKAI_SLOTS = [6, 5, 4, 3, 2, 1, 7]
 YAMAGAN_SLOTS = [4, 3, 2, 1, 7, 6, 5]
 
 # ─────────────────────────────────────────────
-# Ayanamsa setup
-# ─────────────────────────────────────────────
-swe.set_sid_mode(swe.SIDM_LAHIRI)   # Lahiri ayanamsa
-
-
-# ─────────────────────────────────────────────
-# Julian Day helpers
+# Julian Day helpers (Lahiri via ephemeris wrappers)
 # ─────────────────────────────────────────────
 
 def _to_jd(dt: datetime) -> float:

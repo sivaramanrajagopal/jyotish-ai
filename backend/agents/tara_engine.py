@@ -29,9 +29,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
-
-swe.set_sid_mode(swe.SIDM_LAHIRI)
+import ephemeris as swe
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 

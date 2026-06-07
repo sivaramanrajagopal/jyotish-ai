@@ -23,12 +23,8 @@ import math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
-
-# ─────────────────────────────────────────────
-# Ayanamsa
-# ─────────────────────────────────────────────
-swe.set_sid_mode(swe.SIDM_LAHIRI)
+import ephemeris as swe
+from ephemeris import RAHU_NODE
 
 # ─────────────────────────────────────────────
 # Lookup tables
@@ -73,7 +69,7 @@ PLANETS = {
     "Jupiter": swe.JUPITER,
     "Venus":   swe.VENUS,
     "Saturn":  swe.SATURN,
-    "Rahu":    swe.MEAN_NODE,   # North Node
+    "Rahu":    RAHU_NODE,
 }
 
 # Exaltation degrees (sidereal, for neecha bhanga detection)
@@ -104,7 +100,7 @@ DEBILITATION = {
 def _to_jd(dt: datetime) -> float:
     utc = dt.astimezone(ZoneInfo("UTC"))
     hour_ut = utc.hour + utc.minute / 60 + utc.second / 3600
-    return swe.julday(utc.year, utc.month, utc.day, hour_ut)
+    return swe.julday(utc.year, utc.month, utc.day, hour_ut)  # noqa: ephemeris wrapper
 
 
 def _lon_to_sign(lon: float) -> tuple[str, float]:
@@ -155,7 +151,7 @@ def _house_number(planet_sign_idx: int, asc_sign_idx: int) -> int:
 def _is_retrograde(planet_id: int, jd: float) -> bool:
     """True if planet's speed is negative (retrograde)."""
     flags = swe.FLG_SIDEREAL | swe.FLG_SPEED
-    xx, _ = swe.calc_ut(jd, planet_id, flags)
+    xx, _ = swe.calc_ut(jd, planet_id, flags)  # Lahiri enforced in ephemeris
     return xx[3] < 0   # xx[3] = speed in longitude
 
 
@@ -270,11 +266,10 @@ def calculate_natal_chart(
     birth_dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=tz)
     jd = _to_jd(birth_dt)
 
-    # Ayanamsa value
+    # Ayanamsa value (Lahiri — set inside ephemeris wrapper)
     ayanamsa_val = swe.get_ayanamsa_ut(jd)
 
     # ── Ascendant ────────────────────────────────────────────
-    geopos = (lon, lat, 0.0)   # swe expects (lon, lat, alt)
     flags  = swe.FLG_SIDEREAL
     cusps, ascmc = swe.houses_ex(jd, lat, lon, b"W", flags)
     # ascmc[0] = Ascendant longitude (already sidereal with FLG_SIDEREAL)

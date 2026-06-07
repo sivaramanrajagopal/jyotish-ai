@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
+import ephemeris as swe
 
 from agents.panchangam_agent import LOCATIONS, calculate_panchangam
 from agents.natal_agent import (
@@ -82,7 +82,6 @@ def _starts_within(now: datetime, start_iso: Optional[str], minutes: int = 30) -
 
 def _planet_signs_now(jd: float) -> dict[str, dict]:
     """Sidereal sign + retrograde for grahas at jd."""
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
     out: dict[str, dict] = {}
     for name, pid in PLANETS.items():
         xx, _ = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL)

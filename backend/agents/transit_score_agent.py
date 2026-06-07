@@ -24,7 +24,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-import swisseph as swe
+import ephemeris as swe
+from ephemeris import RAHU_NODE
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -175,7 +176,7 @@ VEDHA_EXEMPT: set[frozenset] = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _init_swe():
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    swe.use_lahiri()
 
 
 def _get_chart_info(longitude: float, speed: Optional[float] = None) -> dict:
@@ -201,7 +202,7 @@ def _get_planet_positions(jd: float, lat: float, lon: float) -> tuple[dict, floa
         lonlat = swe.calc_ut(jd, pid, FLAGS)[0]
         results[name] = _get_chart_info(lonlat[0], lonlat[3])
 
-    rahu = swe.calc_ut(jd, swe.TRUE_NODE, FLAGS)[0]
+    rahu = swe.calc_ut(jd, RAHU_NODE, FLAGS)[0]
     results["Rahu"] = _get_chart_info(rahu[0], rahu[3])
     results["Rahu"]["retrograde"] = True
     ketu_lon = (rahu[0] + 180.0) % 360.0
