@@ -10,6 +10,8 @@ import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
 import { chartPayload } from '../lib/chartPayload'
 import { roundScore } from '../lib/scoreFormat'
+import { formatApiError } from '../lib/apiError'
+import QuotaHint from './QuotaHint'
 
 const HOUSE_ICONS = {
   1:'🧘', 2:'💰', 3:'💬', 4:'🏠', 5:'🎨', 6:'⚔️',
@@ -319,7 +321,7 @@ function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
 
-export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId }) {
+export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId, enabled = true }) {
   const [transitDate,  setTransitDate]  = useState(todayISO)
   const [scores,         setScores]         = useState(null)
   const [scoresLoading,  setScoresLoading]  = useState(false)
@@ -330,34 +332,50 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
   const [insightCache,   setInsightCache]   = useState({})
   const [dailyReading,   setDailyReading]   = useState(null)
   const [readingLoading, setReadingLoading] = useState(false)
+  const [readingError,   setReadingError]   = useState('')
   const [language,       setLanguage]       = useState('english')
 
   const insightKey = (houseNum) => `${houseNum}:${transitDate}:${language}`
 
-  // Load scores + daily reading when chart or selected date changes
+  // Deterministic scores — refetch on chart/date only (not language)
   useEffect(() => {
-    if (!chart) return
+    if (!chart || !enabled) return
     setScoresLoading(true)
-    setReadingLoading(true)
     setScoresError('')
     setSelectedHouse(null)
     setInsightCache({})
     const body = chartPayload(chart, userId, { transit_date: transitDate })
-    Promise.all([
-      api.post('/forecast/scores', body),
-      api.post('/forecast/daily-reading', { ...body, gender, language }),
-    ]).then(([scoresRes, readingRes]) => {
-      setScores(scoresRes.data)
-      setDailyReading(readingRes.data)
-    }).catch(err => {
-      setScoresError(err.response?.data?.detail || 'Could not load forecast.')
-      setScores(null)
-      setDailyReading(null)
-    }).finally(() => {
-      setScoresLoading(false)
-      setReadingLoading(false)
-    })
-  }, [chart, transitDate, gender, language, userId])
+    api.post('/forecast/scores', body)
+      .then(r => setScores(r.data))
+      .catch(err => {
+        setScoresError(formatApiError(err, 'Could not load forecast scores.'))
+        setScores(null)
+      })
+      .finally(() => setScoresLoading(false))
+  }, [chart, transitDate, userId, enabled])
+
+  // AI daily reading — refetch when language or date changes
+  useEffect(() => {
+    if (!chart || !enabled) return
+    setReadingLoading(true)
+    setReadingError('')
+    const body = chartPayload(chart, userId, { transit_date: transitDate })
+    api.post('/forecast/daily-reading', { ...body, gender, language })
+      .then(r => setDailyReading(r.data))
+      .catch(err => {
+        setReadingError(formatApiError(err, 'Could not load daily reading.'))
+        setDailyReading(null)
+      })
+      .finally(() => setReadingLoading(false))
+  }, [chart, transitDate, gender, language, userId, enabled])
+
+  if (!enabled) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: 14 }}>
+        Open Forecast to load your Gochara scores…
+      </div>
+    )
+  }
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang)
@@ -380,7 +398,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       }))
       setInsightCache(prev => ({ ...prev, [key]: res.data.insight || '' }))
     } catch (err) {
-      setInsightError(err.response?.data?.detail || 'Could not load AI insight.')
+      setInsightError(formatApiError(err, 'Could not load AI insight.'))
     } finally {
       setInsightLoading(false)
     }
@@ -410,6 +428,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
   return (
     <div>
+      <QuotaHint userId={userId} />
       {/* Date picker */}
       {showDatePicker && (
         <div style={{
@@ -455,6 +474,11 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       )}
 
       {/* Daily Reading Card */}
+      {readingError && (
+        <div style={{ color:'var(--error-text)', background:'var(--error-bg)', border:'1px solid var(--error-border)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:13 }}>
+          ⚠️ {readingError}
+        </div>
+      )}
       {readingLoading && !dailyReading && (
         <div style={{ background:'var(--daily-card-bg)', borderRadius:16, padding:'18px 20px', marginBottom:20, color:'rgba(255,255,255,0.5)', fontSize:13 }}>
           <span style={{ color:'var(--orange)' }}>✦</span> {tx.generatingReading}

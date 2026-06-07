@@ -3,7 +3,6 @@
  */
 import {
   BAV_RASI_LAYOUT,
-  SAV_HOUSE_LAYOUT,
   SIGN_ABBR,
   binduStrength,
   houseForRasi,
@@ -69,19 +68,22 @@ export function BavSouthGrid({
   )
 }
 
-export function SavSouthGrid({ houseWise, total }) {
+export function SavSouthGrid({ houseWise, ascRasi, total }) {
+  const rasiChart = houseWiseToRasiWise(houseWise, ascRasi)
   const savTotal = total ?? houseWise.reduce((a, b) => a + b, 0)
 
   return (
     <div className="av-pro-wrap">
       <div className="av-pro-grid av-pro-grid--sav">
-        {SAV_HOUSE_LAYOUT.map(({ house, slot }) => (
+        {BAV_RASI_LAYOUT.map(({ rasi, slot }) => (
           <GridCell
             key={slot}
             slot={slot}
-            value={houseWise[house - 1] ?? 0}
-            label={`H${house}`}
-            strength={binduStrength(houseWise[house - 1] ?? 0, true)}
+            value={rasiChart[rasi - 1]}
+            label={SIGN_ABBR[rasi - 1]}
+            sub={`H${houseForRasi(rasi, ascRasi)}`}
+            strength={binduStrength(rasiChart[rasi - 1], true)}
+            natural={ascRasi === rasi}
             isSav
           />
         ))}

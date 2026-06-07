@@ -67,6 +67,7 @@ export const BAV_CONTRIBUTOR_LABELS = [
   { key: 'ASCENDANT', short: 'Lg' },
 ]
 
+/** @deprecated Prokerala house-diagram layout — not South Indian rasi orientation. */
 export const SAV_HOUSE_LAYOUT = [
   { house: 9, slot: 'top-1' },
   { house: 10, slot: 'top-2' },

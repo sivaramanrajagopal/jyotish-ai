@@ -26,6 +26,8 @@ import { startNotificationWatcher } from '../lib/notifications'
 import { saveSessionChart, loadSessionChart, clearSessionChart } from '../lib/chartStorage'
 import AdminPanel from '../components/AdminPanel'
 import { useIsAdmin } from '../hooks/useIsAdmin'
+import ConfirmDialog from '../components/ConfirmDialog'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 // Apply persisted theme immediately on load
 applyStoredTheme()
@@ -93,7 +95,7 @@ function NeedChart({ onGoHome }) {
   )
 }
 
-function clearStorage() {
+function clearSessionAndReload() {
   clearSessionChart()
   window.location.reload()
 }
@@ -140,7 +142,7 @@ const fieldStyle = {
   outline: 'none',
 }
 
-function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab, userId, userEmail }) {
+function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab, userId, userEmail, onClearRequest }) {
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
   const handleFeatureClick = ({ tab, section }) => {
@@ -149,6 +151,12 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
 
   return (
     <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
+      {!userId && chart && (
+        <p className="guest-session-hint" role="status">
+          Guest mode: your chart is saved for this browser session only (about 24 hours). Sign in to keep it permanently.
+        </p>
+      )}
+
       {userId && (
         <div className="auth-save-hint">
           Signed in as <strong>{userEmail}</strong> — new charts save to your account.
@@ -172,7 +180,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             <button
               type="button"
               className="welcome-back__btn welcome-back__btn--ghost"
-              onClick={clearStorage}
+              onClick={onClearRequest}
             >
               Clear
             </button>
@@ -234,8 +242,9 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
         <form onSubmit={onChartReady} className="space-y-4">
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
+            <label htmlFor="birth-name" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
             <input
+              id="birth-name"
               name="name" value={form.name} onChange={handleChange}
               placeholder="Your name" required
               style={{ ...fieldStyle }}
@@ -245,15 +254,17 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           {/* Mobile: stack vertically; sm+: side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Date of Birth</label>
+              <label htmlFor="birth-dob" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Date of Birth</label>
               <input
+                id="birth-dob"
                 type="date" name="dob" value={form.dob} onChange={handleChange} required
                 style={{ ...fieldStyle }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Time of Birth</label>
+              <label htmlFor="birth-tob" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Time of Birth</label>
               <input
+                id="birth-tob"
                 type="time" name="tob" value={form.tob} onChange={handleChange} required
                 style={{ ...fieldStyle }}
               />
@@ -261,8 +272,9 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Place of Birth</label>
+            <label htmlFor="birth-place" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Place of Birth</label>
             <input
+              id="birth-place"
               name="place_of_birth" value={form.place_of_birth} onChange={handleChange}
               placeholder="City, Country (e.g. Chennai, India)" required
               style={{ ...fieldStyle }}
@@ -270,8 +282,9 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Gender</label>
+            <label htmlFor="birth-gender" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Gender</label>
             <select
+              id="birth-gender"
               name="gender" value={form.gender} onChange={handleChange}
               style={{ ...fieldStyle, cursor: 'pointer' }}
             >
@@ -302,7 +315,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
 }
 
 // ── MY CHART TAB ──────────────────────────────────────────────────────────────
-function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
+function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
   if (!chart) return <NeedChart onGoHome={onGoHome} />
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
@@ -392,7 +405,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
       )}
 
       {/* Personal Panchangam */}
-      <PersonalPanchangamCard chart={chart} userId={userId} />
+      <PersonalPanchangamCard chart={chart} userId={userId} enabled={chartTabActive} />
 
       {/* Ashtakavarga */}
       <div
@@ -409,7 +422,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
           </p>
         </div>
         <div className="px-4 sm:px-5 py-4">
-          <AshtakavargaPanel chart={chart} userId={userId} />
+          <AshtakavargaPanel chart={chart} userId={userId} enabled={chartTabActive} />
         </div>
       </div>
 
@@ -425,7 +438,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
-export default function Home() {
+function HomeApp() {
   useKeepAlive()
   const { userId, email: userEmail } = useAuth()
   const { isAdmin } = useIsAdmin(userId, userEmail)
@@ -450,6 +463,11 @@ export default function Home() {
   // Restore anonymous session chart (signed-in users fetch from server)
   const saved = loadFromStorage(null)
   const [activeTab, setActiveTab] = useState(urlTab || (saved?.chart ? 'chart' : 'home'))
+  const [mountedTabs, setMountedTabs] = useState(
+    () => new Set([urlTab || (saved?.chart ? 'chart' : 'home')]),
+  )
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [syncNotice, setSyncNotice] = useState('')
   const [form, setForm]   = useState(saved?.form  || { name:'', dob:'', tob:'', place_of_birth:'', gender:'male' })
   const [chart, setChart] = useState(saved?.chart || null)
   const [loading, setLoading] = useState(false)
@@ -464,6 +482,7 @@ export default function Home() {
   })
 
   const setTab = useCallback((key, section) => {
+    setMountedTabs(prev => new Set(prev).add(key))
     setActiveTab(key)
     if (section) setScrollTarget(section)
     try {
@@ -521,7 +540,10 @@ export default function Home() {
           const { data } = await api.post('/natal-chart', { ...s.form, user_id: userId })
           setChart(data)
           setForm(s.form)
-        } catch {}
+        } catch (syncErr) {
+          console.error('[chart sync]', syncErr)
+          setSyncNotice('Could not save your chart to your account. Please recalculate on Home.')
+        }
       })
       .finally(() => setChartRefreshing(false))
   }, [userId])
@@ -564,6 +586,7 @@ export default function Home() {
   // Deep-link ?tab=admin once owner status is confirmed
   useEffect(() => {
     if (isAdmin && requestedTab === 'admin') {
+      setMountedTabs(prev => new Set(prev).add('admin'))
       setActiveTab('admin')
     }
   }, [isAdmin, requestedTab])
@@ -572,7 +595,6 @@ export default function Home() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setChart(null)
     try {
       const payload = userId ? { ...form, user_id: userId } : form
       const { data } = await api.post('/natal-chart', payload)
@@ -592,15 +614,25 @@ export default function Home() {
   }
 
   const goHome = () => setTab('home')
+  const chartTabActive = activeTab === 'chart'
 
   const tabPane = (key) => ({ display: activeTab === key ? 'block' : 'none' })
 
-  // ── Top tab bar (desktop) / content area ────────────────────────────────
   return (
     <div
       className="min-h-screen flex flex-col"
       style={{ background: 'var(--app-bg)', color: 'var(--text-primary)' }}
     >
+      <ConfirmDialog
+        open={showClearConfirm}
+        title="Clear chart data?"
+        message="This removes your saved birth chart from this browser and reloads the app. Chat and forecast history will be lost."
+        confirmLabel="Clear & reload"
+        cancelLabel="Keep chart"
+        danger
+        onConfirm={clearSessionAndReload}
+        onCancel={() => setShowClearConfirm(false)}
+      />
       {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
       {activeTab === 'home' ? (
         <div className="banner-minimal">
@@ -624,11 +656,18 @@ export default function Home() {
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
         className="hidden sm:flex border-b sticky top-0 z-30"
+        role="tablist"
+        aria-label="Main navigation"
         style={{ background: 'var(--nav-tab-bg)', borderColor: 'var(--nav-tab-border)', boxShadow: 'var(--card-shadow)' }}
       >
         {TABS.map(tab => (
           <button
             key={tab.key}
+            type="button"
+            role="tab"
+            id={`tab-${tab.key}`}
+            aria-selected={activeTab === tab.key}
+            aria-controls={`panel-${tab.key}`}
             onClick={() => setTab(tab.key)}
             className="flex items-center gap-1.5 px-4 lg:px-5 py-3 text-sm font-semibold transition-all relative"
             style={{
@@ -654,6 +693,12 @@ export default function Home() {
 
       {/* ── Tab content (kept mounted to preserve Chat / Forecast state) ── */}
       <main className="flex-1 pb-20 sm:pb-0">
+        {syncNotice && (
+          <div className="app-notice app-notice--warn" role="alert">
+            {syncNotice}
+            <button type="button" className="app-notice__dismiss" onClick={() => setSyncNotice('')}>Dismiss</button>
+          </div>
+        )}
         {chartRefreshing && (
           <div style={{
             textAlign: 'center', padding: '8px', fontSize: 12,
@@ -664,7 +709,7 @@ export default function Home() {
           </div>
         )}
 
-        <div style={tabPane('home')}>
+        <div style={tabPane('home')} role="tabpanel" id="panel-home" aria-labelledby="tab-home">
           <HomeTab
             form={form} setForm={setForm}
             onChartReady={handleSubmit}
@@ -673,39 +718,48 @@ export default function Home() {
             onGoToTab={setTab}
             userId={userId}
             userEmail={userEmail}
+            onClearRequest={() => setShowClearConfirm(true)}
           />
         </div>
 
-        <div style={tabPane('chart')}>
-          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} />
+        {mountedTabs.has('chart') && (
+        <div style={tabPane('chart')} role="tabpanel" id="panel-chart" aria-labelledby="tab-chart">
+          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} chartTabActive={chartTabActive} />
         </div>
+        )}
 
-        <div style={tabPane('panchangam')}>
+        {mountedTabs.has('panchangam') && (
+        <div style={tabPane('panchangam')} role="tabpanel" id="panel-panchangam" aria-labelledby="tab-panchangam">
           <PanchangamTab />
         </div>
+        )}
 
-        <div style={tabPane('chat')}>
+        {mountedTabs.has('chat') && (
+        <div style={tabPane('chat')} role="tabpanel" id="panel-chat" aria-labelledby="tab-chat">
           {chart
-            ? <div className="max-w-3xl mx-auto px-4 py-8">
+            ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} userId={userId} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
         </div>
+        )}
 
-        <div style={tabPane('forecast')}>
+        {mountedTabs.has('forecast') && (
+        <div style={tabPane('forecast')} role="tabpanel" id="panel-forecast" aria-labelledby="tab-forecast">
           {chart
-            ? <div className="max-w-3xl mx-auto px-4 py-8">
+            ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
-                <ForecastPanel chart={chart} gender={form.gender} showDatePicker userId={userId} />
+                <ForecastPanel chart={chart} gender={form.gender} showDatePicker userId={userId} enabled={activeTab === 'forecast'} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
         </div>
+        )}
 
-        {isAdmin && (
-          <div style={tabPane('admin')}>
+        {isAdmin && mountedTabs.has('admin') && (
+          <div style={tabPane('admin')} role="tabpanel" id="panel-admin" aria-labelledby="tab-admin">
             <AdminPanel />
           </div>
         )}
@@ -714,6 +768,8 @@ export default function Home() {
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
       <nav
         className="sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
+        role="tablist"
+        aria-label="Main navigation"
         style={{
           background: 'var(--nav-tab-bg)',
           borderTop: '1px solid var(--nav-tab-border)',
@@ -724,6 +780,11 @@ export default function Home() {
         {TABS.map(tab => (
           <button
             key={tab.key}
+            type="button"
+            role="tab"
+            id={`tab-mobile-${tab.key}`}
+            aria-selected={activeTab === tab.key}
+            aria-controls={`panel-${tab.key}`}
             onClick={() => setTab(tab.key)}
             className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
             style={{ color: activeTab === tab.key ? 'var(--orange)' : 'var(--text-muted)' }}
@@ -748,5 +809,13 @@ export default function Home() {
         ))}
       </nav>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <ErrorBoundary>
+      <HomeApp />
+    </ErrorBoundary>
   )
 }

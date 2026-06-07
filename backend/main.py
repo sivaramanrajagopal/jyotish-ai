@@ -198,6 +198,15 @@ def auth_me(request: Request, user: AuthUser = Depends(get_current_user)):
     }
 
 
+@app.get("/auth/usage")
+@limiter.limit("60/minute")
+def auth_usage(request: Request, user: AuthUser = Depends(get_current_user)):
+    """Today's AI quota usage for signed-in users."""
+    from ai_limits import get_ai_usage
+
+    return get_ai_usage(user.id)
+
+
 # ── Input sanitiser (strip control chars + HTML tags from free-text) ──────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -539,6 +548,9 @@ def natal_chart(
 
     lat, lon, timezone = _geocode(place_of_birth)
 
+    from agents.sky_today_agent import _resolve_location
+    panchangam_location = _resolve_location(place_of_birth)
+
     chart = calculate_natal_chart(
         dob=dob,
         tob=tob,
@@ -552,6 +564,9 @@ def natal_chart(
     chart["birth_data"]["lat"] = lat
     chart["birth_data"]["lon"] = lon
     chart["birth_data"]["timezone"] = timezone
+    chart["birth_data"]["place_of_birth"] = place_of_birth
+    chart["birth_data"]["panchangam_location"] = panchangam_location
+    chart["panchangam_location"] = panchangam_location
 
     # Add dasha data
     try:

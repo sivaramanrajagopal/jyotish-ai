@@ -71,7 +71,7 @@ function MatrixTable({ planet, matrix, ascRasi, houseWise }) {
   )
 }
 
-export default function AshtakavargaPanel({ chart, userId }) {
+export default function AshtakavargaPanel({ chart, userId, enabled = true }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -79,14 +79,18 @@ export default function AshtakavargaPanel({ chart, userId }) {
   const [showMatrix, setShowMatrix] = useState(false)
 
   useEffect(() => {
-    if (!chart) return
+    if (!chart || !enabled) return
     setLoading(true)
     setError('')
     api.post('/ashtakavarga', chartPayload(chart, userId))
       .then(r => setData(r.data))
       .catch(e => setError(e.response?.data?.detail || 'Could not load Ashtakavarga.'))
       .finally(() => setLoading(false))
-  }, [chart, userId])
+  }, [chart, userId, enabled])
+
+  if (!enabled) {
+    return <div className="av-pro-loading" style={{ opacity: 0.6 }}>Open My Chart to load Ashtakavarga…</div>
+  }
 
   if (loading) {
     return (
@@ -133,7 +137,11 @@ export default function AshtakavargaPanel({ chart, userId }) {
 
       {view === 'sav' && (
         <div className="av-pro-section">
-          <SavSouthGrid houseWise={sav.house_wise || []} total={sav.total} />
+          <SavSouthGrid
+            houseWise={sav.house_wise || []}
+            ascRasi={ascRasi}
+            total={sav.total}
+          />
           <div className="av-pro-totals">
             <div className="av-pro-totals__title">Planet BAV totals</div>
             <div className="av-pro-totals__grid">

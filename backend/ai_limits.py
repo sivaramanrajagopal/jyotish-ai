@@ -106,3 +106,33 @@ def check_ai_quota(user_id: Optional[str], kind: str) -> None:
         raise
     except Exception as exc:
         logger.warning("AI quota check skipped: %s", exc)
+
+
+def get_ai_usage(user_id: str) -> dict:
+    """Return today's AI usage counts for an authenticated user."""
+    today = date.today().isoformat()
+    out = {
+        "chat_count": 0,
+        "forecast_count": 0,
+        "chat_limit": DAILY_CHAT_LIMIT,
+        "forecast_limit": DAILY_FORECAST_LIMIT,
+        "usage_date": today,
+    }
+    if not _SB:
+        return out
+    try:
+        sb = get_supabase()
+        row = (
+            sb.table("ai_usage")
+            .select("chat_count, forecast_count")
+            .eq("user_id", user_id)
+            .eq("usage_date", today)
+            .maybe_single()
+            .execute()
+        )
+        if row and row.data:
+            out["chat_count"] = row.data.get("chat_count", 0) or 0
+            out["forecast_count"] = row.data.get("forecast_count", 0) or 0
+    except Exception as exc:
+        logger.warning("AI usage read skipped: %s", exc)
+    return out

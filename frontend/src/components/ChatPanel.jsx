@@ -7,6 +7,9 @@ import { useState, useRef, useEffect } from 'react'
 import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
 import { chartPayload } from '../lib/chartPayload'
+import { formatApiError } from '../lib/apiError'
+import { resolvePanchangamLocation } from '../lib/resolveLocation'
+import QuotaHint from './QuotaHint'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -134,13 +137,6 @@ function renderBoldSafe(text) {
   )
 }
 
-function guessLocation(place) {
-  if (!place) return 'Chennai'
-  const cities = ['Chennai','Bangalore','Mumbai','Delhi','Hyderabad','Coimbatore','Erlangen']
-  const lower = place.toLowerCase()
-  return cities.find(c => lower.includes(c.toLowerCase())) || 'Chennai'
-}
-
 // ── Component ────────────────────────────────────────────────────────────────
 export default function ChatPanel({ chart, placeOfBirth, userId }) {
   const [messages, setMessages]     = useState([])
@@ -148,11 +144,35 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
   const [loading, setLoading]       = useState(false)
   const [activeTopics, setActive]   = useState([])
   const [language, setLanguage]     = useState('english')
+  const [lastFailedText, setLastFailedText] = useState('')
   const bottomRef = useRef(null)
+
+  const panchangamLocation = resolvePanchangamLocation(placeOfBirth, chart)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  const runChat = async (msgs, failedText = '') => {
+    setLoading(true)
+    try {
+      const { data } = await api.post('/chat', chartPayload(chart, userId, {
+        messages: msgs,
+        location: panchangamLocation,
+        language,
+      }))
+      const reply = data.reply || ''
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      setActive(detectTopics(reply))
+      setLastFailedText('')
+    } catch (err) {
+      const detail = formatApiError(err, 'Could not get a reply. Please try again.')
+      setLastFailedText(failedText || msgs[msgs.length - 1]?.content || '')
+      setMessages(prev => [...prev, { role: 'error', content: detail }])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const sendMessage = async (text) => {
     const userMsg = text || input.trim()
@@ -162,23 +182,13 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
     setMessages(newMessages)
     setInput('')
     setActive([])
-    setLoading(true)
+    await runChat(newMessages, userMsg)
+  }
 
-    try {
-      const { data } = await api.post('/chat', chartPayload(chart, userId, {
-        messages: newMessages,
-        location: guessLocation(placeOfBirth),
-        language,
-      }))
-      const reply = data.reply || ''
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
-      setActive(detectTopics(reply))
-    } catch (err) {
-      const detail = err.response?.data?.detail || 'Something went wrong.'
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${detail}` }])
-    } finally {
-      setLoading(false)
-    }
+  const retryLast = async () => {
+    const withoutError = messages.filter(m => m.role !== 'error')
+    setMessages(withoutError)
+    if (withoutError.length) await runChat(withoutError, lastFailedText)
   }
 
   const handleKey = (e) => {
@@ -191,6 +201,7 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
   const cardBg    = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }
   const userBubble = { background: 'var(--orange)', color: 'var(--accent-dark)', borderRadius: '14px 14px 2px 14px', fontWeight: 500 }
   const aiBubble   = { background: 'var(--bubble-ai-bg)', border: '1px solid var(--bubble-ai-border)', color: 'var(--text-primary)', borderRadius: '2px 14px 14px 14px' }
+  const errBubble  = { background: 'var(--error-bg)', border: '1px solid var(--error-border)', color: 'var(--error-text)', borderRadius: '8px' }
 
   return (
     <div className="rounded-2xl overflow-hidden mb-8" style={cardBg}>
@@ -203,12 +214,18 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
         </h3>
         <div className="ml-auto flex items-center gap-3">
           <LanguageToggle language={language} onChange={setLanguage} />
-          <span className="text-xs hidden sm:block" style={{ color: 'rgba(255,255,255,0.4)' }}>GPT-4o mini</span>
+          <span className="text-xs hidden sm:block" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {panchangamLocation}
+          </span>
         </div>
       </div>
 
+      <div className="px-4 pt-2">
+        <QuotaHint userId={userId} />
+      </div>
+
       {/* Topic chips */}
-      <div className="px-4 pt-3 pb-1 flex flex-wrap gap-2">
+      <div className="chat-topic-chips px-4 pt-3 pb-1 flex flex-wrap sm:flex-wrap gap-2">
         {TOPICS.map(topic => {
           const isActive = activeTopics.includes(topic.key)
           return (
@@ -248,11 +265,24 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
         {/* Conversation */}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className="max-w-[88%] sm:max-w-[82%] px-4 py-2.5 text-sm leading-relaxed" style={msg.role === 'user' ? userBubble : aiBubble}>
+            <div
+              className="max-w-[88%] sm:max-w-[82%] px-4 py-2.5 text-sm leading-relaxed"
+              style={
+                msg.role === 'user' ? userBubble
+                  : msg.role === 'error' ? errBubble
+                    : aiBubble
+              }
+              role={msg.role === 'error' ? 'alert' : undefined}
+            >
               {msg.role === 'assistant'
                 ? <MarkdownText text={msg.content} />
                 : msg.content
               }
+              {msg.role === 'error' && i === messages.length - 1 && (
+                <button type="button" className="chat-retry-btn" onClick={retryLast}>
+                  Retry
+                </button>
+              )}
               {/* Auto-tag badges on AI replies */}
               {msg.role === 'assistant' && i === messages.length - 1 && activeTopics.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--card-border)' }}>
@@ -295,7 +325,9 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
 
       {/* Input */}
       <div className="px-3 sm:px-4 py-3 flex gap-2" style={{ borderTop: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
+        <label htmlFor="chat-input" className="sr-only">Your question</label>
         <input
+          id="chat-input"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey}
@@ -305,9 +337,11 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
           style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--input-text)' }}
         />
         <button
+          type="button"
           onClick={() => sendMessage()}
           disabled={!input.trim() || loading}
-          className="px-4 py-2.5 rounded-xl transition-all text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          aria-label="Send message"
+          className="chat-send-btn px-4 py-2.5 rounded-xl transition-all text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
           style={{ background: 'var(--orange)', color: 'var(--accent-dark)' }}
         >
           ↑
