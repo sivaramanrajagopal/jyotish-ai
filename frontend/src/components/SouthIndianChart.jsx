@@ -66,123 +66,50 @@ function PlanetBadgeCompact({ planet, retrograde, vargottama }) {
   )
 }
 
-// ── Planet badge — detailed (degree + pada + retrograde prominent) ──────────
+// ── Planet badge — detailed (degree + pada, single-line for transit charts) ─
 function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada }) {
-  const short = PLANET_SHORT[planet] || planet.slice(0,2)
-  const col   = PLANET_COLORS[planet] || { bg:"#f1f5f9", fg:"#475569" }
-  const deg   = typeof degreeInSign === 'number' ? degreeInSign.toFixed(1) : '—'
+  const short = PLANET_SHORT[planet] || planet.slice(0, 2)
+  const col = PLANET_COLORS[planet] || { bg: '#f1f5f9', fg: '#475569' }
+  const deg = typeof degreeInSign === 'number' ? degreeInSign.toFixed(1) : '—'
 
   return (
-    <div style={{
-      display: "inline-flex",
-      flexDirection: "column",
-      alignItems: "center",
-      borderRadius: "6px",
-      padding: "3px 5px 2px",
-      fontSize: "0.62rem",
-      fontWeight: 700,
-      margin: "2px 2px 2px",
-      background: col.bg,
-      color: col.fg,
-      lineHeight: 1.3,
-      border: vargottama ? "1.5px solid var(--orange)" : "1px solid var(--card-border)",
-      minWidth: "30px",
-      position: "relative",
-    }}>
-      {/* Retrograde badge — shown prominently on top */}
-      {retrograde && (
-        <span style={{
-          position: "absolute",
-          top: "-7px",
-          right: "-5px",
-          background: "var(--error-text)",
-          color: "var(--nav-text)",
-          fontSize: "0.48rem",
-          fontWeight: 900,
-          borderRadius: "99px",
-          padding: "0px 3px",
-          lineHeight: 1.6,
-          zIndex: 1,
-          border: "1px solid #fef3c7",
-        }}>℞</span>
-      )}
-      {/* Vargottama star */}
-      {vargottama && (
-        <span style={{
-          position: "absolute",
-          top: "-7px",
-          left: "-4px",
-          color: "var(--orange)",
-          fontSize: "0.55rem",
-          fontWeight: 900,
-        }}>★</span>
-      )}
-      {/* Planet short name */}
-      <span style={{ fontSize: "0.7rem", fontWeight: 800 }}>{short}</span>
-      {/* Degree */}
-      <span style={{ fontSize: "0.55rem", opacity: 0.85, fontWeight: 600 }}>{deg}°</span>
-      {/* Pada */}
-      {pada && (
-        <span style={{
-          fontSize: "0.5rem",
-          background: "rgba(0,0,0,0.12)",
-          borderRadius: "3px",
-          padding: "0 3px",
-          marginTop: "1px",
-          fontWeight: 700,
-        }}>P{pada}</span>
-      )}
-    </div>
+    <span
+      className="si-chart__badge si-chart__badge--detail"
+      style={{ background: col.bg, color: col.fg, borderColor: vargottama ? 'var(--orange)' : 'var(--card-border)' }}
+      title={`${planet} ${deg}° Pada ${pada || '—'}${retrograde ? ' Retrograde' : ''}`}
+    >
+      {retrograde && <span className="si-chart__badge-retro">℞</span>}
+      <span className="si-chart__badge-name">{short}</span>
+      <span className="si-chart__badge-deg">{deg}°</span>
+      {pada != null && <span className="si-chart__badge-pada">P{pada}</span>}
+      {vargottama && <span className="si-chart__badge-varga">★</span>}
+    </span>
   )
 }
 
 // ── Chart cell ───────────────────────────────────────────────────────────────
 function Cell({ signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, planetData, showDetails }) {
-  const planets   = planetSignMap[signIdx] || []
-  const isLagna   = signIdx === lagnaSignIdx
+  const planets = planetSignMap[signIdx] || []
+  const isLagna = signIdx === lagnaSignIdx
   const hasCrisis = planets.some(p => CRISIS_SET.has(p))
   const hasGrowth = planets.some(p => GROWTH_SET.has(p))
 
-  let bg = "var(--chart-cell-bg)"
-  if (hasCrisis && !hasGrowth) bg = "var(--chart-cell-crisis)"
-  else if (hasGrowth && !hasCrisis) bg = "var(--chart-cell-growth)"
-
-  const lagnaGrad = isLagna
-    ? ", linear-gradient(45deg, transparent 46%, var(--orange) 47%, var(--orange) 53%, transparent 54%)"
-    : ""
+  let tone = ''
+  if (hasCrisis && !hasGrowth) tone = 'si-chart__cell--crisis'
+  else if (hasGrowth && !hasCrisis) tone = 'si-chart__cell--growth'
 
   return (
-    <td style={{
-      background: `${bg}${lagnaGrad}`,
-      border: "1px solid var(--card-border)",
-      padding: "4px 3px 3px",
-      verticalAlign: "top",
-      width: "25%",
-      position: "relative",
-    }}>
-      {/* Sign label top-right */}
-      <div style={{
-        fontSize: "0.5rem",
-        color: "var(--text-muted)",
-        textAlign: "right",
-        lineHeight: 1,
-        marginBottom: "2px",
-        userSelect: "none",
-      }}>
+    <td className={[
+      'si-chart__cell',
+      showDetails && 'si-chart__cell--detail',
+      isLagna && 'si-chart__cell--lagna',
+      tone,
+    ].filter(Boolean).join(' ')}>
+      <span className="si-chart__sign" aria-hidden="true">
         {SIGN_SYM[signIdx]} {SIGN_ABBR[signIdx]}
-      </div>
-
-      {/* ASC label */}
-      {isLagna && (
-        <div style={{
-          fontSize: "0.48rem", fontWeight: 700, color: "var(--nav-text)",
-          background: "var(--orange)", borderRadius: "3px",
-          padding: "0 3px", display: "inline-block", marginBottom: "2px",
-        }}>ASC</div>
-      )}
-
-      {/* Planet badges */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "1px" }}>
+      </span>
+      {isLagna && <span className="si-chart__asc">ASC</span>}
+      <div className="si-chart__planets">
         {planets.map(p => {
           const pd = planetData?.[p] || {}
           return showDetails ? (
@@ -242,21 +169,16 @@ export default function SouthIndianChart({
   })
 
   const centreStyle = {
-    background: "var(--chart-centre)",
-    border: "1px solid var(--card-border)",
-    textAlign: "center",
-    verticalAlign: "middle",
-    padding: "8px",
+    background: 'var(--chart-centre)',
+    border: '1px solid var(--card-border)',
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    padding: showDetails ? '10px 8px' : '8px',
   }
 
   return (
-    <div style={{ width: "100%" }}>
-      <table style={{
-        borderCollapse: "collapse",
-        width: "100%",
-        tableLayout: "fixed",
-        fontFamily: "'Inter', system-ui, sans-serif",
-      }}>
+    <div className={`si-chart-wrap${showDetails ? ' si-chart-wrap--detail' : ''}`}>
+      <table className="si-chart">
         <tbody>
           <tr>
             <Cell {...cellProps(11)} />
@@ -266,21 +188,9 @@ export default function SouthIndianChart({
           </tr>
           <tr>
             <Cell {...cellProps(10)} />
-            <td colSpan={2} rowSpan={2} style={centreStyle}>
-              <div style={{ color:"var(--orange-dark)", fontWeight:700, fontSize:"0.85rem" }}>{title}</div>
-              {subtitle && (
-                <div style={{ color:"var(--text-muted)", fontSize:"0.6rem", marginTop:"4px", lineHeight:1.4 }}>
-                  {subtitle}
-                </div>
-              )}
-              {showDetails && (
-                <div style={{ marginTop:"8px", fontSize:"0.5rem", color:"var(--text-muted)", lineHeight:1.8 }}>
-                  <div><span style={{color:"var(--error-text)"}}>℞</span> Retrograde</div>
-                  <div><span style={{color:"var(--orange-dark)"}}>★</span> Vargottama</div>
-                  <div>15.3° = degree</div>
-                  <div>P2 = pada</div>
-                </div>
-              )}
+            <td colSpan={2} rowSpan={2} className="si-chart__centre" style={centreStyle}>
+              <div className="si-chart__centre-title">{title}</div>
+              {subtitle && <div className="si-chart__centre-sub">{subtitle}</div>}
             </td>
             <Cell {...cellProps(3)} />
           </tr>
@@ -297,9 +207,9 @@ export default function SouthIndianChart({
         </tbody>
       </table>
       {!showDetails && (
-        <div style={{ fontSize:"0.55rem", color:"var(--text-muted)", marginTop:"4px", textAlign:"right" }}>
-          <span style={{color:"var(--error-text)"}}>℞</span> Retrograde &nbsp;
-          <span style={{color:"var(--orange-dark)"}}>★</span> Vargottama
+        <div className="si-chart__legend">
+          <span style={{ color: 'var(--error-text)' }}>℞</span> Retrograde &nbsp;
+          <span style={{ color: 'var(--orange-dark)' }}>★</span> Vargottama
         </div>
       )}
     </div>

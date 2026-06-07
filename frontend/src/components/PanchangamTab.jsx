@@ -325,13 +325,13 @@ export default function PanchangamTab() {
           type="date" value={date}
           min="2020-01-01" max="2030-12-31"
           onChange={e => setDate(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl w-full"
+          className="w-full px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl"
           style={S.input}
         />
         <select
           value={location}
           onChange={e => setLocation(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl w-full"
+          className="w-full px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl"
           style={S.input}
         >
           {LOCATIONS.map(l => (
@@ -341,10 +341,10 @@ export default function PanchangamTab() {
       </div>
 
       {/* ── Two-column layout: Panchangam left, Transit chart right ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="panch-layout">
 
         {/* ── Left: Panchangam data ── */}
-        <div>
+        <div className="panch-col">
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={S.label}>
             🗓 Panchangam — {date}
           </h2>
@@ -364,7 +364,7 @@ export default function PanchangamTab() {
         </div>
 
         {/* ── Right: Transit chart ── */}
-        <div>
+        <div className="panch-col panch-sky-panel">
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-4" style={S.label}>
             🪐 Sky Chart — Planetary Transits · {location} · Noon
           </h2>
@@ -382,8 +382,8 @@ export default function PanchangamTab() {
           )}
 
           {transit && !loadingT && (
-            <div>
-              <div className="rounded-xl p-3 mb-4"
+            <>
+              <div className="panch-sky-chart rounded-xl p-3"
                 style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
                 <SouthIndianChart
                   title="Transit"
@@ -392,10 +392,14 @@ export default function PanchangamTab() {
                   lagnaSignIndex={transit.ascendant?.sign_index}
                   showDetails={true}
                 />
+                <p className="si-chart__legend" style={{ marginTop: 8, textAlign: 'left' }}>
+                  <span style={{ color: 'var(--error-text)' }}>℞</span> Retrograde ·{' '}
+                  <span style={{ color: 'var(--orange-dark)' }}>★</span> Vargottama · deg = degree in sign · P = pada
+                </p>
               </div>
 
               {/* Planet details table */}
-              <div className="rounded-xl overflow-hidden"
+              <div className="rounded-xl overflow-hidden flex-1"
                 style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
                 <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--card-border)', background: 'var(--table-header)' }}>
                   <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -405,14 +409,14 @@ export default function PanchangamTab() {
                     Ayanamsa: Lahiri {transit.ayanamsa_value?.toFixed(4)}°
                   </span>
                 </div>
-                <div className="px-2 py-2">
+                <div className="px-2 py-2 panch-planet-table-wrap">
                   <TransitPlanetTable
                     planetPositions={transit.planet_positions}
                     ascendant={transit.ascendant}
                   />
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 

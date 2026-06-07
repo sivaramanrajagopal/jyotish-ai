@@ -303,12 +303,230 @@ input:focus, select:focus, textarea:focus {
 }
 
 .panch-controls {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 10px;
+  max-width: 520px;
 }
 @media (min-width: 480px) {
-  .panch-controls { flex-direction: row; gap: 12px; }
+  .panch-controls {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: none;
+  }
+}
+
+.panch-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .panch-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+}
+
+.panch-col {
+  min-width: 0;
+}
+
+.panch-sky-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.panch-sky-chart {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+@media (min-width: 1024px) {
+  .panch-sky-chart {
+    margin: 0;
+    max-width: 100%;
+  }
+}
+
+.panch-planet-table-wrap {
+  max-height: none;
+}
+@media (min-width: 1024px) {
+  .panch-planet-table-wrap {
+    max-height: 320px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── South Indian chart grid ─────────────────────────────────────────────── */
+.si-chart-wrap {
+  width: 100%;
+}
+
+.si-chart-wrap--detail {
+  max-width: 100%;
+}
+
+.si-chart {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.si-chart__cell {
+  position: relative;
+  width: 25%;
+  padding: 4px 3px 5px;
+  vertical-align: top;
+  border: 1px solid var(--card-border);
+  background: var(--chart-cell-bg);
+}
+
+.si-chart__cell--detail {
+  min-height: 4.25rem;
+  padding: 18px 4px 6px;
+  vertical-align: middle;
+}
+
+.si-chart__cell--crisis {
+  background: var(--chart-cell-crisis);
+}
+
+.si-chart__cell--growth {
+  background: var(--chart-cell-growth);
+}
+
+.si-chart__cell--lagna {
+  background-image: linear-gradient(
+    45deg,
+    transparent 46%,
+    var(--orange) 47%,
+    var(--orange) 53%,
+    transparent 54%
+  );
+}
+
+.si-chart__sign {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--text-muted);
+  user-select: none;
+  pointer-events: none;
+}
+
+.si-chart__asc {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: var(--nav-text);
+  background: var(--orange);
+  border-radius: 3px;
+  padding: 1px 4px;
+  line-height: 1.2;
+  z-index: 1;
+}
+
+.si-chart__planets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 1.75rem;
+}
+
+.si-chart__cell--detail .si-chart__planets {
+  min-height: 2.25rem;
+  padding-top: 2px;
+}
+
+.si-chart__badge--detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--card-border);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.si-chart__badge-retro {
+  color: var(--error-text);
+  font-weight: 900;
+  font-size: 0.5rem;
+}
+
+.si-chart__badge-name {
+  font-weight: 800;
+  font-size: 0.625rem;
+}
+
+.si-chart__badge-deg {
+  opacity: 0.85;
+  font-weight: 600;
+  font-size: 0.5rem;
+}
+
+.si-chart__badge-pada {
+  font-size: 0.5rem;
+  font-weight: 700;
+  padding: 0 2px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.si-chart__badge-varga {
+  color: var(--orange-dark);
+  font-size: 0.5rem;
+}
+
+.si-chart__centre-title {
+  color: var(--orange-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.si-chart__centre-sub {
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.si-chart__legend {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: right;
+}
+
+@media (max-width: 639px) {
+  .si-chart__cell--detail {
+    min-height: 3.75rem;
+    padding-top: 16px;
+  }
+
+  .si-chart__badge--detail {
+    font-size: 0.5rem;
+    padding: 1px 3px;
+  }
+
+  .si-chart__badge-name {
+    font-size: 0.5625rem;
+  }
 }
 
 /* ── Home hero ────────────────────────────────────────────────────────────── */
