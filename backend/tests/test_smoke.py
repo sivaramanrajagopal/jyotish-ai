@@ -33,8 +33,9 @@ def test_resolve_panchangam_location_text():
 
 def test_planet_retrograde_rahu_ketu():
     from agents.natal_agent import _planet_retrograde
+    from ephemeris import RAHU_NODE
     import ephemeris as swe
 
-    assert _planet_retrograde("Rahu", swe.TRUE_NODE, 2450000.0) is True
-    assert _planet_retrograde("Ketu", swe.TRUE_NODE, 2450000.0) is True
+    assert _planet_retrograde("Rahu", RAHU_NODE, 2450000.0) is True
+    assert _planet_retrograde("Ketu", RAHU_NODE, 2450000.0) is True
     assert _planet_retrograde("Sun", swe.SUN, 2450000.0) is False
