@@ -449,9 +449,8 @@ function BestWatchStrip({ top2, watch2, language, onHouseClick, suggestedHouse }
   )
 }
 
-function DailyReadingExpandable({ expanded, onToggle, children, language, hasReading }) {
+function DailyReadingExpandable({ expanded, onToggle, children, language }) {
   const tx = t(language)
-  if (!hasReading) return null
   return (
     <div style={{ marginBottom: 16 }}>
       <button
@@ -603,6 +602,8 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     if (!chart || !enabled) return
     setReadingLoading(true)
     setReadingError('')
+    setDailyReading(null)
+    setReadingExpanded(false)
     const body = chartPayload(chart, userId, { transit_date: transitDate })
     api.post('/forecast/daily-reading', { ...body, gender, language })
       .then(r => setDailyReading(r.data))
@@ -762,22 +763,23 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         suggestedHouse={suggestedHouse}
       />
 
-      <DailyReadingExpandable
-        expanded={readingExpanded}
-        onToggle={() => setReadingExpanded(v => !v)}
-        language={language}
-        hasReading={!!dailyReading?.reading}
-      >
-        <DailyReadingCard
-          reading={dailyReading.reading}
-          dtc={dailyReading.dasha_transit}
-          overall={dailyReading.overall_health}
-          topHouses={dailyReading.top_houses}
-          challengingHouses={dailyReading.challenging_houses}
+      {dailyReading?.reading && (
+        <DailyReadingExpandable
+          expanded={readingExpanded}
+          onToggle={() => setReadingExpanded(v => !v)}
           language={language}
-          compact
-        />
-      </DailyReadingExpandable>
+        >
+          <DailyReadingCard
+            reading={dailyReading.reading}
+            dtc={dailyReading.dasha_transit}
+            overall={dailyReading.overall_health}
+            topHouses={dailyReading.top_houses}
+            challengingHouses={dailyReading.challenging_houses}
+            language={language}
+            compact
+          />
+        </DailyReadingExpandable>
+      )}
 
       {/* Life areas grid — collapsible on mobile */}
       <button
