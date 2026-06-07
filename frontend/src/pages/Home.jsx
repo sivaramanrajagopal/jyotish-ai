@@ -28,6 +28,12 @@ import AdminPanel from '../components/AdminPanel'
 import { useIsAdmin } from '../hooks/useIsAdmin'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ErrorBoundary from '../components/ErrorBoundary'
+import AccountSettings from '../components/AccountSettings'
+import LegalAcceptModal from '../components/LegalAcceptModal'
+import LegalDocumentModal from '../components/LegalDocumentModal'
+import LegalFooter from '../components/LegalFooter'
+import { TERMS_SECTIONS, PRIVACY_SECTIONS, SHORT_DISCLAIMER } from '../constants/legal'
+import { hasLegalConsent, isAtLeast18 } from '../lib/legalConsent'
 
 // Apply persisted theme immediately on load
 applyStoredTheme()
@@ -161,6 +167,10 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
         <div className="auth-save-hint">
           Signed in as <strong>{userEmail}</strong> — new charts save to your account.
         </div>
+      )}
+
+      {userId && (
+        <AccountSettings />
       )}
 
       {chart && form.name && (
@@ -300,6 +310,10 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
               {error}
             </div>
           )}
+
+          <p className="legal-form-note">
+            You must be 18 or older. Birth date is used for chart calculation only.
+          </p>
 
           <button
             type="submit" disabled={loading}
@@ -480,6 +494,13 @@ function HomeApp() {
       return tab === 'chart' && hash ? hash : null
     } catch { return null }
   })
+  const [legalReady, setLegalReady] = useState(() => hasLegalConsent())
+  const [legalDoc, setLegalDoc] = useState(null)
+
+  const DISCLAIMER_SECTIONS = useMemo(
+    () => [{ title: 'Disclaimer', body: SHORT_DISCLAIMER }],
+    [],
+  )
 
   const setTab = useCallback((key, section) => {
     setMountedTabs(prev => new Set(prev).add(key))
@@ -593,6 +614,14 @@ function HomeApp() {
 
   const handleSubmit = async e => {
     e.preventDefault()
+    if (!legalReady && !hasLegalConsent()) {
+      setError('Please accept the Terms and confirm you are 18 or older using the dialog above.')
+      return
+    }
+    if (!isAtLeast18(form.dob)) {
+      setError('You must be at least 18 years old to use this service.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -623,6 +652,30 @@ function HomeApp() {
       className="min-h-screen flex flex-col"
       style={{ background: 'var(--app-bg)', color: 'var(--text-primary)' }}
     >
+      <LegalAcceptModal
+        open={!legalReady}
+        onAccepted={() => setLegalReady(true)}
+        onOpenTerms={() => setLegalDoc('terms')}
+        onOpenPrivacy={() => setLegalDoc('privacy')}
+      />
+      <LegalDocumentModal
+        open={legalDoc === 'terms'}
+        title="Terms of Use"
+        sections={TERMS_SECTIONS}
+        onClose={() => setLegalDoc(null)}
+      />
+      <LegalDocumentModal
+        open={legalDoc === 'privacy'}
+        title="Privacy Policy"
+        sections={PRIVACY_SECTIONS}
+        onClose={() => setLegalDoc(null)}
+      />
+      <LegalDocumentModal
+        open={legalDoc === 'disclaimer'}
+        title="Disclaimer"
+        sections={DISCLAIMER_SECTIONS}
+        onClose={() => setLegalDoc(null)}
+      />
       <ConfirmDialog
         open={showClearConfirm}
         title="Clear chart data?"
@@ -764,6 +817,12 @@ function HomeApp() {
           </div>
         )}
       </main>
+
+      <LegalFooter
+        onOpenTerms={() => setLegalDoc('terms')}
+        onOpenPrivacy={() => setLegalDoc('privacy')}
+        onOpenDisclaimer={() => setLegalDoc('disclaimer')}
+      />
 
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
       <nav

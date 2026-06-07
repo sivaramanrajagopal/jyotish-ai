@@ -9,6 +9,7 @@ import LanguageToggle from './LanguageToggle'
 import { chartPayload } from '../lib/chartPayload'
 import { formatApiError } from '../lib/apiError'
 import { resolvePanchangamLocation } from '../lib/resolveLocation'
+import { loadChatMessages, saveChatMessages } from '../lib/chatStorage'
 import QuotaHint from './QuotaHint'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
@@ -139,7 +140,7 @@ function renderBoldSafe(text) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function ChatPanel({ chart, placeOfBirth, userId }) {
-  const [messages, setMessages]     = useState([])
+  const [messages, setMessages]     = useState(() => loadChatMessages(chart))
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [activeTopics, setActive]   = useState([])
@@ -148,6 +149,16 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
   const bottomRef = useRef(null)
 
   const panchangamLocation = resolvePanchangamLocation(placeOfBirth, chart)
+
+  useEffect(() => {
+    if (chart) setMessages(loadChatMessages(chart))
+  }, [chart])
+
+  useEffect(() => {
+    if (!chart) return
+    const toSave = messages.filter(m => m.role === 'user' || m.role === 'assistant')
+    if (toSave.length) saveChatMessages(chart, toSave)
+  }, [chart, messages])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -219,6 +230,10 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
           </span>
         </div>
       </div>
+
+      <p className="legal-inline-hint px-4 pb-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+        AI responses are for entertainment and informational purposes only — not professional advice.
+      </p>
 
       <div className="px-4 pt-2">
         <QuotaHint userId={userId} />

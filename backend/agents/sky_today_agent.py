@@ -30,15 +30,10 @@ SIGN_SHORT = {
 }
 
 
-def _resolve_location(name: str) -> str:
-    """Match user place string to a known LOCATIONS key."""
-    if name in LOCATIONS:
-        return name
-    lower = name.lower()
-    for key in LOCATIONS:
-        if key.lower() in lower or lower in key.lower():
-            return key
-    return "Chennai"
+def _resolve_location(name: str, lat: float | None = None, lon: float | None = None) -> str:
+    """Match user place string or coordinates to a known LOCATIONS key."""
+    from location_utils import resolve_panchangam_location
+    return resolve_panchangam_location(name, lat=lat, lon=lon)
 
 
 def _fmt_time_short(iso: Optional[str], tz: ZoneInfo) -> Optional[str]:

@@ -252,7 +252,27 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
   )
 }
 
-// ── Daily Reading Card ────────────────────────────────────────────────────
+const PLANET_TA = {
+  Sun: 'சூரியன்', Moon: 'சந்திரன்', Mars: 'செவ்வாய்', Mercury: 'புதன்',
+  Jupiter: 'குரு', Venus: 'சுக்கிரன்', Saturn: 'சனி', Rahu: 'ராகு', Ketu: 'கேது',
+}
+
+function dtcDetailText(dtc, isTamil) {
+  if (!dtc) return ''
+  const score = dtc.correlation_score ?? 50
+  if (isTamil) {
+    const md = PLANET_TA[dtc.mahadasha?.planet] || dtc.mahadasha?.planet || '—'
+    const bh = PLANET_TA[dtc.bhukti?.planet] || dtc.bhukti?.planet || '—'
+    const overall = score >= 68
+      ? 'இரு தசா அதிபதிகளும் நல்ல கோசாரத்தில் — வலுவான செயல்பாட்டு காலம்.'
+      : score >= 45
+        ? 'கலப்பு தசா–கோசாரம் — பகுதி செயல்பாடு.'
+        : 'தசா அதிபதிகள் பலவீனமான கோசாரத்தில் — பொறுமை தேவை.'
+    return `${md} மகாதசை · ${bh} புத்தி — ${overall} (${Math.round(score)}/100)`
+  }
+  return dtc.summary || dtc.overall || ''
+}
+
 function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses, language = 'english' }) {
   if (!reading) return null
   const dtcRag  = dtc?.rag?.status || 'AMBER'
@@ -306,10 +326,10 @@ function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses,
         </div>
       </div>
 
-      {/* Dasha-Transit detail — English only (hardcoded template string) */}
-      {dtc?.summary && !isTamil && (
+      {/* Dasha-Transit detail */}
+      {dtc && dtcDetailText(dtc, isTamil) && (
         <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:10, fontSize:11, color:'rgba(255,255,255,0.55)', lineHeight:1.6 }}>
-          {dtc.summary}
+          {dtcDetailText(dtc, isTamil)}
         </div>
       )}
     </div>

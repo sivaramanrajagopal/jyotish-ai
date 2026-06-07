@@ -35,11 +35,12 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from rate_limit import limiter
+from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
-from chart_utils import round_score
+from chart_utils import round_score, assert_chart_not_stale
 from ai_limits import check_ai_quota, moderate_messages
+from analytics import track_event
 from security import (
     IS_PRODUCTION,
     check_content_length,
@@ -207,6 +208,26 @@ def auth_usage(request: Request, user: AuthUser = Depends(get_current_user)):
     return get_ai_usage(user.id)
 
 
+@app.get("/auth/anon-usage")
+@limiter.limit("60/minute")
+def auth_anon_usage(request: Request):
+    """Today's AI quota for guest users (hashed IP, no PII returned)."""
+    from ai_limits import get_anon_ai_usage
+
+    return get_anon_ai_usage(client_ip(request))
+
+
+@app.delete("/auth/account")
+@limiter.limit("5/hour")
+def auth_delete_account(request: Request, user: AuthUser = Depends(get_current_user)):
+    """Permanently delete account, chart, and AI usage data."""
+    from account_delete import delete_user_account
+
+    delete_user_account(user.id)
+    track_event("account_deleted", user_id=user.id)
+    return {"deleted": True}
+
+
 # ── Input sanitiser (strip control chars + HTML tags from free-text) ──────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -285,6 +306,29 @@ def ping(request: Request):
     Frontend polls this every 10 minutes to prevent the 50s cold-start.
     """
     return {"pong": True}
+
+
+@app.get("/health")
+@limiter.limit("60/minute")
+def health(request: Request):
+    """Dependency check for uptime monitors."""
+    checks = {"api": "ok", "supabase": "skipped", "ephemeris": "ok"}
+    if SUPABASE_ENABLED:
+        try:
+            sb = get_supabase()
+            sb.table("users").select("id").limit(1).execute()
+            checks["supabase"] = "ok"
+        except Exception:
+            checks["supabase"] = "error"
+    try:
+        import swisseph as swe
+        swe.set_sid_mode(swe.SIDM_LAHIRI)
+        checks["ephemeris"] = "ok"
+    except Exception:
+        checks["ephemeris"] = "error"
+    status = "ok" if all(v == "ok" or v == "skipped" for v in checks.values()) else "degraded"
+    code = 200 if status == "ok" else 503
+    return JSONResponse(status_code=code, content={"status": status, "checks": checks})
 
 
 @app.get("/panchangam/locations")
@@ -548,8 +592,8 @@ def natal_chart(
 
     lat, lon, timezone = _geocode(place_of_birth)
 
-    from agents.sky_today_agent import _resolve_location
-    panchangam_location = _resolve_location(place_of_birth)
+    from location_utils import resolve_panchangam_location
+    panchangam_location = resolve_panchangam_location(place_of_birth, lat=lat, lon=lon)
 
     chart = calculate_natal_chart(
         dob=dob,
@@ -589,6 +633,11 @@ def natal_chart(
         chart["birth_data"]["name"] = name
         save_natal_chart(user_id, chart, birth_form)
 
+    track_event(
+        "chart_calculated",
+        user_id=user_id,
+        properties={"place": place_of_birth, "panchangam_city": panchangam_location},
+    )
     return chart
 
 
@@ -631,8 +680,9 @@ def forecast(
     Requires ANTHROPIC_API_KEY in backend/.env.
     Get a key at: https://console.anthropic.com
     """
-    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
     try:
         context = assemble_context(
             natal_chart=chart,
@@ -817,7 +867,7 @@ def chat_endpoint(
     Pass the full conversation history with each request.
     Requires OPENAI_API_KEY in backend/.env.
     """
-    check_ai_quota(auth_user.id if auth_user else None, "chat")
+    check_ai_quota(auth_user.id if auth_user else None, "chat", client_ip(request))
     # Enforce message count and content length caps (cost control + DoS prevention)
     MAX_MESSAGES = 40
     MAX_MSG_LEN  = 2000
@@ -838,9 +888,11 @@ def chat_endpoint(
 
     moderate_messages(msgs)
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
 
     try:
         reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)
+        track_event("chat_sent", user_id=auth_user.id if auth_user else None, properties={"language": req.language})
         return {"reply": reply, "model": "gpt-4o-mini"}
     except RuntimeError:
         raise HTTPException(status_code=503, detail="Chat service temporarily unavailable.")
@@ -912,6 +964,7 @@ def forecast_scores(
     Cached in-process: same natal chart + same date = instant response.
     """
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
     try:
         result = score_all_houses(chart, req.transit_date)
         return result
@@ -937,8 +990,9 @@ def forecast_house_insight(
     if not 1 <= req.house_num <= 12:
         raise HTTPException(status_code=400, detail="house_num must be 1–12.")
 
-    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -1049,8 +1103,9 @@ def forecast_daily_reading(
     Synthesise natal chart + Dasha + Gochara + Tara Balam into a
     3-5 sentence daily reading with a Dasha-Transit correlation score.
     """
-    check_ai_quota(auth_user.id if auth_user else None, "forecast")
+    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -1197,6 +1252,7 @@ def ashtakavarga_endpoint(
     Results are cached — same chart always returns instantly.
     """
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
     try:
         result = calculate_ashtakavarga(chart)
         if not result:

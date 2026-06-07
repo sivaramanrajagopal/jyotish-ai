@@ -10,6 +10,10 @@ export function formatApiError(err, fallback = 'Something went wrong. Please try
     return 'Daily AI limit reached. Sign in for higher limits, or try again tomorrow.'
   }
 
+  if (status === 409) {
+    return typeof detail === 'string' ? detail : 'Please recalculate your chart on Home first.'
+  }
+
   if (status === 503) {
     return typeof detail === 'string' ? detail : 'Service temporarily unavailable. Try again shortly.'
   }
