@@ -113,8 +113,8 @@ function GaneshaBanner() {
           ॐ श्री கணபதியே நமஹ
         </div>
       </div>
-      <DarkModeToggle small />
-      <AuthPanel compact />
+      <DarkModeToggle small onDarkBg />
+      <AuthPanel compact onDarkBg />
     </div>
   )
 }
@@ -218,7 +218,11 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       </header>
 
       <div className="home-auth-block">
-        <AuthPanel variant="card" />
+        {!userId && (
+          chart
+            ? <AuthPanel variant="nudge" />
+            : <AuthPanel variant="card" />
+        )}
       </div>
 
       {/* Birth form */}
@@ -304,7 +308,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId }) {
 
       {!userId && (
         <div className="max-w-lg mx-auto mb-6">
-          <AuthPanel variant="card" />
+          <AuthPanel variant="nudge" />
         </div>
       )}
 
@@ -596,11 +600,10 @@ export default function Home() {
     >
       {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
       {activeTab === 'home' ? (
-        <div className={`banner-minimal${!userId ? ' banner-minimal--auth' : ''}`}>
+        <div className="banner-minimal">
           <span className="banner-minimal__label">Parashara Jyotish</span>
           <div className="banner-minimal__actions">
-            <AuthPanel compact />
-            <DarkModeToggle small />
+            <DarkModeToggle small onDarkBg />
           </div>
         </div>
       ) : (
@@ -641,7 +644,7 @@ export default function Home() {
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2 px-3">
-          <AuthPanel compact />
+          {activeTab !== 'home' && <AuthPanel compact />}
           <DarkModeToggle small onDarkBg={false} />
         </div>
       </nav>
