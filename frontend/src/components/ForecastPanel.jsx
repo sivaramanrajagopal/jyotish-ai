@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { formatTransitMoment } from '../lib/formatMoment'
 import LanguageToggle from './LanguageToggle'
 import { chartPayload, forecastPayload } from '../lib/chartPayload'
 import { roundScore } from '../lib/scoreFormat'
@@ -856,7 +857,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
           </p>
           {scores?.transit_moment && (
             <p style={{ fontSize:11, color:'var(--text-muted)', margin:'6px 0 0' }}>
-              {tx.transitComputedAt}: {scores.transit_moment}
+              {tx.transitComputedAt}: {formatTransitMoment(scores.transit_moment)}
             </p>
           )}
         </div>
@@ -1002,8 +1003,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         {tx.footer(scores.lagna_en, scores.transit_date)}
         {scores.transit_moment?.time && (
           <div style={{ marginTop: 4 }}>
-            {tx.transitComputedAt} {scores.transit_moment.time} ({scores.transit_moment.timezone?.split('/').pop() || 'local'})
-            {scores.transit_moment.note ? ` · ${scores.transit_moment.note}` : ''}
+            {tx.transitComputedAt} {formatTransitMoment(scores.transit_moment)}
           </div>
         )}
       </div>

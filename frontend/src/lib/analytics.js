@@ -1,11 +1,14 @@
 /**
  * Product analytics — optional GA4 + server-side app_events (via POST /analytics/event).
- * Both are best-effort and never block the UI.
+ * Best-effort only; never blocks the UI.
  */
 
 import api from '../api/client'
 
 const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim()
+
+/** Stop POST spam if backend hasn't deployed /analytics/event yet (404). */
+let backendEventsEnabled = true
 
 function loadGtag() {
   window.dataLayer = window.dataLayer || []
@@ -31,10 +34,16 @@ export function trackEvent(eventName, properties = {}) {
     window.gtag('event', eventName, properties)
   }
 
+  if (!backendEventsEnabled) return
+
   api.post('/analytics/event', {
     event_name: eventName,
     properties,
-  }).catch(() => {})
+  }).catch((err) => {
+    if (err.response?.status === 404) {
+      backendEventsEnabled = false
+    }
+  })
 }
 
 export function trackTabView(tab) {

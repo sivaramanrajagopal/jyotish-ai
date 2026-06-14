@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
+import { formatPrashnaMoment } from '../lib/formatMoment'
 import { formatApiError } from '../lib/apiError'
 import { loadPrashnaHistory, savePrashnaSession, clearPrashnaHistory } from '../lib/prashnaStorage'
 import { PRASHNA_CATALOG, mergePrashnaCatalog, firstQuestionId } from '../constants/prashnaCatalog'
@@ -595,7 +596,7 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
               <div className="prashna-result-card-title">Prashna chart</div>
               <SouthIndianChart
                 title="Prashna"
-                subtitle={`${result.chart.moment?.date} ${result.chart.moment?.time}`}
+                subtitle={formatPrashnaMoment(result.chart.moment)}
                 planetPositions={result.chart.planet_positions}
                 lagnaSignIndex={result.chart.ascendant?.sign_index}
                 variant="classic"
