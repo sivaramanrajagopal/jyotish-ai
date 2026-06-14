@@ -324,6 +324,111 @@ input:focus, select:focus, textarea:focus {
   border-radius: 12px;
   backdrop-filter: blur(8px);
 }
+
+/* Result cards below hero — readable on light page background */
+.prashna-result-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.prashna-result-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.prashna-result-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.prashna-engine-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.prashna-engine-badge--rule {
+  color: #1b5e20;
+  background: rgba(39, 174, 96, 0.12);
+  border: 1px solid rgba(39, 174, 96, 0.35);
+}
+
+.prashna-engine-badge--ai {
+  color: #6a1b9a;
+  background: rgba(156, 39, 176, 0.1);
+  border: 1px solid rgba(156, 39, 176, 0.3);
+}
+
+.prashna-verdict-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.prashna-verdict-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 10px 0 0;
+  font-style: italic;
+}
+
+.prashna-result-card-title--positive { color: #1b7a43; }
+.prashna-result-card-title--negative { color: #c0392b; }
+.prashna-result-card-title--neutral  { color: #d68910; }
+
+.prashna-result-card-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.prashna-result-card-para {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+
+.prashna-result-card-note {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.prashna-result-card-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.prashna-result-card-list li {
+  margin-bottom: 6px;
+}
+
+.prashna-result-card-list li:last-child {
+  margin-bottom: 0;
+}
 .prashna-category-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -334,31 +439,63 @@ input:focus, select:focus, textarea:focus {
 }
 
 .prashna-form-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  --prashna-select-bg: #ffffff;
+  --prashna-select-text: #1a1a1a;
+  --prashna-select-border: #c8baa8;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 14px;
   padding: 16px 18px;
   margin-bottom: 16px;
-  backdrop-filter: blur(8px);
+  box-shadow: var(--card-shadow);
 }
 
 .prashna-label {
   display: block;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-secondary);
   margin-bottom: 8px;
+}
+
+.prashna-select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 40px 0 14px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: 10px;
+  border: 1px solid var(--prashna-select-border);
+  background-color: var(--prashna-select-bg);
+  color: var(--prashna-select-text);
+  -webkit-text-fill-color: var(--prashna-select-text);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23E47911' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.prashna-select option {
+  color: #1a1a1a;
+  background: #ffffff;
+  font-size: 15px;
 }
 
 .prashna-question-preview {
   margin: 10px 0 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(201, 162, 39, 0.1);
-  border: 1px solid rgba(201, 162, 39, 0.25);
+  background: rgba(255, 153, 0, 0.08);
+  border: 1px solid rgba(255, 153, 0, 0.35);
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .prashna-location-row {
@@ -367,17 +504,18 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 10px;
   margin-bottom: 14px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .prashna-link-btn {
   padding: 8px 12px;
   min-height: 44px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--chip-border);
   background: transparent;
-  color: #C9A227;
+  color: var(--orange-dark);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -443,10 +581,121 @@ input:focus, select:focus, textarea:focus {
 .prashna-disclaimer {
   font-size: 11px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.45);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  border-top: 1px solid var(--card-border);
   padding-top: 14px;
   margin-top: 8px;
+}
+
+.prashna-audit-card {
+  border: 1px solid rgba(39, 174, 96, 0.35);
+}
+
+.prashna-audit-intro {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+
+.prashna-audit-toggle {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.prashna-audit-sections section {
+  margin-bottom: 18px;
+}
+
+.prashna-audit-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--orange-dark);
+  margin: 0 0 8px;
+}
+
+.prashna-audit-line {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.prashna-audit-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.prashna-audit-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 4px;
+}
+
+.prashna-audit-table {
+  width: 100%;
+  min-width: 280px;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.prashna-audit-table th,
+.prashna-audit-table td {
+  border: 1px solid var(--card-border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-primary);
+}
+
+.prashna-audit-table th {
+  background: rgba(255, 153, 0, 0.08);
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.prashna-audit-table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.prashna-audit-verdict-box {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(39, 174, 96, 0.08);
+  border: 1px solid rgba(39, 174, 96, 0.25);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .prashna-audit-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="dark"] .prashna-audit-table th {
+  background: rgba(201, 162, 39, 0.12);
+}
+
+html[data-theme="dark"] .prashna-audit-verdict-box {
+  background: rgba(39, 174, 96, 0.1);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .prashna-history-item {
@@ -457,50 +706,66 @@ input:focus, select:focus, textarea:focus {
   background: var(--card-bg);
 }
 
-html:not([data-theme="dark"]) .prashna-form-card select option {
-  color: #1a1033;
-  background: #fff;
+html[data-theme="dark"] .prashna-form-card {
+  --prashna-select-bg: rgba(0, 0, 0, 0.35);
+  --prashna-select-text: #ffffff;
+  --prashna-select-border: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
-html:not([data-theme="dark"]) .prashna-form-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  box-shadow: var(--card-shadow);
-}
-html:not([data-theme="dark"]) .prashna-label {
-  color: var(--text-secondary);
-}
-html:not([data-theme="dark"]) .prashna-form-card select {
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--input-text);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23E47911' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+html[data-theme="dark"] .prashna-label {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.prashna-select {
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background-color: rgba(0, 0, 0, 0.3);
-  color: #fff;
+html[data-theme="dark"] .prashna-select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23C9A227' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
 }
 
-html:not([data-theme="dark"]) .prashna-form-card .prashna-select {
-  background-color: var(--input-bg);
-  color: var(--input-text);
-  border-color: var(--input-border);
+html[data-theme="dark"] .prashna-select option {
+  color: #1a1a1a;
+  background: #ffffff;
 }
 
-html:not([data-theme="dark"]) .prashna-question-preview {
-  background: rgba(255, 153, 0, 0.08);
-  border-color: rgba(255, 153, 0, 0.35);
-  color: var(--text-primary);
+html[data-theme="dark"] .prashna-question-preview {
+  background: rgba(201, 162, 39, 0.12);
+  border-color: rgba(201, 162, 39, 0.3);
+  color: rgba(255, 255, 255, 0.92);
 }
-html:not([data-theme="dark"]) .prashna-location-row {
-  color: var(--text-muted);
+
+html[data-theme="dark"] .prashna-location-row {
+  color: rgba(255, 255, 255, 0.65);
 }
-html:not([data-theme="dark"]) .prashna-link-btn {
-  color: var(--orange-dark);
-  border-color: var(--chip-border);
+
+html[data-theme="dark"] .prashna-link-btn {
+  color: #e8d5a3;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+html[data-theme="dark"] .prashna-result-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .prashna-result-card-title {
+  color: #e8d5a3;
+}
+
+html[data-theme="dark"] .prashna-result-card-title--positive { color: #81c784; }
+html[data-theme="dark"] .prashna-result-card-title--negative { color: #ef9a9a; }
+html[data-theme="dark"] .prashna-result-card-title--neutral  { color: #ffb74d; }
+
+html[data-theme="dark"] .prashna-result-card-body,
+html[data-theme="dark"] .prashna-result-card-para,
+html[data-theme="dark"] .prashna-result-card-list {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme="dark"] .prashna-disclaimer {
+  color: rgba(255, 255, 255, 0.45);
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .panch-controls {

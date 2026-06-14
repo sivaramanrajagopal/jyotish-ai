@@ -23,6 +23,7 @@ from agents.prashna.timing_engine import estimate_timing
 from agents.prashna.testimony_engine import collect_testimonies
 from agents.prashna.verdict_engine import compute_verdict
 from agents.prashna.interpretation_engine import generate_interpretation
+from agents.prashna.audit_engine import build_calculation_audit
 
 
 def analyze_prashna(
@@ -95,28 +96,46 @@ def analyze_prashna(
         relevant,
     )
 
+    question_payload = {
+        "id": qid,
+        "text": qtext.strip(),
+        "category": cat,
+        "category_label": category_label,
+        "timestamp": chart["prashna_moment"]["iso"],
+        "timezone": tz_use,
+        "location": {
+            "lat": plat,
+            "lon": plon,
+            "place": place_label,
+        },
+    }
+
+    chart_payload = {
+        "ascendant": chart["ascendant"],
+        "planet_positions": chart["planet_positions"],
+        "house_signs": chart["house_signs"],
+        "ayanamsa": chart["ayanamsa"],
+        "ayanamsa_value": chart["ayanamsa_value"],
+        "moment": chart["prashna_moment"],
+    }
+
+    calculation_audit = build_calculation_audit(
+        question=question_payload,
+        chart=chart_payload,
+        house_num=house_num,
+        lagna=lagna,
+        relevant=relevant,
+        moon=moon,
+        significators=significators,
+        aspects=aspects,
+        occupants=occupants,
+        testimonies=testimonies,
+        verdict=verdict,
+    )
+
     return {
-        "question": {
-            "id": qid,
-            "text": qtext.strip(),
-            "category": cat,
-            "category_label": category_label,
-            "timestamp": chart["prashna_moment"]["iso"],
-            "timezone": tz_use,
-            "location": {
-                "lat": plat,
-                "lon": plon,
-                "place": place_label,
-            },
-        },
-        "chart": {
-            "ascendant": chart["ascendant"],
-            "planet_positions": chart["planet_positions"],
-            "house_signs": chart["house_signs"],
-            "ayanamsa": chart["ayanamsa"],
-            "ayanamsa_value": chart["ayanamsa_value"],
-            "moment": chart["prashna_moment"],
-        },
+        "question": question_payload,
+        "chart": chart_payload,
         "analysis": {
             "lagna": lagna,
             "relevant_house": relevant,
@@ -130,4 +149,10 @@ def analyze_prashna(
         "verdict": verdict,
         "interpretation": interpretation,
         "disclaimer": PRASHNA_DISCLAIMER,
+        "calculation_audit": calculation_audit,
+        "meta": {
+            "engine": "rule_based",
+            "uses_degrees": True,
+            "ai_narration": False,
+        },
     }

@@ -10,7 +10,7 @@ def analyze_occupants(chart: dict, house_num: int, occupants: list[str]) -> list
     results = []
     for planet in occupants:
         data = chart["planet_positions"][planet]
-        dignity = planetary_dignity(planet, data["sign"])
+        dignity = planetary_dignity(planet, data["sign"], data.get("degree_in_sign"))
         positive = PLANET_OCCUPANT_POSITIVE.get(planet)
         caution = PLANET_OCCUPANT_CAUTION.get(planet)
 

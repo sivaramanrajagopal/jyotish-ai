@@ -58,3 +58,24 @@ def assert_chart_not_stale(natal_chart: dict) -> None:
                 "Please recalculate on Home to refresh Lahiri positions."
             ),
         )
+
+
+def ensure_dasha(natal_chart: dict) -> dict:
+    """Compute Vimshottari dasha if missing from a saved chart."""
+    dasha = natal_chart.get("dasha") or {}
+    if dasha.get("mahadasha", {}).get("planet"):
+        natal_chart["dasha_available"] = True
+        return natal_chart
+    try:
+        from agents.dasha_agent import get_personal_dasha
+        moon_lon = natal_chart["planet_positions"]["Moon"]["longitude"]
+        dob = natal_chart.get("birth_data", {}).get("dob", "")
+        if moon_lon is not None and dob:
+            natal_chart["dasha"] = get_personal_dasha(moon_lon, dob)
+            natal_chart["dasha_available"] = bool(
+                natal_chart["dasha"].get("mahadasha", {}).get("planet")
+            )
+    except Exception:
+        natal_chart.setdefault("dasha", {})
+        natal_chart["dasha_available"] = False
+    return natal_chart

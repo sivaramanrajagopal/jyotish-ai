@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import LanguageToggle from './LanguageToggle'
-import { chartPayload } from '../lib/chartPayload'
+import { chartPayload, forecastPayload } from '../lib/chartPayload'
 import { roundScore } from '../lib/scoreFormat'
 import { formatApiError } from '../lib/apiError'
 import QuotaHint from './QuotaHint'
@@ -40,8 +40,13 @@ const TR = {
     dignity: { Exalted:'Exalted', 'Own Sign':'Own Sign', Friend:'Friend',
                Neutral:'Neutral', Enemy:'Enemy', Debilitated:'Debilitated', 'N/A':'—' },
     atGlance: 'Your day at a glance',
-    readFullNote: 'Read full daily note',
-    hideFullNote: 'Hide daily note',
+    readFullNote: 'Read AI daily note',
+    hideFullNote: 'Hide AI daily note',
+    loadDailyReading: 'Load AI daily note',
+    ruleEngine: 'Rule engine',
+    aiNarration: 'AI narration',
+    dashaTransitRule: 'Dasha–Transit (computed)',
+    transitComputedAt: 'Transits computed at',
     exploreAll: 'Explore all 12 life areas',
     hideAreas: 'Hide life areas',
     checkTomorrow: 'Check tomorrow',
@@ -70,8 +75,13 @@ const TR = {
     dignity: { Exalted:'உச்சம்', 'Own Sign':'சொந்த வீடு', Friend:'நட்பு வீடு',
                Neutral:'நடுநிலை', Enemy:'எதிரி வீடு', Debilitated:'நீசம்', 'N/A':'—' },
     atGlance: 'இன்றைய நிலை — ஒரு பார்வையில்',
-    readFullNote: 'முழு தினசரி கணிப்பு',
-    hideFullNote: 'கணிப்பை மறை',
+    readFullNote: 'AI தினசரி குறிப்பு',
+    hideFullNote: 'AI குறிப்பை மறை',
+    loadDailyReading: 'AI தினசரி குறிப்பு ஏற்று',
+    ruleEngine: 'விதி இயந்திரம்',
+    aiNarration: 'AI விளக்கம்',
+    dashaTransitRule: 'தசை–கோசாரம் (கணக்கிடப்பட்டது)',
+    transitComputedAt: 'கோசாரம் கணக்கிடப்பட்ட நேரம்',
     exploreAll: '12 துறைகளையும் பார்க்க',
     hideAreas: 'துறைகளை மறை',
     checkTomorrow: 'நாளை பார்க்க',
@@ -273,8 +283,16 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
 
       <ScoreBar score={houseData.score} status={status} language={language} />
 
-      {/* Key facts grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap:8, margin:'14px 0' }}>
+      {/* Key facts grid — rule engine */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+        <span className="prashna-engine-badge prashna-engine-badge--rule">{tx.ruleEngine}</span>
+        {houseData.lord_gochara_result && (
+          <span style={{ fontSize:11, color:'var(--text-muted)' }}>
+            Lord Gochara: {houseData.lord_gochara_result}
+          </span>
+        )}
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap:8, margin:'0 0 14px' }}>
         {[
           { label: tx.houseLord,       value:`${houseData.lord} → H${houseData.lord_placed_house}` },
           { label: tx.lordDignity,     value: dignityVal },
@@ -303,10 +321,13 @@ function HouseDetailCard({ houseData, insight, insightLoading, insightError, lan
         ))}
       </div>
 
-      {/* AI insight section */}
+      {/* AI insight section — optional */}
       <div style={{ borderTop:`1px solid ${rc.border}`, paddingTop:14 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:10 }}>
-          {tx.aiForecast}
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em' }}>
+            {tx.aiForecast}
+          </div>
+          <span className="prashna-engine-badge prashna-engine-badge--ai">{tx.aiNarration}</span>
         </div>
         {insightLoading && (
           <div style={{ color:'var(--orange)', fontSize:13, display:'flex', gap:6, alignItems:'center' }}>
@@ -339,6 +360,31 @@ function dtcDetailText(dtc, isTamil) {
     return `${md} மகாதசை · ${bh} புத்தி — ${overall} (${Math.round(score)}/100)`
   }
   return dtc.summary || dtc.overall || ''
+}
+
+function DashaTransitRuleCard({ dtc, language }) {
+  if (!dtc?.correlation_score && !dtc?.summary) return null
+  const tx = t(language)
+  const isTamil = language === 'tamil'
+  const score = roundScore(dtc.correlation_score ?? 50)
+  const ragStatus = dtc.rag?.status || 'AMBER'
+  const rc = RAG[ragStatus] || RAG.AMBER
+
+  return (
+    <div className="prashna-result-card" style={{ marginBottom: 14 }}>
+      <div className="prashna-result-card-header">
+        <div className="prashna-result-card-title">{tx.dashaTransitRule}</div>
+        <span className="prashna-engine-badge prashna-engine-badge--rule">{tx.ruleEngine}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 22, fontWeight: 800, color: rc.badge }}>{score}</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>/100 · {tx.ragLabel[ragStatus]}</span>
+      </div>
+      <p className="prashna-result-card-para" style={{ margin: 0, fontSize: 13 }}>
+        {isTamil ? dtcDetailText(dtc, true) : (dtc.summary || dtc.overall || '')}
+      </p>
+    </div>
+  )
 }
 
 function AtGlanceHero({
@@ -473,23 +519,29 @@ function AtGlanceHero({
   )
 }
 
-function DailyReadingExpandable({ expanded, onToggle, children, language }) {
+function DailyReadingExpandable({ expanded, onToggle, children, language, hasReading, onLoad, loading }) {
   const tx = t(language)
+  const label = expanded ? tx.hideFullNote : (hasReading ? tx.readFullNote : tx.loadDailyReading)
   return (
     <div style={{ marginBottom: 16 }}>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() => {
+          if (!expanded && !hasReading && onLoad) onLoad()
+          onToggle()
+        }}
         aria-expanded={expanded}
+        disabled={loading}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
+          padding: '12px 14px', borderRadius: 12, cursor: loading ? 'wait' : 'pointer',
           border: '1px solid var(--card-border)', background: 'var(--card-bg)',
           color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
           boxShadow: 'var(--card-shadow)', marginBottom: expanded ? 10 : 0,
+          opacity: loading ? 0.7 : 1,
         }}
       >
-        <span>{expanded ? tx.hideFullNote : tx.readFullNote}</span>
+        <span>{loading ? tx.generatingReading : label}</span>
         <span style={{ fontSize: 10, opacity: 0.6 }}>{expanded ? '▲' : '▼'}</span>
       </button>
       {expanded && children}
@@ -611,8 +663,8 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     setSelectedHouse(null)
     setInsightCache({})
     setReadingExpanded(false)
-    const body = chartPayload(chart, userId, { transit_date: transitDate })
-    api.post('/forecast/scores', body)
+    setDailyReading(null)
+    api.post('/forecast/scores', forecastPayload(chart, userId, transitDate))
       .then(r => setScores(r.data))
       .catch(err => {
         setScoresError(formatApiError(err, 'Could not load forecast scores.'))
@@ -621,22 +673,21 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       .finally(() => setScoresLoading(false))
   }, [chart, transitDate, userId, enabled])
 
-  // AI daily reading — refetch when language or date changes
-  useEffect(() => {
-    if (!chart || !enabled) return
+  const loadDailyReading = () => {
+    if (!chart || !enabled || readingLoading || dailyReading?.reading) return
     setReadingLoading(true)
     setReadingError('')
-    setDailyReading(null)
-    setReadingExpanded(false)
-    const body = chartPayload(chart, userId, { transit_date: transitDate })
-    api.post('/forecast/daily-reading', { ...body, gender, language })
+    api.post('/forecast/daily-reading', {
+      ...forecastPayload(chart, userId, transitDate),
+      gender,
+      language,
+    })
       .then(r => setDailyReading(r.data))
       .catch(err => {
         setReadingError(formatApiError(err, 'Could not load daily reading.'))
-        setDailyReading(null)
       })
       .finally(() => setReadingLoading(false))
-  }, [chart, transitDate, gender, language, userId, enabled])
+  }
 
   if (!enabled) {
     return (
@@ -648,6 +699,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang)
+    setDailyReading(null)
   }
 
   const handleTagClick = async (houseNum) => {
@@ -659,12 +711,12 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
     setInsightLoading(true)
     try {
-      const res = await api.post('/forecast/house', chartPayload(chart, userId, {
+      const res = await api.post('/forecast/house', {
+        ...forecastPayload(chart, userId, transitDate),
         house_num:   houseNum,
         gender,
         language,
-        transit_date: transitDate,
-      }))
+      })
       setInsightCache(prev => ({ ...prev, [key]: res.data.insight || '' }))
     } catch (err) {
       setInsightError(formatApiError(err, 'Could not load AI insight.'))
@@ -703,9 +755,9 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
   const oh     = scores.overall_health || {}
   const houses = scores.houses || {}
   const ranked = rankedHouses(houses)
-  const top2   = (dailyReading?.top_houses?.slice(0, 2) || ranked.slice(0, 2).map(toHouseChip))
-  const watch2 = (dailyReading?.challenging_houses?.slice(0, 2) || ranked.slice(-2).reverse().map(toHouseChip))
-  const overallForHero = dailyReading?.overall_health || oh
+  const top2   = ranked.slice(0, 2).map(toHouseChip)
+  const watch2 = ranked.slice(-2).reverse().map(toHouseChip)
+  const overallForHero = oh
   const headline = buildHeadline({
     reading: dailyReading?.reading,
     top2, watch2,
@@ -762,12 +814,6 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
       )}
 
       {/* At-a-glance hero + best/watch strip */}
-      {readingError && (
-        <div style={{ color:'var(--error-text)', background:'var(--error-bg)', border:'1px solid var(--error-border)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:13 }}>
-          ⚠️ {readingError}
-        </div>
-      )}
-
       <AtGlanceHero
         overall={overallForHero}
         headline={headline}
@@ -775,7 +821,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         onLanguageChange={handleLanguageChange}
         isToday={isToday}
         onCheckTomorrow={isToday ? () => setTransitDate(tomorrowISO()) : undefined}
-        readingLoading={readingLoading && !dailyReading?.reading}
+        readingLoading={false}
         transitDate={scores.transit_date || transitDate}
         top2={top2}
         watch2={watch2}
@@ -783,23 +829,33 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
         onAskAi={scrollToHouseDetail}
       />
 
-      {dailyReading?.reading && (
-        <DailyReadingExpandable
-          expanded={readingExpanded}
-          onToggle={() => setReadingExpanded(v => !v)}
-          language={language}
-        >
+      <DashaTransitRuleCard dtc={scores.dasha_transit} language={language} />
+
+      <DailyReadingExpandable
+        expanded={readingExpanded}
+        onToggle={() => setReadingExpanded(v => !v)}
+        language={language}
+        hasReading={!!dailyReading?.reading}
+        onLoad={loadDailyReading}
+        loading={readingLoading}
+      >
+        {readingError && (
+          <div style={{ color:'var(--error-text)', background:'var(--error-bg)', border:'1px solid var(--error-border)', borderRadius:12, padding:'12px 16px', marginBottom:10, fontSize:13 }}>
+            ⚠️ {readingError}
+          </div>
+        )}
+        {dailyReading?.reading && (
           <DailyReadingCard
             reading={dailyReading.reading}
-            dtc={dailyReading.dasha_transit}
-            overall={dailyReading.overall_health}
-            topHouses={dailyReading.top_houses}
-            challengingHouses={dailyReading.challenging_houses}
+            dtc={dailyReading.dasha_transit || scores.dasha_transit}
+            overall={dailyReading.overall_health || oh}
+            topHouses={dailyReading.top_houses || top2}
+            challengingHouses={dailyReading.challenging_houses || watch2}
             language={language}
             compact
           />
-        </DailyReadingExpandable>
-      )}
+        )}
+      </DailyReadingExpandable>
 
       {/* Life areas grid — collapsible on mobile */}
       <button
@@ -891,6 +947,12 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
       <div style={{ marginTop:20, textAlign:'center', fontSize:11, color:'var(--text-muted)' }}>
         {tx.footer(scores.lagna_en, scores.transit_date)}
+        {scores.transit_moment?.time && (
+          <div style={{ marginTop: 4 }}>
+            {tx.transitComputedAt} {scores.transit_moment.time} ({scores.transit_moment.timezone?.split('/').pop() || 'local'})
+            {scores.transit_moment.note ? ` · ${scores.transit_moment.note}` : ''}
+          </div>
+        )}
       </div>
     </div>
   )

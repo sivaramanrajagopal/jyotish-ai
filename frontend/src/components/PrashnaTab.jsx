@@ -18,21 +18,6 @@ const VERDICT_STYLE = {
   possible_delayed: { bg: '#3d321a', border: '#ff9800', color: '#FFCC80' },
 }
 
-const selectStyle = {
-  display: 'block',
-  width: '100%',
-  boxSizing: 'border-box',
-  minHeight: 48,
-  padding: '0 14px',
-  fontSize: 16,
-  borderRadius: 10,
-  WebkitAppearance: 'none',
-  appearance: 'none',
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 14px center',
-  paddingRight: 40,
-}
-
 function useLiveClock() {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -51,33 +36,229 @@ function formatClock(d) {
 
 function TestimonyList({ items, tone }) {
   if (!items?.length) return null
-  const colors = {
-    positive: { dot: '#27ae60', label: 'Positive Testimonies' },
-    negative: { dot: '#e74c3c', label: 'Challenging Testimonies' },
-    neutral:  { dot: '#f39c12', label: 'Neutral Testimonies' },
-  }[tone] || { dot: '#999', label: 'Testimonies' }
+  const toneClass = {
+    positive: 'prashna-result-card-title--positive',
+    negative: 'prashna-result-card-title--negative',
+    neutral:  'prashna-result-card-title--neutral',
+  }[tone] || ''
+  const labels = {
+    positive: 'Positive Testimonies',
+    negative: 'Challenging Testimonies',
+    neutral:  'Neutral Testimonies',
+  }
 
   return (
-    <div className="prashna-glass" style={{ padding: '14px 16px', marginBottom: 12 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: colors.dot, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {colors.label}
+    <div className="prashna-result-card">
+      <div className={`prashna-result-card-title ${toneClass}`}>
+        {labels[tone] || 'Testimonies'}
       </div>
-      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.6, color: 'rgba(255,255,255,0.82)' }}>
+      <ul className="prashna-result-card-list">
         {items.map((t, i) => (
-          <li key={i} style={{ marginBottom: 6 }}>{t.description}</li>
+          <li key={i}>{t.description}</li>
         ))}
       </ul>
     </div>
   )
 }
 
-function AnalysisCard({ title, children }) {
+function AnalysisCard({ title, children, badge, badgeVariant = 'rule' }) {
   return (
-    <div className="prashna-glass" style={{ padding: '14px 16px', marginBottom: 12 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#C9A227', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {title}
+    <div className="prashna-result-card">
+      <div className="prashna-result-card-header">
+        <div className="prashna-result-card-title">{title}</div>
+        {badge && (
+          <span className={`prashna-engine-badge prashna-engine-badge--${badgeVariant}`}>
+            {badge}
+          </span>
+        )}
       </div>
-      <div style={{ fontSize: 13, lineHeight: 1.65, color: 'rgba(255,255,255,0.82)' }}>{children}</div>
+      <div className="prashna-result-card-body">{children}</div>
+    </div>
+  )
+}
+
+function AuditTable({ headers, rows }) {
+  if (!rows?.length) return <p className="prashna-audit-empty">None</p>
+  return (
+    <div className="prashna-audit-table-wrap">
+      <table className="prashna-audit-table">
+        <thead>
+          <tr>
+            {headers.map(h => <th key={h}>{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              {row.map((cell, j) => <td key={j}>{cell ?? '—'}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PrashnaAuditCard({ audit }) {
+  const [expanded, setExpanded] = useState(true)
+  if (!audit) return null
+
+  const fmtDeg = (d) => (d != null && d !== '' ? `${Number(d).toFixed(2)}°` : '—')
+  const fmtCoord = (lat, lon) => {
+    if (lat == null || lon == null) return '—'
+    return `${Number(lat).toFixed(4)}, ${Number(lon).toFixed(4)}`
+  }
+
+  const planetRows = (audit.planets || []).map(p => [
+    p.planet,
+    p.sign,
+    fmtDeg(p.degree_in_sign),
+    `H${p.house}`,
+    p.nakshatra || '—',
+    p.retrograde ? '℞' : '—',
+    (p.roles || []).join('; '),
+    (p.used_in || []).join('; '),
+  ])
+
+  const aspectRows = (audit.aspects_to_matter_house || []).map(a => [
+    a.planet,
+    `H${a.from_house}`,
+    `H${a.target_house}`,
+    a.polarity,
+    a.description,
+  ])
+
+  const sigChecks = (audit.significators?.checks || []).map(c => [
+    c.check,
+    c.result,
+    c.detail,
+  ])
+
+  const testimonyRows = (audit.testimonies_summary || []).map(t => [
+    t.polarity === 'positive' ? '🟢' : t.polarity === 'negative' ? '🔴' : '⚪',
+    t.category,
+    t.description,
+  ])
+
+  return (
+    <div className="prashna-result-card prashna-audit-card">
+      <div className="prashna-result-card-header">
+        <div className="prashna-result-card-title">📋 Calculation audit</div>
+        <span className="prashna-engine-badge prashna-engine-badge--rule">Verify calculation</span>
+      </div>
+      <p className="prashna-audit-intro">
+        {audit.method?.note}
+      </p>
+      <button
+        type="button"
+        className="prashna-audit-toggle"
+        onClick={() => setExpanded(v => !v)}
+        aria-expanded={expanded}
+      >
+        {expanded ? 'Hide audit tables ▲' : 'Show audit tables ▼'}
+      </button>
+
+      {expanded && (
+        <div className="prashna-audit-sections">
+          <section>
+            <h4 className="prashna-audit-heading">Question & cast moment</h4>
+            <AuditTable
+              headers={['Field', 'Value']}
+              rows={[
+                ['Question', audit.question?.text],
+                ['Category', audit.question?.category_label],
+                ['Matter house', audit.matter_house?.house_num ? `H${audit.matter_house.house_num} (${audit.matter_house.house_sign})` : '—'],
+                ['Cast time (ISO)', audit.moment?.timestamp_iso],
+                ['Local date / time', `${audit.moment?.date || '—'} ${audit.moment?.time || ''}`.trim()],
+                ['Timezone', audit.moment?.timezone],
+                ['Place', audit.moment?.place],
+                ['Coordinates', fmtCoord(audit.moment?.latitude, audit.moment?.longitude)],
+                ['Ayanamsa', `${audit.moment?.ayanamsa || 'Lahiri'} (${audit.moment?.ayanamsa_value ?? '—'})`],
+              ]}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Lagna (querent)</h4>
+            <AuditTable
+              headers={['Field', 'Value']}
+              rows={[
+                ['Lagna sign', `${audit.lagna?.sign} ${fmtDeg(audit.lagna?.degree_in_sign)}`],
+                ['Lagna nakshatra', audit.lagna?.nakshatra ? `${audit.lagna.nakshatra} P${audit.lagna.pada}` : '—'],
+                ['Querent lord (Lagna lord)', audit.lagna?.lagna_lord],
+                ['Lord placement', `${audit.lagna?.lord_sign} · H${audit.lagna?.lord_house}`],
+                ['Lord dignity', `${audit.lagna?.dignity} (${audit.lagna?.strength})`],
+              ]}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Matter house (quesited)</h4>
+            <AuditTable
+              headers={['Field', 'Value']}
+              rows={[
+                ['House', `H${audit.matter_house?.house_num} ${audit.matter_house?.house_sign}`],
+                ['Quesited lord', audit.matter_house?.house_lord],
+                ['Lord placement', `${audit.matter_house?.lord_sign} · H${audit.matter_house?.lord_house}`],
+                ['Lord dignity', `${audit.matter_house?.lord_dignity} (${audit.matter_house?.lord_strength})`],
+                ['Occupants', (audit.matter_house?.occupants || []).join(', ') || 'None'],
+              ]}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Significator link (querent ↔ quesited)</h4>
+            <p className="prashna-audit-line">
+              <strong>{audit.significators?.connection_label}</strong>
+              {' — '}{audit.significators?.explanation}
+            </p>
+            <AuditTable headers={['Check', 'Result', 'Detail']} rows={sigChecks} />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Drishti to matter house</h4>
+            <AuditTable
+              headers={['Planet', 'From', 'Aspects', 'Tone', 'Rule']}
+              rows={aspectRows}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Moon</h4>
+            <AuditTable
+              headers={['Field', 'Value']}
+              rows={[
+                ['Sign / house', `${audit.moon?.sign} · H${audit.moon?.house}`],
+                ['Nakshatra', audit.moon?.nakshatra ? `${audit.moon.nakshatra} (lord ${audit.moon.nakshatra_lord})` : '—'],
+                ['Dignity', `${audit.moon?.dignity} (${audit.moon?.strength})`],
+                ['Relation to matter', audit.moon?.relation_to_matter],
+                ['Outcome weight', audit.moon?.outcome],
+              ]}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">All planets (ephemeris)</h4>
+            <AuditTable
+              headers={['Planet', 'Sign', 'Degree', 'House', 'Nakshatra', '℞', 'Role', 'Used in']}
+              rows={planetRows}
+            />
+          </section>
+
+          <section>
+            <h4 className="prashna-audit-heading">Testimonies → verdict</h4>
+            <AuditTable
+              headers={['Tone', 'Category', 'Testimony']}
+              rows={testimonyRows}
+            />
+            <div className="prashna-audit-verdict-box">
+              <div><strong>Verdict:</strong> {audit.verdict_logic?.label}</div>
+              <div><strong>Counts:</strong> 🟢 {audit.verdict_logic?.positive_count} · 🔴 {audit.verdict_logic?.negative_count} · ⚪ {audit.verdict_logic?.neutral_count}</div>
+              <div><strong>Rule applied:</strong> {audit.verdict_logic?.rule_applied}</div>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
@@ -240,7 +421,6 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
             className="prashna-select"
             value={category}
             onChange={(e) => handleCategoryChange(e.target.value)}
-            style={selectStyle}
           >
             {categories.map(c => (
               <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
@@ -258,7 +438,6 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
               className="prashna-select"
               value={questionId}
               onChange={(e) => setQuestionId(e.target.value)}
-              style={selectStyle}
               required
             >
               {questions.map(q => (
@@ -292,54 +471,66 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
       {result && (
         <div>
           <div className="prashna-verdict-card" style={{ background: vs.bg, borderColor: vs.border }}>
-            <div className="prashna-verdict-label">Verdict</div>
+            <div className="prashna-verdict-header">
+              <div className="prashna-verdict-label">Verdict</div>
+              <span className="prashna-engine-badge prashna-engine-badge--rule">Rule engine</span>
+            </div>
             <div className="prashna-verdict-title" style={{ color: vs.color }}>{result.verdict?.label}</div>
             <p className="prashna-verdict-text">{result.verdict?.explanation}</p>
             <div className="prashna-verdict-counts">
               🟢 {result.verdict?.positive_count} supportive · 🔴 {result.verdict?.negative_count} challenging · ⚪ {result.verdict?.neutral_count} neutral
             </div>
+            <p className="prashna-verdict-note">
+              Based on {result.testimonies?.counts?.total ?? 0} computed testimonies — not a guarantee.
+            </p>
           </div>
 
+          <PrashnaAuditCard audit={result.calculation_audit} />
+
           {result.ai_reading && (
-            <AnalysisCard title="🤖 AI Prashna reading">
-              <p style={{ margin: '0 0 8px' }}>{result.ai_reading}</p>
-              <p style={{ margin: 0, fontSize: 11, opacity: 0.65, fontStyle: 'italic' }}>
+            <AnalysisCard title="🤖 AI Prashna reading" badge="AI narration" badgeVariant="ai">
+              <p className="prashna-result-card-para">{result.ai_reading}</p>
+              <p className="prashna-result-card-note">
                 AI narration based only on computed testimonies — not a guarantee.
               </p>
             </AnalysisCard>
           )}
 
-          <AnalysisCard title="Rule-based summary">
-            <p style={{ margin: 0 }}>{result.interpretation?.summary}</p>
+          <AnalysisCard title="Rule-based summary" badge="Rule engine" badgeVariant="rule">
+            <p className="prashna-result-card-para">{result.interpretation?.summary}</p>
           </AnalysisCard>
 
           <TestimonyList items={result.testimonies?.positive} tone="positive" />
           <TestimonyList items={result.testimonies?.negative} tone="negative" />
           <TestimonyList items={result.testimonies?.neutral} tone="neutral" />
 
-          <AnalysisCard title="Moon analysis">
-            <strong>{result.analysis?.moon?.moon_sign}</strong> in house {result.analysis?.moon?.moon_house} · {result.analysis?.moon?.strength_label}<br />
+          <AnalysisCard title="Moon analysis" badge="Rule engine" badgeVariant="rule">
+            <strong>{result.analysis?.moon?.moon_sign}</strong> in house {result.analysis?.moon?.moon_house}
+            {result.analysis?.moon?.moon_nakshatra && (
+              <> · {result.analysis.moon.moon_nakshatra} (lord {result.analysis.moon.moon_nakshatra_lord})</>
+            )}
+            {' '}· {result.analysis?.moon?.strength_label}<br />
             {result.analysis?.moon?.explanation}
           </AnalysisCard>
 
-          <AnalysisCard title={`Relevant house — ${result.analysis?.relevant_house?.category_label}`}>
+          <AnalysisCard title={`Relevant house — ${result.analysis?.relevant_house?.category_label}`} badge="Rule engine" badgeVariant="rule">
             House {result.analysis?.relevant_house?.house_num} ({result.analysis?.relevant_house?.house_sign}) ·
             Lord {result.analysis?.relevant_house?.house_lord} · {result.analysis?.relevant_house?.lord_strength_label}<br />
             {result.analysis?.relevant_house?.explanation}
           </AnalysisCard>
 
-          <AnalysisCard title="Timing indication">
+          <AnalysisCard title="Timing indication" badge="Rule engine" badgeVariant="rule">
             <strong>{result.analysis?.timing?.timing_band}</strong><br />
             {result.analysis?.timing?.explanation}
           </AnalysisCard>
 
-          <AnalysisCard title="Practical guidance">
+          <AnalysisCard title="Practical guidance" badge="Rule engine" badgeVariant="rule">
             {result.interpretation?.practical_guidance}
           </AnalysisCard>
 
           {result.chart && (
-            <div className="prashna-glass" style={{ padding: '14px', marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C9A227', marginBottom: 10, textTransform: 'uppercase' }}>Prashna chart</div>
+            <div className="prashna-result-card">
+              <div className="prashna-result-card-title">Prashna chart</div>
               <SouthIndianChart
                 title="Prashna"
                 subtitle={`${result.chart.moment?.date} ${result.chart.moment?.time}`}

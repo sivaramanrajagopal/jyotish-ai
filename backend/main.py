@@ -38,7 +38,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
-from chart_utils import round_score, assert_chart_not_stale
+from chart_utils import round_score, assert_chart_not_stale, ensure_dasha
 from ai_limits import check_ai_quota, moderate_messages
 from analytics import track_event
 from security import (
@@ -327,6 +327,12 @@ def health(request: Request):
         checks["ephemeris"] = "ok"
     except Exception:
         checks["ephemeris"] = "error"
+    try:
+        from agents.dasha_agent import get_personal_dasha
+        sample = get_personal_dasha(100.0, "1990-06-15")
+        checks["dasha"] = "ok" if sample.get("mahadasha", {}).get("planet") else "error"
+    except Exception:
+        checks["dasha"] = "error"
     status = "ok" if all(v == "ok" or v == "skipped" for v in checks.values()) else "degraded"
     code = 200 if status == "ok" else 503
     return JSONResponse(status_code=code, content={"status": status, "checks": checks})
@@ -614,13 +620,15 @@ def natal_chart(
     chart["panchangam_location"] = panchangam_location
 
     # Add dasha data
+    chart["dasha"] = {}
+    chart["dasha_available"] = False
     try:
         from agents.dasha_agent import get_personal_dasha
         moon_lon = chart["planet_positions"]["Moon"]["longitude"]
         chart["dasha"] = get_personal_dasha(moon_lon, dob)
+        chart["dasha_available"] = bool(chart["dasha"].get("mahadasha", {}).get("planet"))
     except Exception as e:
         print(f"[dasha error] {e}")
-        chart["dasha"] = {}
 
     # Store in Supabase if user_id provided
     if user_id and SUPABASE_ENABLED:
@@ -939,6 +947,7 @@ def _lang_suffix(language: str) -> str:
 class ForecastScoresRequest(BaseModel):
     natal_chart: Optional[dict] = None
     transit_date: Optional[str] = None
+    transit_time: Optional[str] = None  # HH:MM local; defaults to now if today
 
     model_config = {"str_strip_whitespace": True}
 
@@ -948,6 +957,7 @@ class HouseInsightRequest(BaseModel):
     house_num:   int
     gender:      str = "unspecified"
     transit_date: Optional[str] = None
+    transit_time: Optional[str] = None
     language:    str = "english"          # "english" | "tamil"
 
     model_config = {"str_strip_whitespace": True}
@@ -966,8 +976,14 @@ def forecast_scores(
     """
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
+    chart = ensure_dasha(chart)
     try:
-        result = score_all_houses(chart, req.transit_date)
+        result = score_all_houses(
+            chart,
+            req.transit_date,
+            req.transit_time,
+            chart.get("dasha"),
+        )
         return result
     except Exception as exc:
         import logging, traceback
@@ -994,13 +1010,19 @@ def forecast_house_insight(
     check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
+    chart = ensure_dasha(chart)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
 
     try:
-        scores = score_all_houses(chart, req.transit_date)
+        scores = score_all_houses(
+            chart,
+            req.transit_date,
+            req.transit_time,
+            chart.get("dasha"),
+        )
     except Exception as exc:
         import logging, traceback
         logging.getLogger(__name__).error("forecast/house scoring: %s\n%s", exc, traceback.format_exc())
@@ -1089,6 +1111,7 @@ class DailyReadingRequest(BaseModel):
     natal_chart:  Optional[dict] = None
     gender:       str = "unspecified"
     transit_date: Optional[str] = None
+    transit_time: Optional[str] = None
     language:     str = "english"
     model_config = {"str_strip_whitespace": True}
 
@@ -1107,6 +1130,7 @@ def forecast_daily_reading(
     check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
+    chart = ensure_dasha(chart)
 
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -1117,9 +1141,14 @@ def forecast_daily_reading(
         from agents.transit_score_agent import (
             score_all_houses, dasha_transit_correlation, compact_gochara_summary
         )
-        scores = score_all_houses(chart, req.transit_date)
+        scores = score_all_houses(
+            chart,
+            req.transit_date,
+            req.transit_time,
+            chart.get("dasha"),
+        )
         dasha  = chart.get("dasha", {}) or {}
-        dtc    = dasha_transit_correlation(scores, dasha)
+        dtc    = scores.get("dasha_transit") or dasha_transit_correlation(scores, dasha)
     except Exception as exc:
         import logging, traceback
         logging.getLogger(__name__).error("daily-reading scoring: %s\n%s", exc, traceback.format_exc())
@@ -1227,6 +1256,7 @@ def forecast_daily_reading(
         "challenging_houses":   [{"house": h["house_num"], "name": h["name"],
                                   "score": h["score"], "rag": h["rag"]} for h in bot3],
         "transit_date":         scores["transit_date"],
+        "transit_moment":       scores.get("transit_moment"),
         "natal_moon":           scores.get("natal_moon_en", ""),
     }
 
@@ -1338,6 +1368,7 @@ def prashna_analyze(
             ai_reading = narrate_prashna(result, req.language or "english")
             if ai_reading:
                 result["ai_reading"] = ai_reading
+                result["meta"]["ai_narration"] = True
                 result["interpretation"]["ai_note"] = (
                     "AI narration below is based solely on the computed testimonies above."
                 )

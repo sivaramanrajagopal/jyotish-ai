@@ -11,7 +11,7 @@ def analyze_relevant_house(chart: dict, house_num: int, category_label: str) -> 
     lord = house_lord(chart, house_num)
     lord_data = chart["planet_positions"][lord]
     occupants = planets_in_house(chart, house_num)
-    dignity = planetary_dignity(lord, lord_data["sign"])
+    dignity = planetary_dignity(lord, lord_data["sign"], lord_data.get("degree_in_sign"))
 
     return {
         "house_num": house_num,

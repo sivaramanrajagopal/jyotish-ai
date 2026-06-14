@@ -10,7 +10,7 @@ def analyze_lagna(chart: dict) -> dict:
     lord = asc["sign_lord"]
     lord_data = chart["planet_positions"][lord]
 
-    dignity = planetary_dignity(lord, lord_data["sign"])
+    dignity = planetary_dignity(lord, lord_data["sign"], lord_data.get("degree_in_sign"))
     strength = dignity["strength"]
 
     return {

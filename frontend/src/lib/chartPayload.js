@@ -20,3 +20,14 @@ export function chartPayload(chart, userId, extra = {}) {
   if (!chart) return { ...extra }
   return { natal_chart: chart, ...extra }
 }
+
+/** Forecast API extras: pass current local time when scoring today. */
+export function forecastPayload(chart, userId, transitDate) {
+  const extra = { transit_date: transitDate }
+  const today = new Date().toISOString().split('T')[0]
+  if (transitDate === today) {
+    const n = new Date()
+    extra.transit_time = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+  }
+  return chartPayload(chart, userId, extra)
+}

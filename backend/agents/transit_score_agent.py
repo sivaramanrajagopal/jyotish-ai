@@ -68,6 +68,19 @@ PLANETARY_STATES = {
     "Saturn": {"exalted":"Thula",   "debilitated":"Mesha",    "own":["Makara","Kumbha"]},
 }
 
+# Exact exaltation / debilitation degrees (sign + degree within sign)
+EXACT_DIGNITY_DEGREES = {
+    "Sun":     {"exalt": ("Mesha", 10),   "debil": ("Thula", 10)},
+    "Moon":    {"exalt": ("Rishaba", 3),  "debil": ("Vrischika", 3)},
+    "Mars":    {"exalt": ("Makara", 28),  "debil": ("Kataka", 28)},
+    "Mercury": {"exalt": ("Kanni", 15),   "debil": ("Meena", 15)},
+    "Jupiter": {"exalt": ("Kataka", 5),   "debil": ("Makara", 5)},
+    "Venus":   {"exalt": ("Meena", 27),   "debil": ("Kanni", 27)},
+    "Saturn":  {"exalt": ("Thula", 20),   "debil": ("Mesha", 20)},
+}
+
+DIGNITY_DEEP_ORB = 5.0
+
 FRIENDSHIPS = {
     "Sun":    {"friends":["Moon","Mars","Jupiter"],    "enemies":["Venus","Saturn"]},
     "Moon":   {"friends":["Sun","Mercury"],            "enemies":[]},
@@ -233,7 +246,7 @@ def _nth_house_from(from_house: int, n: int) -> int:
 
 
 def _planet_aspects(planet: str, from_house: int) -> list[int]:
-    """Direct aspects only — 7th for all, plus special aspects for Mars/Jupiter/Saturn."""
+    """Direct aspects — 7th for all; special drishti for Mars, Jupiter, Saturn, Rahu, Ketu."""
     asp = {_nth_house_from(from_house, 7)}
     if planet == "Mars":
         asp |= {_nth_house_from(from_house, 4), _nth_house_from(from_house, 8)}
@@ -241,21 +254,54 @@ def _planet_aspects(planet: str, from_house: int) -> list[int]:
         asp |= {_nth_house_from(from_house, 5), _nth_house_from(from_house, 9)}
     elif planet == "Saturn":
         asp |= {_nth_house_from(from_house, 3), _nth_house_from(from_house, 10)}
+    elif planet in ("Rahu", "Ketu"):
+        asp |= {_nth_house_from(from_house, 3), _nth_house_from(from_house, 11)}
     return sorted(asp)
 
 
-def _planetary_state(planet: str, sign: str) -> str:
+def _degree_distance(deg: float, target: float) -> float:
+    return min(abs(deg - target), 30 - abs(deg - target))
+
+
+def _planetary_state(planet: str, sign: str, degree_in_sign: Optional[float] = None) -> str:
+    state, _ = _planetary_state_detailed(planet, sign, degree_in_sign)
+    return state
+
+
+def _planetary_state_detailed(
+    planet: str, sign: str, degree_in_sign: Optional[float] = None,
+) -> tuple[str, bool]:
+    """Return (dignity_state, is_deep_exalt_or_debil)."""
     if planet in ("Rahu", "Ketu", "Ascendant"):
-        return "N/A"
+        return "N/A", False
+
+    exact = EXACT_DIGNITY_DEGREES.get(planet, {})
+    ex_sign, ex_deg = exact.get("exalt", ("", 0))
+    deb_sign, deb_deg = exact.get("debil", ("", 0))
+
+    if sign == ex_sign:
+        deep = (
+            degree_in_sign is not None
+            and _degree_distance(degree_in_sign, ex_deg) <= DIGNITY_DEEP_ORB
+        )
+        return "Exalted", deep
+    if sign == deb_sign:
+        deep = (
+            degree_in_sign is not None
+            and _degree_distance(degree_in_sign, deb_deg) <= DIGNITY_DEEP_ORB
+        )
+        return "Debilitated", deep
+
     s = PLANETARY_STATES.get(planet, {})
-    if sign == s.get("exalted"):      return "Exalted"
-    if sign == s.get("debilitated"):  return "Debilitated"
-    if sign in s.get("own", []):      return "Own Sign"
+    if sign in s.get("own", []):
+        return "Own Sign", False
     sl = SIGN_LORDS.get(sign, "")
     f  = FRIENDSHIPS.get(planet, {})
-    if sl in f.get("friends", []):    return "Friend"
-    if sl in f.get("enemies", []):    return "Enemy"
-    return "Neutral"
+    if sl in f.get("friends", []):
+        return "Friend", False
+    if sl in f.get("enemies", []):
+        return "Enemy", False
+    return "Neutral", False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -275,13 +321,14 @@ def _analyze_connections(data: dict, asc_deg: float) -> list[dict]:
         house = _house_from_lon(lon, asc_deg)
         asp   = _planet_aspects(planet, house)
         owns  = _planet_house_ownership(lagna_sign, planet)
-        state = _planetary_state(planet, sig)
+        state, deep = _planetary_state_detailed(planet, sig, round(lon % 30, 2))
 
         result.append({
             "Planet":       planet,
             "Placed_House": house,
             "Sign":         sig,
             "State":        state,
+            "Deep":         deep,
             "Degree":       round(lon % 30, 2),
             "Retrograde":   "R" if p["retrograde"] else "-",
             "Planet_Owns":  owns,
@@ -297,8 +344,13 @@ def _analyze_connections(data: dict, asc_deg: float) -> list[dict]:
 # Natal house lord strength (from Lagna) — unchanged, this is correct
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _dignity_score(state: str) -> float:
-    return {"Exalted":100,"Own Sign":90,"Friend":70,"Neutral":50,"Enemy":30,"Debilitated":10,"N/A":50}.get(state, 50)
+def _dignity_score(state: str, deep: bool = False) -> float:
+    base = {"Exalted":100,"Own Sign":90,"Friend":70,"Neutral":50,"Enemy":30,"Debilitated":10,"N/A":50}.get(state, 50)
+    if deep and state == "Exalted":
+        return min(100.0, base + 5.0)
+    if deep and state == "Debilitated":
+        return max(5.0, base - 5.0)
+    return base
 
 
 def _house_quality_score(house: int) -> float:
@@ -316,7 +368,7 @@ def _natal_house_strength(house_num: int, lord_data: dict,
                            houses_from_own: int) -> float:
     pos_s = {12:100,4:90,7:90,10:90,5:95,9:95,3:75,11:75,2:50,6:40,8:30}
     lp = pos_s.get(houses_from_own, 50)
-    ld = _dignity_score(lord_data["State"])
+    ld = _dignity_score(lord_data["State"], lord_data.get("Deep", False))
 
     ben = sum(1 for p in planets_in + planets_asp if PLANETARY_NATURE.get(p) == "benefic")
     mal = sum(1 for p in planets_in + planets_asp if PLANETARY_NATURE.get(p) == "malefic")
@@ -472,17 +524,86 @@ def _rag(score: float) -> dict:
 _score_cache: dict[str, dict] = {}
 
 
-def _cache_key(natal_chart: dict, transit_date: str) -> str:
+def _cache_key(natal_chart: dict, transit_date: str, transit_time: Optional[str] = None) -> str:
     bd = natal_chart.get("birth_data", {})
     fp = chart_fingerprint(natal_chart)
-    return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{transit_date}|{fp}"
+    tt = transit_time or "auto"
+    return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{transit_date}|{tt}|{fp}"
+
+
+def _resolve_transit_jd(
+    transit_date: str,
+    tz_str: str,
+    transit_time: Optional[str] = None,
+) -> tuple[float, dict]:
+    """
+    Resolve Julian day for transit positions.
+    - Explicit transit_time → use that (HH:MM local)
+    - Today → current local time in birth timezone
+    - Other dates → 06:00 local (day anchor)
+    """
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo(tz_str)
+    td = datetime.datetime.strptime(transit_date, "%Y-%m-%d").date()
+    today_local = datetime.datetime.now(tz).date()
+
+    if transit_time:
+        parts = transit_time.strip().split(":")
+        hour = int(parts[0])
+        minute = int(parts[1]) if len(parts) > 1 else 0
+        dt = datetime.datetime(td.year, td.month, td.day, hour, minute, tzinfo=tz)
+        note = f"{transit_time} local"
+    elif td == today_local:
+        dt = datetime.datetime.now(tz)
+        note = "current local time"
+    else:
+        dt = datetime.datetime(td.year, td.month, td.day, 6, 0, tzinfo=tz)
+        note = "06:00 local (default for selected date)"
+
+    utc = dt.astimezone(datetime.timezone.utc)
+    jd = swe.julday(
+        utc.year, utc.month, utc.day,
+        utc.hour + utc.minute / 60.0 + utc.second / 3600.0,
+    )
+    meta = {
+        "date": transit_date,
+        "time": dt.strftime("%H:%M"),
+        "timezone": tz_str,
+        "note": note,
+    }
+    return jd, meta
+
+
+def _dasha_house_adjustment(
+    lord: str,
+    blended: float,
+    dasha: Optional[dict],
+    gochara_scores: dict[str, float],
+) -> tuple[float, float]:
+    """Boost/penalise house score when its lord is current MD or Bhukti lord."""
+    if not dasha or not lord:
+        return blended, 0.0
+    md = (dasha.get("mahadasha") or {}).get("planet", "")
+    bh = (dasha.get("bhukti") or {}).get("planet", "")
+    adj = 0.0
+    if lord == md:
+        adj += (gochara_scores.get(md, 50.0) - 50.0) * 0.12
+    if lord == bh and bh != md:
+        adj += (gochara_scores.get(bh, 50.0) - 50.0) * 0.08
+    return round(max(0.0, min(100.0, blended + adj)), 1), round(adj, 1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PUBLIC ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 
-def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> dict:
+def score_all_houses(
+    natal_chart: dict,
+    transit_date: Optional[str] = None,
+    transit_time: Optional[str] = None,
+    dasha: Optional[dict] = None,
+) -> dict:
     """
     Score all 12 houses using Parasara's Gochara rules.
 
@@ -490,20 +611,23 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
         55% natal house lord strength (from Lagna — permanent strength)
         35% Gochara transit score     (from natal Moon — current timing)
         10% SAV normalised            (Ashtakavarga bindus per house)
+        + Dasha lord adjustment when MD/Bhukti lord owns the house
 
     Parameters
     ----------
-    natal_chart  : the /natal-chart response (must contain birth_data)
-    transit_date : YYYY-MM-DD; defaults to today
+    natal_chart   : the /natal-chart response (must contain birth_data)
+    transit_date  : YYYY-MM-DD; defaults to today
+    transit_time  : HH:MM local (birth timezone); defaults to now if today else 06:00
+    dasha         : optional Vimshottari dasha dict for dasha–transit weighting
 
     Returns
     -------
-    dict: houses, overall_health, transit_analysis (per planet), house_rankings
+    dict: houses, overall_health, transit_analysis, dasha_transit, transit_moment, …
     """
     if transit_date is None:
         transit_date = datetime.date.today().isoformat()
 
-    ck = _cache_key(natal_chart, transit_date)
+    ck = _cache_key(natal_chart, transit_date, transit_time)
     if ck in _score_cache:
         return _score_cache[ck]
 
@@ -541,9 +665,8 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
     natal_moon_sign = natal_data["Moon"]["rasi"]
     natal_moon_sign_en = natal_data["Moon"]["rasi_en"]
 
-    # ── Transit positions ──────────────────────────────────────────────────
-    td_dt      = datetime.datetime.strptime(transit_date, "%Y-%m-%d")
-    transit_jd = swe.julday(td_dt.year, td_dt.month, td_dt.day, 12.0)
+    # ── Transit positions (query-time local, not fixed noon) ───────────────
+    transit_jd, transit_moment = _resolve_transit_jd(transit_date, tz_str, transit_time)
     transit_data, _ = _get_planet_positions(transit_jd, lat, lon)
 
     # ── Gochara: position of each transit planet from natal Moon ───────────
@@ -645,6 +768,10 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
         sav_pts   = sav_house[h - 1] if h <= len(sav_house) else 28
         sav_norm  = round(min(100, (sav_pts / 42) * 100), 1)   # 42 = practical max
         blended   = round(natal_s * 0.55 + transit_s * 0.35 + sav_norm * 0.10, 1)
+        lord_name = hl.get("lord", "")
+        blended, dasha_adj = _dasha_house_adjustment(
+            lord_name, blended, dasha, gochara_scores,
+        )
 
         # "Transit Activity" — ONLY planets directly in or directly aspecting house
         house_sign  = RASIS[(RASIS.index(natal_data["Ascendant"]["rasi"]) + h - 1) % 12]
@@ -683,6 +810,7 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
             # Ashtakavarga
             "sav_points":   sav_pts,
             "sav_label":    "Strong" if sav_pts >= 30 else "Good" if sav_pts >= 25 else "Average" if sav_pts >= 20 else "Weak",
+            "dasha_adjustment": dasha_adj,
         }
 
     # ── Overall Gochara health ─────────────────────────────────────────────
@@ -700,12 +828,23 @@ def score_all_houses(natal_chart: dict, transit_date: Optional[str] = None) -> d
     # ── House ranking by blended score ────────────────────────────────────
     ranked = sorted(houses_out.values(), key=lambda x: x["score"], reverse=True)
 
+    dasha_transit = dasha_transit_correlation(
+        {"transit_analysis": list(gochara_details.values()), "transit_date": transit_date},
+        dasha or {},
+    ) if dasha else {}
+
     result = {
         "houses":           houses_out,
         "overall_health":   overall,
         "transit_analysis": list(gochara_details.values()),
         "house_rankings":   ranked,
         "transit_date":     transit_date,
+        "transit_moment":   transit_moment,
+        "dasha_transit":    dasha_transit,
+        "meta": {
+            "engine": "rule_based",
+            "blend": "55% natal lord + 35% Gochara + 10% SAV + dasha lord adjustment",
+        },
         "lagna":            natal_data["Ascendant"]["rasi"],
         "lagna_en":         RASIS_EN[RASIS.index(natal_data["Ascendant"]["rasi"])],
         "natal_moon":       natal_moon_sign,
