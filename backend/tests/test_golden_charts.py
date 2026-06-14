@@ -62,3 +62,13 @@ def test_golden_moon_indices():
     chart = _calc_golden()
     assert chart["moon_nakshatra_index"] == 26  # Revati
     assert chart["moon_rasi_index"] == 11      # Pisces
+
+
+def test_navamsa_positions_include_degree_and_nakshatra():
+    chart = _calc_golden()
+    nav = chart["navamsa_positions"]
+    for planet, pos in nav.items():
+        assert pos.get("degree_in_sign") is not None, f"{planet} missing D9 degree"
+        assert pos.get("nakshatra"), f"{planet} missing D9 nakshatra"
+        assert pos.get("pada") is not None, f"{planet} missing D9 pada"
+        assert pos["sign_index"] == int(pos["longitude"] // 30) % 12

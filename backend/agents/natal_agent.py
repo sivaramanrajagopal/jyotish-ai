@@ -143,6 +143,20 @@ def _navamsa_sign_idx(lon: float) -> int:
     return (start + amsa_idx) % 12
 
 
+def _navamsa_degree_in_sign(lon: float) -> float:
+    """Degree within the D9 sign (each navamsa amsa spans 3°20' of rasi)."""
+    deg_in_sign = lon % 30
+    amsa_size = 30 / 9
+    deg_in_amsa = deg_in_sign % amsa_size
+    return deg_in_amsa * 9
+
+
+def _navamsa_longitude(lon: float) -> float:
+    """Synthetic sidereal longitude for D9 nakshatra / degree display."""
+    nav_idx = _navamsa_sign_idx(lon)
+    return nav_idx * 30 + _navamsa_degree_in_sign(lon)
+
+
 def _house_number(planet_sign_idx: int, asc_sign_idx: int) -> int:
     """Whole Sign house number (1-based) given planet sign and ascendant sign."""
     return ((planet_sign_idx - asc_sign_idx) % 12) + 1
@@ -343,16 +357,28 @@ def calculate_natal_chart(
 
     # ── D9 Navamsa positions ──────────────────────────────────
     asc_nav_idx  = _navamsa_sign_idx(asc_lon)
+    asc_nav_deg  = _navamsa_degree_in_sign(asc_lon)
+    asc_nav_lon  = _navamsa_longitude(asc_lon)
+    asc_nav_naks, asc_nav_naks_lord, asc_nav_pada = _lon_to_nakshatra(asc_nav_lon)
     navamsa_positions: dict[str, dict] = {}
     for pname, pdata in planet_positions.items():
         nav_idx  = _navamsa_sign_idx(pdata["longitude"])
         nav_sign = SIGNS[nav_idx]
         nav_house = _house_number(nav_idx, asc_nav_idx)
+        nav_deg  = _navamsa_degree_in_sign(pdata["longitude"])
+        nav_lon  = _navamsa_longitude(pdata["longitude"])
+        nav_naks, nav_naks_lord, nav_pada = _lon_to_nakshatra(nav_lon)
         navamsa_positions[pname] = {
             "sign":       nav_sign,
             "sign_index": nav_idx,
             "sign_lord":  SIGN_LORDS[nav_sign],
             "house":      nav_house,
+            "longitude":  round(nav_lon, 4),
+            "degree_in_sign": round(nav_deg, 4),
+            "nakshatra":      nav_naks,
+            "nakshatra_lord": nav_naks_lord,
+            "pada":           nav_pada,
+            "retrograde": pdata.get("retrograde", False),
             "vargottama": nav_idx == SIGNS.index(pdata["sign"]),
         }
 
@@ -378,6 +404,10 @@ def calculate_natal_chart(
             "sign":       asc_nav_sign,
             "sign_index": asc_nav_idx,
             "sign_lord":  SIGN_LORDS[asc_nav_sign],
+            "degree_in_sign": round(asc_nav_deg, 4),
+            "nakshatra":      asc_nav_naks,
+            "nakshatra_lord": asc_nav_naks_lord,
+            "pada":           asc_nav_pada,
         },
         "planet_positions": planet_positions,
         "navamsa_positions": navamsa_positions,
