@@ -1151,6 +1151,16 @@ html[data-theme="dark"] .prashna-disclaimer {
   font-size: 0.5rem;
   opacity: 0.75;
   margin-top: 1px;
+  line-height: 1.15;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.si-chart__classic-planet-house {
+  font-size: 0.5rem;
+  font-weight: 700;
+  opacity: 0.85;
+  line-height: 1.1;
 }
 
 .si-chart__centre--classic .si-chart__centre-title {
@@ -1211,6 +1221,11 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   }
 
   .si-chart__classic-planet-nak {
+    font-size: 0.4375rem;
+    line-height: 1.1;
+  }
+
+  .si-chart__classic-planet-house {
     font-size: 0.4375rem;
   }
 

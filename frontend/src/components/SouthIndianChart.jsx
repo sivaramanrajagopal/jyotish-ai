@@ -13,6 +13,7 @@ import { isPlanetRetrograde } from '../lib/planetRetrograde'
  *   navamsa               — boolean, use navamsa positions
  *   showDetails           — boolean (default false), show degree + pada in each badge
  *   variant               — 'default' | 'classic' (classic = traditional Tamil house labels)
+ *   chartKind             — 'natal' | 'transit' | 'prashna' (legend + centre label)
  *
  * Layout:
  *   Pisces(11) | Aries(0)  | Taurus(1)  | Gemini(2)
@@ -102,18 +103,25 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
   )
 }
 
-// ── Planet badge — classic stacked row (Gocharam-style readability) ───────────
-function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada, nakshatra }) {
+function formatNakshatraLine(nakshatra, pada, useFullName = true) {
+  if (!nakshatra && pada == null) return null
+  const name = useFullName ? nakshatra : nakshatraAbbr(nakshatra)
+  if (!name) return pada != null ? `P${pada}` : null
+  return pada != null ? `${name} · P${pada}` : name
+}
+
+// ── Planet badge — classic stacked row (traditional readability) ───────────────
+function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada, nakshatra, house, showHouse }) {
   const short = PLANET_SHORT[planet] || planet.slice(0, 2)
   const col = PLANET_COLORS[planet] || { bg: '#f1f5f9', fg: '#475569' }
   const deg = typeof degreeInSign === 'number' ? degreeInSign.toFixed(1) : '—'
-  const nak = nakshatraAbbr(nakshatra)
+  const nakLine = formatNakshatraLine(nakshatra, pada, true)
 
   return (
     <div
       className="si-chart__classic-planet"
       style={{ background: col.bg, color: col.fg, borderColor: vargottama ? 'var(--chart-lagna-accent)' : 'var(--card-border)' }}
-      title={`${planet} ${deg}° ${nakshatra || ''} P${pada || '—'}${retrograde ? ' ℞' : ''}`}
+      title={`${planet} ${deg}° ${nakshatra || ''}${pada != null ? ` P${pada}` : ''}${house != null ? ` H${house}` : ''}${retrograde ? ' ℞' : ''}`}
     >
       <div className="si-chart__classic-planet-row">
         <span className="si-chart__classic-planet-name">
@@ -123,10 +131,11 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
         <span className="si-chart__classic-planet-deg">{deg}°</span>
         {vargottama && <span className="si-chart__classic-planet-varga">★</span>}
       </div>
-      {(nak || pada != null) && (
-        <div className="si-chart__classic-planet-nak">
-          {nak}{pada != null ? ` P${pada}` : ''}
-        </div>
+      {showHouse && house != null && (
+        <div className="si-chart__classic-planet-house">H{house}</div>
+      )}
+      {nakLine && (
+        <div className="si-chart__classic-planet-nak">{nakLine}</div>
       )}
     </div>
   )
@@ -135,7 +144,7 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
 // ── Chart cell ───────────────────────────────────────────────────────────────
 function Cell({
   signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, planetData,
-  showDetails, variant,
+  showDetails, variant, chartKind = 'natal',
 }) {
   const planets = planetSignMap[signIdx] || []
   const isLagna = signIdx === lagnaSignIdx
@@ -150,6 +159,7 @@ function Cell({
 
   const useDetail = showDetails && !isClassic
   const useClassicDetail = showDetails && isClassic
+  const showHouseOnPlanet = isClassic && chartKind === 'transit'
 
   return (
     <td className={[
@@ -190,6 +200,8 @@ function Cell({
                 degreeInSign={pd.degree_in_sign}
                 pada={pd.pada}
                 nakshatra={pd.nakshatra}
+                house={pd.house}
+                showHouse={showHouseOnPlanet}
               />
             )
           }
@@ -219,15 +231,30 @@ function Cell({
   )
 }
 
-function ClassicLegend() {
+function ClassicLegend({ chartKind = 'natal' }) {
+  const lagnaNote = chartKind === 'transit'
+    ? 'Ascendant at chart time (noon local for transits)'
+    : 'Rising sign at birth (most important reference point)'
+  const vargaNote = chartKind === 'transit'
+    ? null
+    : 'Vargottama (same sign in D1 and D9)'
+
   return (
     <details className="si-chart__classic-legend">
       <summary>How to read this chart</summary>
       <ul>
-        <li><strong>Lagna ↑</strong> — rising sign at birth (most important reference point)</li>
+        <li><strong>Lagna ↑</strong> — {lagnaNote}</li>
         <li><sup className="retro-sup-r">R</sup> — retrograde planet</li>
-        <li><span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> — Vargottama (same sign in D1 and D9)</li>
-        <li>Numbers 1–12 are fixed sign houses (Mesha → Meena)</li>
+        {vargaNote && (
+          <li><span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> — {vargaNote}</li>
+        )}
+        <li>Numbers 1–12 are fixed signs (Mesha → Meena)</li>
+        {chartKind === 'transit' && (
+          <li>Each planet shows degree, nakshatra · pada, and house from Ascendant</li>
+        )}
+        {chartKind === 'natal' && (
+          <li>Each planet shows degree and nakshatra · pada</li>
+        )}
       </ul>
     </details>
   )
@@ -242,6 +269,7 @@ export default function SouthIndianChart({
   navamsa = false,
   showDetails = false,
   variant = 'default',
+  chartKind = 'natal',
 }) {
   const isClassic = variant === 'classic'
   const planetSignMap = {}
@@ -267,6 +295,7 @@ export default function SouthIndianChart({
     planetData: planetPositions,
     showDetails,
     variant,
+    chartKind,
   })
 
   const centreStyle = {
@@ -295,11 +324,17 @@ export default function SouthIndianChart({
             <Cell {...cellProps(10)} />
             <td colSpan={2} rowSpan={2} className={`si-chart__centre${isClassic ? ' si-chart__centre--classic' : ''}`} style={centreStyle}>
               <div className="si-chart__centre-title">{title}</div>
-              {isClassic && navamsa && (
+              {isClassic && chartKind === 'transit' && (
+                <div className="si-chart__centre-tamil">கோசாரம்</div>
+              )}
+              {isClassic && chartKind === 'natal' && navamsa && (
                 <div className="si-chart__centre-tamil">நவாம்சம்</div>
               )}
-              {isClassic && !navamsa && (
+              {isClassic && chartKind === 'natal' && !navamsa && (
                 <div className="si-chart__centre-tamil">ராசி சக்கரம்</div>
+              )}
+              {isClassic && chartKind === 'prashna' && (
+                <div className="si-chart__centre-tamil">பிரஷ்னா</div>
               )}
               {subtitle && <div className="si-chart__centre-sub">{subtitle}</div>}
             </td>
@@ -317,7 +352,7 @@ export default function SouthIndianChart({
           </tr>
         </tbody>
       </table>
-      {isClassic && showDetails && <ClassicLegend />}
+      {isClassic && showDetails && <ClassicLegend chartKind={chartKind} />}
       {!showDetails && !isClassic && (
         <div className="si-chart__legend">
           <sup className="retro-sup-r">R</sup> Retrograde &nbsp;

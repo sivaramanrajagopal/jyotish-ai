@@ -397,12 +397,10 @@ export default function PanchangamTab() {
                   subtitle={`${date} · ${location} · Noon`}
                   planetPositions={transit.planet_positions}
                   lagnaSignIndex={transit.ascendant?.sign_index}
+                  variant="classic"
                   showDetails={true}
+                  chartKind="transit"
                 />
-                <p className="si-chart__legend" style={{ marginTop: 8, textAlign: 'left' }}>
-                  <sup className="retro-sup-r">R</sup> Retrograde ·{' '}
-                  <span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> Vargottama · deg = degree in sign · P = pada
-                </p>
               </div>
 
               {/* Planet details table */}
