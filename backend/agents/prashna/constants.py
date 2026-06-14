@@ -102,12 +102,37 @@ CATEGORY_QUESTIONS: dict[str, list[dict[str, str]]] = {
         {"id": "interview", "text": "Will the interview stage be successful?"},
     ],
     "key_interest": [
-        {"id": "focus_career", "text": "Should I focus on career at this time?"},
-        {"id": "focus_relationship", "text": "Should I prioritise relationships now?"},
-        {"id": "focus_finance", "text": "Is finance the key area to focus on now?"},
-        {"id": "focus_health", "text": "Should health be my primary concern now?"},
-        {"id": "most_favourable", "text": "Which life area looks most favourable now?"},
+        {"id": "h1_self", "text": "H1 Self — Is my health and vitality favourable now?"},
+        {"id": "h2_wealth", "text": "H2 Wealth — Is financial gain indicated now?"},
+        {"id": "h3_courage", "text": "H3 Courage — Are communication and efforts supported?"},
+        {"id": "h4_home", "text": "H4 Home — Is home and property matter favourable?"},
+        {"id": "h5_education", "text": "H5 Education — Are creativity and studies favoured?"},
+        {"id": "h6_health", "text": "H6 Health — Can I overcome illness or competition?"},
+        {"id": "h7_marriage", "text": "H7 Marriage — Is partnership favourable now?"},
+        {"id": "h8_obstacles", "text": "H8 Obstacles — Will sudden blockages resolve?"},
+        {"id": "h9_fortune", "text": "H9 Fortune — Is luck and dharma on my side?"},
+        {"id": "h10_career", "text": "H10 Career — Is professional success indicated?"},
+        {"id": "h11_gains", "text": "H11 Gains — Will wishes and income manifest?"},
+        {"id": "h12_spiritual", "text": "H12 Spiritual — Is foreign or spiritual path favourable?"},
+        {"id": "most_favourable", "text": "Which life area looks most favourable overall?"},
     ],
+}
+
+
+KEY_INTEREST_HOUSE: dict[str, int] = {
+    "h1_self": 1,
+    "h2_wealth": 2,
+    "h3_courage": 3,
+    "h4_home": 4,
+    "h5_education": 5,
+    "h6_health": 6,
+    "h7_marriage": 7,
+    "h8_obstacles": 8,
+    "h9_fortune": 9,
+    "h10_career": 10,
+    "h11_gains": 11,
+    "h12_spiritual": 12,
+    "most_favourable": 11,
 }
 
 

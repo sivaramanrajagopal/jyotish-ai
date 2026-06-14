@@ -7,10 +7,7 @@ import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import { formatApiError } from '../lib/apiError'
 import { loadPrashnaHistory, savePrashnaSession, clearPrashnaHistory } from '../lib/prashnaStorage'
-
-const FALLBACK_CATEGORIES = [
-  { key: 'general', label: 'General', icon: '🔮', questions: [{ id: 'overall', text: 'Is the overall outlook favourable now?' }] },
-]
+import { PRASHNA_CATALOG, mergePrashnaCatalog, firstQuestionId } from '../constants/prashnaCatalog'
 
 const VERDICT_STYLE = {
   likely_yes:     { bg: '#1a3d2e', border: '#27ae60', color: '#81C784' },
@@ -29,12 +26,8 @@ const selectStyle = {
   padding: '0 14px',
   fontSize: 16,
   borderRadius: 10,
-  border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(0,0,0,0.3)',
-  color: '#FFF',
   WebkitAppearance: 'none',
   appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23C9A227' d='M1 1l5 5 5-5'/%3E%3C/svg%3E")`,
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'right 14px center',
   paddingRight: 40,
@@ -91,9 +84,9 @@ function AnalysisCard({ title, children }) {
 
 export default function PrashnaTab({ enabled = true, chart = null }) {
   const now = useLiveClock()
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
-  const [category, setCategory] = useState('general')
-  const [questionId, setQuestionId] = useState('')
+  const [categories, setCategories] = useState(PRASHNA_CATALOG)
+  const [category, setCategory] = useState('career')
+  const [questionId, setQuestionId] = useState(() => firstQuestionId(PRASHNA_CATALOG, 'career'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
@@ -114,19 +107,25 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
     if (!enabled) return
     api.get('/prashna/categories')
       .then(({ data }) => {
-        if (data?.categories?.length) {
-          setCategories(data.categories)
-          setCategory(data.categories[0].key)
-        }
+        const merged = mergePrashnaCatalog(data?.categories)
+        setCategories(merged)
       })
-      .catch(() => {})
+      .catch(() => {
+        setCategories(PRASHNA_CATALOG)
+      })
   }, [enabled])
 
+  const handleCategoryChange = (nextKey) => {
+    setCategory(nextKey)
+    setQuestionId(firstQuestionId(categories, nextKey))
+  }
+
   useEffect(() => {
-    if (questions.length && !questions.some(q => q.id === questionId)) {
-      setQuestionId(questions[0].id)
+    const qs = categories.find(c => c.key === category)?.questions || []
+    if (qs.length && !qs.some(q => q.id === questionId)) {
+      setQuestionId(qs[0].id)
     }
-  }, [questions, questionId])
+  }, [categories, category, questionId])
 
   const selectedQuestion = questions.find(q => q.id === questionId)?.text || ''
 
@@ -238,8 +237,9 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
           <label htmlFor="prashna-category" className="prashna-label">Category</label>
           <select
             id="prashna-category"
+            className="prashna-select"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             style={selectStyle}
           >
             {categories.map(c => (
@@ -250,17 +250,22 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
 
         <div style={{ marginBottom: 16 }}>
           <label htmlFor="prashna-question" className="prashna-label">Your question</label>
-          <select
-            id="prashna-question"
-            value={questionId}
-            onChange={(e) => setQuestionId(e.target.value)}
-            style={selectStyle}
-            required
-          >
-            {questions.map(q => (
-              <option key={q.id} value={q.id}>{q.text}</option>
-            ))}
-          </select>
+          {questions.length === 0 ? (
+            <p className="prashna-question-preview" role="alert">No questions loaded — refresh the page.</p>
+          ) : (
+            <select
+              id="prashna-question"
+              className="prashna-select"
+              value={questionId}
+              onChange={(e) => setQuestionId(e.target.value)}
+              style={selectStyle}
+              required
+            >
+              {questions.map(q => (
+                <option key={q.id} value={q.id}>{q.text}</option>
+              ))}
+            </select>
+          )}
           {selectedQuestion && (
             <p className="prashna-question-preview" role="status">
               {selectedQuestion}

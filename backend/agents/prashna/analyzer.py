@@ -6,6 +6,7 @@ from agents.prashna.constants import (
     CATEGORY_HOUSE,
     CATEGORY_LABELS,
     PRASHNA_DISCLAIMER,
+    KEY_INTEREST_HOUSE,
     resolve_question,
 )
 from agents.prashna.chart_engine import (
@@ -39,7 +40,10 @@ def analyze_prashna(
         raise ValueError(f"Unknown category: {category}")
 
     qid, qtext = resolve_question(cat, question_id, question)
-    house_num = CATEGORY_HOUSE[cat]
+    if cat == "key_interest":
+        house_num = KEY_INTEREST_HOUSE.get(qid, CATEGORY_HOUSE[cat])
+    else:
+        house_num = CATEGORY_HOUSE[cat]
     category_label = CATEGORY_LABELS[cat]
 
     plat, plon, place_label = resolve_prashna_location(lat, lon, place)

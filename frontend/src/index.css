@@ -471,10 +471,25 @@ html:not([data-theme="dark"]) .prashna-label {
   color: var(--text-secondary);
 }
 html:not([data-theme="dark"]) .prashna-form-card select {
-  background: var(--input-bg);
+  background-color: var(--input-bg);
   border: 1px solid var(--input-border);
   color: var(--input-text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23E47911' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
 }
+
+.prashna-select {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23C9A227' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+}
+
+html:not([data-theme="dark"]) .prashna-form-card .prashna-select {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
+}
+
 html:not([data-theme="dark"]) .prashna-question-preview {
   background: rgba(255, 153, 0, 0.08);
   border-color: rgba(255, 153, 0, 0.35);
