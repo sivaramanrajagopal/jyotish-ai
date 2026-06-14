@@ -1069,11 +1069,35 @@ html[data-theme="dark"] .prashna-disclaimer {
   padding: 20px 3px 6px;
   border-width: 2px;
   vertical-align: top;
+  overflow: hidden;
+}
+
+/* Inset box-shadow bleeds into merged centre cells — use inner ring instead */
+.si-chart__cell--lagna.si-chart__cell--classic {
+  box-shadow: none;
 }
 
 .si-chart__cell--lagna-classic {
-  box-shadow: inset 0 0 0 2px var(--chart-lagna-accent);
   background-color: var(--chart-lagna-bg);
+  box-shadow: none;
+}
+
+.si-chart__cell--lagna-classic::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 2px solid var(--chart-lagna-accent);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.si-chart__cell--lagna-classic .si-chart__classic-house,
+.si-chart__cell--lagna-classic .si-chart__classic-rashi,
+.si-chart__cell--lagna-classic .si-chart__planets,
+.si-chart__cell--lagna-classic .si-chart__lagna-badge {
+  position: relative;
+  z-index: 1;
 }
 
 .si-chart__classic-house {
@@ -1156,13 +1180,6 @@ html[data-theme="dark"] .prashna-disclaimer {
   overflow-wrap: anywhere;
 }
 
-.si-chart__classic-planet-house {
-  font-size: 0.5rem;
-  font-weight: 700;
-  opacity: 0.85;
-  line-height: 1.1;
-}
-
 .si-chart__centre--classic .si-chart__centre-title {
   font-size: 0.95rem;
 }
@@ -1223,10 +1240,6 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .si-chart__classic-planet-nak {
     font-size: 0.4375rem;
     line-height: 1.1;
-  }
-
-  .si-chart__classic-planet-house {
-    font-size: 0.4375rem;
   }
 
   .si-chart__centre--classic .si-chart__centre-title {

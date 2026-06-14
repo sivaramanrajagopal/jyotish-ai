@@ -111,7 +111,7 @@ function formatNakshatraLine(nakshatra, pada, useFullName = true) {
 }
 
 // ── Planet badge — classic stacked row (traditional readability) ───────────────
-function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada, nakshatra, house, showHouse }) {
+function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada, nakshatra }) {
   const short = PLANET_SHORT[planet] || planet.slice(0, 2)
   const col = PLANET_COLORS[planet] || { bg: '#f1f5f9', fg: '#475569' }
   const deg = typeof degreeInSign === 'number' ? degreeInSign.toFixed(1) : '—'
@@ -121,7 +121,7 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
     <div
       className="si-chart__classic-planet"
       style={{ background: col.bg, color: col.fg, borderColor: vargottama ? 'var(--chart-lagna-accent)' : 'var(--card-border)' }}
-      title={`${planet} ${deg}° ${nakshatra || ''}${pada != null ? ` P${pada}` : ''}${house != null ? ` H${house}` : ''}${retrograde ? ' ℞' : ''}`}
+      title={`${planet} ${deg}° ${nakshatra || ''}${pada != null ? ` P${pada}` : ''}${retrograde ? ' ℞' : ''}`}
     >
       <div className="si-chart__classic-planet-row">
         <span className="si-chart__classic-planet-name">
@@ -131,9 +131,6 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
         <span className="si-chart__classic-planet-deg">{deg}°</span>
         {vargottama && <span className="si-chart__classic-planet-varga">★</span>}
       </div>
-      {showHouse && house != null && (
-        <div className="si-chart__classic-planet-house">H{house}</div>
-      )}
       {nakLine && (
         <div className="si-chart__classic-planet-nak">{nakLine}</div>
       )}
@@ -159,22 +156,23 @@ function Cell({
 
   const useDetail = showDetails && !isClassic
   const useClassicDetail = showDetails && isClassic
-  const showHouseOnPlanet = isClassic && chartKind === 'transit'
+  // Transit sky chart: fixed-sign grid only — Lagna varies by date/time and is shown in the table below
+  const showLagna = chartKind !== 'transit' && isLagna
 
   return (
     <td className={[
       'si-chart__cell',
       (showDetails || isClassic) && 'si-chart__cell--detail',
       isClassic && 'si-chart__cell--classic',
-      isLagna && 'si-chart__cell--lagna',
-      isLagna && isClassic && 'si-chart__cell--lagna-classic',
+      showLagna && 'si-chart__cell--lagna',
+      showLagna && isClassic && 'si-chart__cell--lagna-classic',
       tone,
     ].filter(Boolean).join(' ')}>
       {isClassic ? (
         <>
           <div className="si-chart__classic-house">{houseNum}</div>
           <div className="si-chart__classic-rashi">{RASHI_TAMIL[signIdx]}</div>
-          {isLagna && (
+          {showLagna && (
             <span className="si-chart__lagna-badge">Lagna ↑</span>
           )}
         </>
@@ -200,8 +198,6 @@ function Cell({
                 degreeInSign={pd.degree_in_sign}
                 pada={pd.pada}
                 nakshatra={pd.nakshatra}
-                house={pd.house}
-                showHouse={showHouseOnPlanet}
               />
             )
           }
@@ -232,9 +228,6 @@ function Cell({
 }
 
 function ClassicLegend({ chartKind = 'natal' }) {
-  const lagnaNote = chartKind === 'transit'
-    ? 'Ascendant at chart time (noon local for transits)'
-    : 'Rising sign at birth (most important reference point)'
   const vargaNote = chartKind === 'transit'
     ? null
     : 'Vargottama (same sign in D1 and D9)'
@@ -243,18 +236,18 @@ function ClassicLegend({ chartKind = 'natal' }) {
     <details className="si-chart__classic-legend">
       <summary>How to read this chart</summary>
       <ul>
-        <li><strong>Lagna ↑</strong> — {lagnaNote}</li>
+        {chartKind === 'natal' && (
+          <li><strong>Lagna ↑</strong> — rising sign at birth (most important reference point)</li>
+        )}
+        {chartKind === 'transit' && (
+          <li>Fixed-sign sky map for the date shown — Ascendant and house placements are in the table below</li>
+        )}
         <li><sup className="retro-sup-r">R</sup> — retrograde planet</li>
         {vargaNote && (
           <li><span style={{ color: 'var(--chart-lagna-accent)' }}>★</span> — {vargaNote}</li>
         )}
         <li>Numbers 1–12 are fixed signs (Mesha → Meena)</li>
-        {chartKind === 'transit' && (
-          <li>Each planet shows degree, nakshatra · pada, and house from Ascendant</li>
-        )}
-        {chartKind === 'natal' && (
-          <li>Each planet shows degree and nakshatra · pada</li>
-        )}
+        <li>Each planet shows degree and nakshatra · pada</li>
       </ul>
     </details>
   )
