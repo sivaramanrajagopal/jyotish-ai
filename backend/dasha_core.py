@@ -185,3 +185,107 @@ def format_bhukti_table(
             f"| {planet} | {row.get('start', '—')} | {row.get('end', '—')} | {years} | {status} |"
         )
     return "\n".join(lines)
+
+
+def format_next_mahadashas_block(dasha: dict) -> str:
+    """Plain-text block for LLM — current MD + next 5 Mahadashas with exact dates."""
+    md = dasha.get("mahadasha") or {}
+    lines: list[str] = []
+    if md.get("planet"):
+        lines.append(
+            f"  CURRENT Mahadasha: {md['planet']} — {md.get('start', '—')} – {md.get('end', '—')} "
+            f"({md.get('remaining_years', '?')} yrs remaining)"
+        )
+    next_list = dasha.get("next_dashas") or []
+    if not next_list:
+        return "\n".join(lines) if lines else "  (not available — recalculate chart on Home)"
+    for i, d in enumerate(next_list):
+        prefix = "NEXT Mahadasha (1st after current)" if i == 0 else f"  Then Mahadasha #{i + 1}"
+        lines.append(
+            f"  {prefix}: {d.get('planet', '?')} — {d.get('start', '—')} – {d.get('end', '—')} "
+            f"({d.get('years', '?')} yrs)"
+        )
+    return "\n".join(lines)
+
+
+def format_upcoming_bhuktis_block(dasha: dict) -> str:
+    """Plain-text block — current + next 3 Bhuktis within current Mahadasha only."""
+    bh = dasha.get("bhukti") or {}
+    lines: list[str] = []
+    if bh.get("planet"):
+        lines.append(
+            f"  CURRENT Bhukti (sub-period): {bh['planet']} — {bh.get('start', '—')} – {bh.get('end', '—')} "
+            f"({bh.get('remaining_months', '?')} months left)"
+        )
+    for d in dasha.get("upcoming_bhuktis") or []:
+        lines.append(
+            f"  Upcoming Bhukti: {d.get('planet', '?')} — {d.get('start', '—')} – {d.get('end', '—')}"
+        )
+    if not lines:
+        return "  (not available)"
+    lines.append("  (Bhuktis are sub-periods INSIDE the current Mahadasha — not the same as next Mahadasha.)")
+    return "\n".join(lines)
+
+
+def format_mahadasha_timeline_table(dasha: dict) -> str:
+    """Markdown table: current + next Mahadashas."""
+    md = dasha.get("mahadasha") or {}
+    rows: list[dict] = []
+    if md.get("planet"):
+        rows.append({
+            "planet": md["planet"],
+            "start": md.get("start", "—"),
+            "end": md.get("end", "—"),
+            "years": md.get("years", "—"),
+            "status": "← **current**",
+        })
+    for d in dasha.get("next_dashas") or []:
+        rows.append({
+            "planet": d.get("planet", "?"),
+            "start": d.get("start", "—"),
+            "end": d.get("end", "—"),
+            "years": d.get("years", "—"),
+            "status": "next" if len(rows) == 1 else "",
+        })
+    if not rows:
+        return "(Mahadasha timeline not available — recalculate chart on Home.)"
+
+    lines = [
+        "| Mahadasha (Planet) | Start | End | Years | Status |",
+        "|--------------------|-------|-----|-------|--------|",
+    ]
+    for row in rows:
+        years = row["years"]
+        if isinstance(years, (int, float)):
+            years = f"{years:.2f}"
+        lines.append(
+            f"| {row['planet']} | {row['start']} | {row['end']} | {years} | {row['status']} |"
+        )
+    return "\n".join(lines)
+
+
+def format_full_dasha_cycle_markdown(dasha: dict) -> str:
+    """
+    High-level Vimshottari overview for chat: Mahadasha roadmap + current-MD bhuktis.
+    Two markdown tables — copy exactly when user asks for full dasa/bhukti cycle.
+    """
+    md = dasha.get("mahadasha") or {}
+    if not md.get("planet"):
+        return "(Full Dasa cycle not available — recalculate chart on Home.)"
+
+    nak = dasha.get("nakshatra", "—")
+    pada = dasha.get("pada", "—")
+    birth_lord = dasha.get("birth_nakshatra_lord", "—")
+    balance = dasha.get("balance_at_birth_years", "—")
+
+    parts = [
+        f"**Vimshottari Dasa–Bhukti overview** — Moon nakshatra **{nak}** (pada {pada}), "
+        f"birth dasha lord **{birth_lord}**, balance at birth **{balance}** yrs.",
+        "",
+        "**Mahadasha cycle (major periods)**",
+        format_mahadasha_timeline_table(dasha),
+        "",
+        f"**Bhuktis within current {md['planet']} Mahadasha (sub-periods)**",
+        format_bhukti_table(dasha, include_mahadasha_header=False),
+    ]
+    return "\n".join(parts)

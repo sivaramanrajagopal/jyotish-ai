@@ -3361,6 +3361,42 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   white-space: nowrap;
 }
 
+/* Chat topic chips — horizontal scroll when many tags (8 on mobile) */
+.chat-topic-chips {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.chat-topic-chips::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .chat-topic-chips {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    margin-left: -4px;
+    margin-right: -4px;
+    padding-bottom: 4px;
+    scroll-padding-inline: 16px;
+  }
+
+  .chat-topic-chips button {
+    flex-shrink: 0;
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@media (max-width: 380px) {
+  .chat-topic-chips button {
+    font-size: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
 @media (max-width: 400px) {
   .chat-md-table th:nth-child(4),
   .chat-md-table td:nth-child(4) {
@@ -3431,27 +3467,6 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .guest-session-hint {
     font-size: 0.8125rem;
     padding: 12px;
-  }
-
-  .chat-topic-chips {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin: 0 -4px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .chat-topic-chips::-webkit-scrollbar {
-    display: none;
-  }
-
-  .chat-topic-chips button {
-    flex-shrink: 0;
-    min-height: 44px;
-    min-width: 44px;
-    -webkit-tap-highlight-color: transparent;
   }
 
   .chat-send-btn {

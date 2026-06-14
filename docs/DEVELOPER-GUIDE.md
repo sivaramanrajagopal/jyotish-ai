@@ -606,7 +606,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Full forecast | `POST /forecast` | orchestrator + narrator | **Yes** |
 | Daily AI note | `POST /forecast/daily-reading` | scores + inline OpenAI | **Yes** |
 | House AI insight | `POST /forecast/house` | scores + inline OpenAI | **Yes** |
-| Chat | `POST /chat` | chat_agent | **Yes** |
+| Chat | `POST /chat` | chat_agent | **Yes** | Refreshes dasha each request; table tags |
 | Prashna verdict | `POST /prashna/analyze` | prashna engines | No |
 | Prashna narration | same, `include_ai=true` | ai_narrator | **Yes** |
 | Ashtakavarga | `POST /ashtakavarga` | ashtakavarga_agent | No |
@@ -812,6 +812,8 @@ pytest tests/ -q
 | `test_golden_charts.py` | Fixed natal positions |
 | `test_transit_phase3.py` | Gochara scoring |
 | `test_prashna*.py` | Horary engines + catalog sync |
+| `test_dasha_parity.py` | Cross-app dasha consistency |
+| `test_chat_dasha_context.py` | Chat prompt dasha grounding |
 | `test_analytics.py` | Event name validation |
 | `test_admin_app_events.py` | Admin aggregation |
 
@@ -942,11 +944,81 @@ Run: `pytest tests/test_prashna_catalog.py` and `npm test`.
 |---------|-------|---------------|
 | Ayanamsa | Lahiri (sidereal) | `ephemeris.py`, `natal_agent.py` |
 | House system | Whole Sign | `natal_agent.py` |
-| Dasha | Vimshottari | `dasha_agent.py` |
+| Dasha | Vimshottari | `dasha_core.py` → `dasha_agent.py` |
 | Gochara reference | Natal **Moon** sign (not Lagna) | `transit_score_agent.py` |
 | Vedha | Parasara obstruction rules | `transit_score_agent.py` |
 | Aspects (transits) | Mars 4,7,8; Jupiter 5,7,9; Saturn 3,7,10; Rahu/Ketu 3,7,11 | `transit_score_agent.py` |
 | Prashna | Classical horary house mapping | `prashna/constants.py` |
+
+---
+
+## 19. Vimshottari Dasha engine & Chat AI grounding
+
+### Single source of truth: `backend/dasha_core.py`
+
+All Mahadasha/Bhukti math lives in **`dasha_core.py`**. `dasha_agent.py` adds personal focus/trigger text and markdown formatters. The Mundane Astrology dashboard (`../dasha_logic.py`) imports the same module when both repos sit side-by-side locally.
+
+| Function | Purpose |
+|----------|---------|
+| `generate_dashas()` | Full Mahadasha timeline from birth Moon |
+| `generate_bhuktis()` | 9 Bhuktis within one Mahadasha |
+| `find_current_dasha_bhukti()` | Current MD + Bhukti at reference date |
+| `format_bhukti_table()` | Markdown table — bhuktis in **current** MD only |
+| `format_mahadasha_timeline_table()` | Markdown table — current + next 5 Mahadashas |
+| `format_full_dasha_cycle_markdown()` | High-level overview: MD roadmap + current-MD bhuktis |
+| `format_next_mahadashas_block()` | Plain text for LLM (anti-hallucination) |
+
+### Fresh dasha on every chat request
+
+`POST /chat` calls `refresh_dasha(chart, force=True)` before building the system prompt. This recomputes dates from Moon longitude + DOB so stale `chart_data.dasha` JSON cannot mislead the AI.
+
+```python
+# chart_utils.py
+refresh_dasha(natal_chart, force=True)  # chat
+ensure_dasha(natal_chart)               # forecast/scores — backfill if missing
+```
+
+### Chat topic chips (`ChatPanel.jsx`)
+
+| Chip | Key | What the AI must output |
+|------|-----|-------------------------|
+| 🔄 My Dasha | `dasha` | Interpretation of current MD/Bhukti |
+| 📊 Bhukti Table | `dasha_table` | Exact `bhukti_table_markdown` (9 bhuktis in current MD) |
+| 🗓 Dasa Cycle | `dasha_cycle` | Exact `full_dasha_cycle_markdown` (MD roadmap + bhuktis) |
+
+**Anti-hallucination rules** in `chat_agent.py` system prompt:
+
+- Mahadasha ≠ Bhukti (sub-period vs major period)
+- "Next Mahadasha" = first entry in `NEXT MAHADASHAS` block — never guess Ketu/Venus dates
+- Never invent start/end dates; copy markdown tables exactly
+- `TOKENS = 1200` to avoid truncating two-table Dasa Cycle replies
+
+### Mobile-friendly chat tables
+
+CSS in `index.css`:
+
+- `.chat-md-table-wrap` — horizontal swipe scroll, `touch-action: pan-x`
+- `.chat-topic-chips` — horizontal scroll on viewports ≤639px (8 topic chips)
+- 44px minimum tap targets on chips and send button
+- On viewports ≤400px, **Years** column hidden in tables to reduce width
+- `MarkdownTable` in `ChatPanel.jsx` renders pipe tables as HTML `<table>` with `aria-label` for swipe hint
+
+### Tests
+
+| File | Covers |
+|------|--------|
+| `tests/test_dasha.py` | Core dasha structure |
+| `tests/test_dasha_parity.py` | jyotish vs mundane `dasha_logic` (skipped in CI if sibling repo absent) |
+| `tests/test_chat_dasha_context.py` | Prompt includes NEXT MAHADASHAS, FULL DASA CYCLE, `refresh_dasha` |
+
+### Debugging dasha hallucinations in chat
+
+| Symptom | Fix |
+|---------|-----|
+| Wrong "next Mahadasha" planet/dates | Redeploy backend with `refresh_dasha` + NEXT MAHADASHAS prompt block |
+| AI confuses Bhukti with Mahadasha | User taps **🗓 Dasa Cycle** or **📊 Bhukti Table** for structured tables |
+| Empty dasha tables | Recalculate chart on Home; verify `birth_data.dob` and Moon longitude |
+| Tables cut off on mobile | Swipe table horizontally; Years column auto-hides on narrow screens |
 
 ---
 
@@ -959,6 +1031,7 @@ Backend:  Render  → backend/   → FastAPI main.py
 DB:       Supabase → supabase/*.sql
 AI:       OpenAI gpt-4o-mini (forecast, chat, prashna narrate)
 Rules:    Swiss Ephemeris + Parasara engines (no LLM)
+Dasha:    dasha_core.py → chat tables (Bhukti / Dasa Cycle tags)
 Auth:     Supabase magic link + JWT on API
 Gochar:   POST /forecast/scores → GocharamTab (no AI)
 Forecast: Same scores + POST /forecast/daily-reading (AI)
@@ -968,4 +1041,4 @@ Deploy:   DEPLOY.md
 
 ---
 
-*Last updated: 2026-06-06 — reflects Gochar tab, analytics, classic charts, Vitest suite.*
+*Last updated: 2026-06-14 — Gochar tab, dasha_core, chat Dasa Cycle/Bhukti tables, anti-hallucination grounding.*

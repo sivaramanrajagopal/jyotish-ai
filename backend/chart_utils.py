@@ -62,12 +62,23 @@ def assert_chart_not_stale(natal_chart: dict) -> None:
 
 def ensure_dasha(natal_chart: dict) -> dict:
     """Compute Vimshottari dasha if missing from a saved chart."""
+    return refresh_dasha(natal_chart, force=False)
+
+
+def refresh_dasha(natal_chart: dict, *, force: bool = True) -> dict:
+    """
+    Recompute Vimshottari dasha from Moon longitude + DOB.
+    force=True (default): always refresh — use before chat/forecast for accurate dates.
+    force=False: skip if mahadasha already present (legacy ensure_dasha behaviour).
+    """
     dasha = natal_chart.get("dasha") or {}
-    if dasha.get("mahadasha", {}).get("planet"):
+    if not force and dasha.get("mahadasha", {}).get("planet"):
         if dasha.get("antardasha_sequence") and not dasha.get("bhukti_table_markdown"):
             try:
-                from dasha_core import format_bhukti_table
+                from dasha_core import format_bhukti_table, format_mahadasha_timeline_table, format_full_dasha_cycle_markdown
                 dasha["bhukti_table_markdown"] = format_bhukti_table(dasha)
+                dasha["mahadasha_timeline_markdown"] = format_mahadasha_timeline_table(dasha)
+                dasha["full_dasha_cycle_markdown"] = format_full_dasha_cycle_markdown(dasha)
                 natal_chart["dasha"] = dasha
             except Exception:
                 pass
@@ -84,5 +95,7 @@ def ensure_dasha(natal_chart: dict) -> dict:
             )
     except Exception:
         natal_chart.setdefault("dasha", {})
-        natal_chart["dasha_available"] = False
+        natal_chart["dasha_available"] = bool(
+            (natal_chart.get("dasha") or {}).get("mahadasha", {}).get("planet")
+        )
     return natal_chart

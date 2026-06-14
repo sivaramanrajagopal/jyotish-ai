@@ -26,10 +26,16 @@ from agents.transit_score_agent import (
     dasha_transit_correlation,
 )
 from agents.ashtakavarga_agent import bav_context_for_narrator
-from dasha_core import format_bhukti_table
+from dasha_core import (
+    format_bhukti_table,
+    format_full_dasha_cycle_markdown,
+    format_mahadasha_timeline_table,
+    format_next_mahadashas_block,
+    format_upcoming_bhuktis_block,
+)
 
 MODEL  = "gpt-4o-mini"
-TOKENS = 800   # per reply — keep responses concise
+TOKENS = 1200   # room for dasha cycle tables + brief interpretation
 
 SYSTEM_TEMPLATE = """\
 You are Parashara Jyotish — a classical Vedic astrology advisor (Parashari system, \
@@ -39,11 +45,21 @@ You are speaking with {name}. Their natal chart and today's Panchangam are below
 Answer their questions with specific, chart-grounded insights. \
 Be warm, direct, and concise (3–5 sentences per answer). \
 Name specific planets, signs, houses, or dashas from their chart. \
-Never give vague generic advice. Never add disclaimers. \
-When discussing Dasha/Bhukti sequences, always refer to the antardasha table provided — do not guess.
+Never give vague generic advice. Never add disclaimers.
+
+CRITICAL DASHA RULES (never violate):
+- Mahadasha and Bhukti are different. Bhukti = sub-period WITHIN the current Mahadasha only.
+- "Next Mahadasha" = the planet labelled "NEXT Mahadasha (1st after current)" below — NOT the next Bhukti.
+- NEVER invent dasha start/end dates or durations. Quote ONLY from NEXT MAHADASHAS, UPCOMING BHUKTIS, or tables below.
+- If data is missing, say "recalculate your chart on Home" — do not guess.
+
+When discussing Dasha/Bhukti sequences, always refer to the tables provided — do not guess.
 When the user asks for a **dasha table**, **bhukti table**, or taps the Dasha Table topic, you MUST include \
 the exact Bhukti table (markdown) block from below in your reply without changing any dates or planet names. \
-Add a brief 2–3 sentence interpretation before or after the table.
+When the user asks about **next Mahadasha** or **Mahadasha timeline**, include the Mahadasha timeline table below. \
+When the user asks for **full dasa cycle**, **full dasha bhukti cycle**, or taps the Dasa Cycle topic, you MUST include \
+the exact FULL DASA CYCLE block below (both tables, unchanged) plus 2–3 sentences on what is active now and what is next. \
+Add a brief 2–3 sentence interpretation before or after any other table.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -58,12 +74,25 @@ PLANETS:
 CURRENT DASHA:
 Mahadasha : {maha_planet} ({maha_start}–{maha_end}, {maha_rem} yrs left) — {maha_focus}
 Bhukti    : {bhukti_planet} ({bhukti_start}–{bhukti_end}, {bhukti_rem} months left) — {bhukti_trigger}
+MD–Bhukti relationship: {dasha_relationship}
+
+NEXT MAHADASHAS (exact dates — use for "what comes after my Mahadasha" questions):
+{next_mahadashas}
+
+UPCOMING BHUKTIS (sub-periods within current Mahadasha only — NOT next Mahadasha):
+{upcoming_bhuktis}
 
 FULL ANTARDASHA SEQUENCE (all bhuktis within {maha_planet} Mahadasha, in order):
 {antardasha}
 
-Bhukti table (markdown — copy exactly when user asks for dasha/bhukti table):
+Bhukti table (markdown — copy exactly when user asks for bhukti/antardasha table):
 {bhukti_table}
+
+Mahadasha timeline table (markdown — copy when user asks about next Mahadasha or full dasha timeline):
+{mahadasha_timeline}
+
+FULL DASA CYCLE — high level (markdown — copy exactly when user asks for full Vimshottari dasa/bhukti cycle):
+{full_dasha_cycle}
 
 === TODAY'S PANCHANGAM ({today} · {location}) ===
 Vaaram    : {vaaram} (lord: {vaaram_lord})
@@ -285,8 +314,21 @@ def _build_system(natal_chart, location: str = "Chennai") -> str:
         bhukti_end     = bh.get("end", ""),
         bhukti_rem     = bh.get("remaining_months", ""),
         bhukti_trigger = bh.get("trigger", ""),
+        dasha_relationship = dasha.get("relationship", "—"),
+        next_mahadashas = format_next_mahadashas_block(dasha),
+        upcoming_bhuktis = format_upcoming_bhuktis_block(dasha),
         antardasha     = "\n".join(antardasha_lines) or "  (not available)",
         bhukti_table   = dasha.get("bhukti_table_markdown") or format_bhukti_table(dasha) or "(not available)",
+        mahadasha_timeline = (
+            dasha.get("mahadasha_timeline_markdown")
+            or format_mahadasha_timeline_table(dasha)
+            or "(not available)"
+        ),
+        full_dasha_cycle = (
+            dasha.get("full_dasha_cycle_markdown")
+            or format_full_dasha_cycle_markdown(dasha)
+            or "(not available)"
+        ),
         today          = today,
         location       = loc,
         vaaram         = panch.get("vaaram_name", ""),

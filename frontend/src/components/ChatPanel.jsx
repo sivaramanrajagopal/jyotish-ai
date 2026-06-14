@@ -40,11 +40,19 @@ const TOPICS = [
   },
   {
     key: 'dasha_table',
-    label: '📊 Dasha Table',
+    label: '📊 Bhukti Table',
     color: '#fcd34d',
     bg: 'rgba(252,211,77,0.18)',
     border: 'rgba(252,211,77,0.4)',
-    question: "Show my full Mahadasha and Bhukti table in a table format with all dates.",
+    question: "Show all Bhuktis (sub-periods) in my current Mahadasha in a table with exact dates.",
+  },
+  {
+    key: 'dasha_cycle',
+    label: '🗓 Dasa Cycle',
+    color: '#a78bfa',
+    bg: 'rgba(167,139,250,0.18)',
+    border: 'rgba(167,139,250,0.4)',
+    question: "Show my high-level full Vimshottari Dasa–Bhukti cycle: Mahadasha roadmap plus all bhuktis in my current Mahadasha, in tables.",
   },
   {
     key: 'yoga',
@@ -79,7 +87,8 @@ function detectTopics(text) {
   if (/panchangam|vaaram|tithi|nakshatra|yogam|karanam|rahu kalam|sunrise/.test(t))    found.push('panchangam')
   if (/tara|mitra|param|janma|sampat|naidhana|kshema|sadhana|pratyak/.test(t))        found.push('tara')
   if (/mahadasha|bhukti|antardasha|dasha|antar/.test(t))                              found.push('dasha')
-  if (/\|.*\|.*\|/.test(text) && /bhukti|dasha|mahadasha|start.*end/i.test(t))        found.push('dasha_table')
+  if (/\|.*\|.*\|/.test(text) && /bhukti|antardasha/i.test(t) && !/mahadasha cycle/i.test(t)) found.push('dasha_table')
+  if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')
   if (/saturn|jupiter|mars|venus|mercury|sun|moon|rahu|ketu|graha|planet/.test(t))    found.push('planets')

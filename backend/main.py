@@ -38,7 +38,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
-from chart_utils import round_score, assert_chart_not_stale, ensure_dasha
+from chart_utils import round_score, assert_chart_not_stale, ensure_dasha, refresh_dasha
 from ai_limits import check_ai_quota, moderate_messages
 from analytics import track_event
 from security import (
@@ -988,6 +988,7 @@ def chat_endpoint(
     moderate_messages(msgs)
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
+    chart = refresh_dasha(chart, force=True)
 
     try:
         reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)

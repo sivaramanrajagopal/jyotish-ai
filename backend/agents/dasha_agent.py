@@ -18,6 +18,8 @@ from dasha_core import (
     fmt_period,
     fmt_period_day,
     format_bhukti_table,
+    format_full_dasha_cycle_markdown,
+    format_mahadasha_timeline_table,
     get_nakshatra,
     get_relationship,
 )
@@ -147,4 +149,6 @@ def get_personal_dasha(
         "next_dashas": next_dashas,
     }
     result["bhukti_table_markdown"] = format_bhukti_table(result)
+    result["mahadasha_timeline_markdown"] = format_mahadasha_timeline_table(result)
+    result["full_dasha_cycle_markdown"] = format_full_dasha_cycle_markdown(result)
     return result
