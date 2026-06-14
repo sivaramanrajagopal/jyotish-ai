@@ -21,13 +21,17 @@ export function chartPayload(chart, userId, extra = {}) {
   return { natal_chart: chart, ...extra }
 }
 
-/** Forecast API extras: pass current local time when scoring today. */
-export function forecastPayload(chart, userId, transitDate) {
+/** Forecast API extras: pass transit_time when set (today defaults to now). */
+export function forecastPayload(chart, userId, transitDate, transitTime) {
   const extra = { transit_date: transitDate }
   const today = new Date().toISOString().split('T')[0]
-  if (transitDate === today) {
+  if (transitTime) {
+    extra.transit_time = transitTime
+  } else if (transitDate === today) {
     const n = new Date()
     extra.transit_time = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+  } else {
+    extra.transit_time = '06:00'
   }
   return chartPayload(chart, userId, extra)
 }

@@ -85,12 +85,16 @@ const CHAT_TR = {
     chipHint:    'Tap a topic to ask a suggested question, or type your own below',
     emptyState:  'Ask anything about your natal chart, Dasha, or life areas.',
     placeholder: 'Ask about your chart…',
+    aiNarration: 'AI narration',
+    aiHint:      'Grounded on your chart — not a substitute for professional advice.',
   },
   tamil: {
     header:      'உங்கள் ஜாதகம் கேளுங்கள்',
     chipHint:    'ஒரு தலைப்பை தட்டவும் அல்லது நீங்களே கேள்வி கேளுங்கள்',
     emptyState:  'உங்கள் ஜாதகம், தசை அல்லது வாழ்க்கைத் துறைகள் பற்றி கேளுங்கள்.',
     placeholder: 'உங்கள் ஜாதகம் பற்றி கேளுங்கள்…',
+    aiNarration: 'AI விளக்கம்',
+    aiHint:      'உங்கள் ஜாதகத்தின் அடிப்படையில் — தொழில்முறை ஆலோசனைக்கு மாற்றாக அல்ல.',
   },
 }
 
@@ -223,6 +227,9 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
         <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--orange)' }}>
           {(CHAT_TR[language] || CHAT_TR.english).header}
         </h3>
+        <span className="prashna-engine-badge prashna-engine-badge--ai chat-header-badge">
+          {(CHAT_TR[language] || CHAT_TR.english).aiNarration}
+        </span>
         <div className="ml-auto flex items-center gap-3">
           <LanguageToggle language={language} onChange={setLanguage} />
           <span className="text-xs hidden sm:block" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -232,7 +239,7 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
       </div>
 
       <p className="legal-inline-hint px-4 pb-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-        AI responses are for entertainment and informational purposes only — not professional advice.
+        {(CHAT_TR[language] || CHAT_TR.english).aiHint}
       </p>
 
       <div className="px-4 pt-2">
@@ -298,9 +305,16 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
                   Retry
                 </button>
               )}
+              {msg.role === 'assistant' && (
+                <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--card-border)' }}>
+                  <span className="prashna-engine-badge prashna-engine-badge--ai">
+                    {(CHAT_TR[language] || CHAT_TR.english).aiNarration}
+                  </span>
+                </div>
+              )}
               {/* Auto-tag badges on AI replies */}
               {msg.role === 'assistant' && i === messages.length - 1 && activeTopics.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--card-border)' }}>
+                <div className="flex flex-wrap gap-1 mt-2">
                   {activeTopics.map(key => {
                     const t = TOPIC_MAP[key]
                     if (!t) return null

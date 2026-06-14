@@ -63,24 +63,33 @@ def load_natal_chart(user_id: str) -> Optional[dict]:
             return None
 
         row = result.data
+        chart = None
         if row.get("chart_data"):
-            return row["chart_data"]
+            chart = row["chart_data"]
+        elif row.get("planet_positions"):
+            # Legacy rows without chart_data — minimal reconstruction
+            asc_sign = row.get("ascendant") or "Aries"
+            chart = {
+                "planet_positions": row["planet_positions"],
+                "yogas": row.get("yogas") or [],
+                "ayanamsa": row.get("ayanamsa") or "Lahiri",
+                "ayanamsa_value": row.get("ayanamsa_value"),
+                "moon_nakshatra_index": row.get("moon_nakshatra_index"),
+                "moon_rasi_index": row.get("moon_rasi_index"),
+                "ascendant": {"sign": asc_sign},
+                "birth_data": (row.get("birth_form") or {}),
+            }
 
-        # Legacy rows without chart_data — minimal reconstruction
-        if not row.get("planet_positions"):
+        if not chart:
             return None
 
-        asc_sign = row.get("ascendant") or "Aries"
-        return {
-            "planet_positions": row["planet_positions"],
-            "yogas": row.get("yogas") or [],
-            "ayanamsa": row.get("ayanamsa") or "Lahiri",
-            "ayanamsa_value": row.get("ayanamsa_value"),
-            "moon_nakshatra_index": row.get("moon_nakshatra_index"),
-            "moon_rasi_index": row.get("moon_rasi_index"),
-            "ascendant": {"sign": asc_sign},
-            "birth_data": (row.get("birth_form") or {}),
-        }
+        from chart_utils import ensure_dasha
+
+        had_dasha = bool((chart.get("dasha") or {}).get("mahadasha", {}).get("planet"))
+        chart = ensure_dasha(chart)
+        if not had_dasha and chart.get("dasha_available"):
+            save_natal_chart(user_id, chart)
+        return chart
     except Exception as exc:
         logger.exception("Failed to load natal chart for %s: %s", user_id, exc)
         return None
@@ -97,12 +106,14 @@ def resolve_natal_chart(
     """
     from security import validate_client_natal_chart
 
+    from chart_utils import ensure_dasha
+
     if auth_user_id:
         stored = load_natal_chart(auth_user_id)
         if stored:
-            return validate_client_natal_chart(stored, sanitise_fn)
+            return ensure_dasha(validate_client_natal_chart(stored, sanitise_fn))
         if client_chart:
-            return validate_client_natal_chart(client_chart, sanitise_fn)
+            return ensure_dasha(validate_client_natal_chart(client_chart, sanitise_fn))
         raise HTTPException(
             status_code=404,
             detail="No saved chart. Calculate your birth chart on Home first.",
@@ -110,4 +121,4 @@ def resolve_natal_chart(
 
     if not client_chart:
         raise HTTPException(status_code=400, detail="natal_chart is required.")
-    return validate_client_natal_chart(client_chart, sanitise_fn)
+    return ensure_dasha(validate_client_natal_chart(client_chart, sanitise_fn))

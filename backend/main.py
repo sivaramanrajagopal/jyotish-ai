@@ -503,6 +503,7 @@ class NatalChartRequest(BaseModel):
     place_of_birth: str                # max 120 chars
     gender: Optional[str] = "male"
     user_id: Optional[str] = None      # if logged in
+    birth_time_approximate: Optional[bool] = False
 
     model_config = {"str_strip_whitespace": True}
 
@@ -515,6 +516,7 @@ class NatalChartRequest(BaseModel):
             "place_of_birth": _sanitise(self.place_of_birth, 120),
             "gender":         _sanitise(self.gender or "male", 20),
             "user_id":        self.user_id,
+            "birth_time_approximate": bool(self.birth_time_approximate),
         }
 
 
@@ -583,6 +585,7 @@ def natal_chart(
     tob            = cleaned["tob"]
     place_of_birth = cleaned["place_of_birth"]
     user_id        = resolve_user_id(cleaned["user_id"], auth_user)
+    birth_time_approximate = cleaned.get("birth_time_approximate", False)
 
     # Validate date + time formats strictly
     if not re.match(r"^\d{4}-\d{2}-\d{2}$", dob):
@@ -591,6 +594,8 @@ def natal_chart(
     if not re.match(r"^\d{2}:\d{2}(:\d{2})?$", tob):
         raise HTTPException(status_code=400, detail="tob must be HH:MM (24h).")
     tob = tob[:5]   # normalise to HH:MM
+    if birth_time_approximate:
+        tob = "12:00"
     try:
         datetime.strptime(dob, "%Y-%m-%d")
         datetime.strptime(tob, "%H:%M")
@@ -617,6 +622,7 @@ def natal_chart(
     chart["birth_data"]["timezone"] = timezone
     chart["birth_data"]["place_of_birth"] = place_of_birth
     chart["birth_data"]["panchangam_location"] = panchangam_location
+    chart["birth_data"]["birth_time_approximate"] = birth_time_approximate
     chart["panchangam_location"] = panchangam_location
 
     # Add dasha data
@@ -650,6 +656,35 @@ def natal_chart(
     return chart
 
 
+class EnsureDashaRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+
+
+@app.post("/chart/ensure-dasha")
+@limiter.limit("30/minute")
+def chart_ensure_dasha(
+    request: Request,
+    req: EnsureDashaRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Backfill Vimshottari dasha on a saved chart without full recalculation."""
+    from chart_utils import ensure_dasha
+    from security import validate_client_natal_chart
+
+    # Authenticated users: never trust client chart body for persistence — use server copy.
+    if auth_user:
+        stored = load_natal_chart(auth_user.id)
+        if stored:
+            return stored
+
+    if not req.natal_chart:
+        raise HTTPException(status_code=400, detail="natal_chart is required.")
+
+    chart = validate_client_natal_chart(req.natal_chart, _sanitise)
+    chart = ensure_dasha(chart)
+    return chart
+
+
 @app.get("/natal-chart")
 @limiter.limit("60/minute")
 def get_natal_chart(
@@ -657,10 +692,12 @@ def get_natal_chart(
     auth_user: AuthUser = Depends(get_current_user),
 ):
     """Return the authenticated user's saved natal chart from Supabase."""
+    from chart_utils import ensure_dasha
+
     chart = load_natal_chart(auth_user.id)
     if not chart:
         raise HTTPException(status_code=404, detail="No saved chart found.")
-    return chart
+    return ensure_dasha(chart)
 
 
 # ─────────────────────────────────────────────

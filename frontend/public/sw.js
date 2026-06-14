@@ -1,6 +1,9 @@
-/* Parashara Jyotish — service worker for cosmic alert notifications */
+/* Parashara Jyotish — service worker: offline shell + cosmic alert notifications */
 
-const ALLOWED_TABS = new Set(['home', 'chart', 'panchangam', 'chat', 'forecast'])
+const CACHE_SHELL = 'jyotish-shell-v1'
+const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
+
+const ALLOWED_TABS = new Set(['home', 'chart', 'panchangam', 'chat', 'forecast', 'prashna'])
 
 function safeInternalPath(raw) {
   try {
@@ -16,12 +19,57 @@ function safeInternalPath(raw) {
   }
 }
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
+function isNavigationRequest(request) {
+  return request.mode === 'navigate'
+    || (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_SHELL)
+      .then((cache) => cache.addAll(SHELL_URLS))
+      .then(() => self.skipWaiting())
+      .catch(() => self.skipWaiting())
+  )
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k.startsWith('jyotish-shell-') && k !== CACHE_SHELL).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  )
+})
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event
+  if (request.method !== 'GET') return
+
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
+  if (url.pathname.startsWith('/api')) return
+  if (url.pathname.startsWith('/auth')) return
+
+  if (isNavigationRequest(request)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone()
+          caches.open(CACHE_SHELL).then((cache) => cache.put('/index.html', copy))
+          return response
+        })
+        .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
+    )
+    return
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => response)
+      .catch(() => caches.match(request))
+  )
 })
 
 self.addEventListener('notificationclick', (event) => {

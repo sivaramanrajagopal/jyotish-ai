@@ -23,6 +23,7 @@ import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
 import AuthPanel from '../components/AuthPanel'
 import NotificationSettings from '../components/NotificationSettings'
 import { useAuth } from '../hooks/useAuth'
+import { chartNeedsDasha, backfillChartDasha } from '../lib/ensureChartDasha'
 import { startNotificationWatcher } from '../lib/notifications'
 import { saveSessionChart, loadSessionChart, clearSessionChart } from '../lib/chartStorage'
 import AdminPanel from '../components/AdminPanel'
@@ -151,7 +152,18 @@ const fieldStyle = {
 }
 
 function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab, userId, userEmail, onClearRequest }) {
-  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  const handleChange = e => {
+    const { name, value, type, checked } = e.target
+    if (name === 'time_unknown') {
+      setForm(f => ({
+        ...f,
+        time_unknown: checked,
+        tob: checked ? '12:00' : f.tob,
+      }))
+      return
+    }
+    setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
+  }
 
   const handleFeatureClick = ({ tab, section }) => {
     onGoToTab(tab, section)
@@ -277,9 +289,21 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
               <label htmlFor="birth-tob" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Time of Birth</label>
               <input
                 id="birth-tob"
-                type="time" name="tob" value={form.tob} onChange={handleChange} required
-                style={{ ...fieldStyle }}
+                type="time" name="tob" value={form.tob} onChange={handleChange}
+                required={!form.time_unknown}
+                disabled={form.time_unknown}
+                style={{ ...fieldStyle, opacity: form.time_unknown ? 0.55 : 1 }}
               />
+              <label className="approx-time-check" htmlFor="birth-time-unknown">
+                <input
+                  id="birth-time-unknown"
+                  type="checkbox"
+                  name="time_unknown"
+                  checked={!!form.time_unknown}
+                  onChange={handleChange}
+                />
+                I don&apos;t know my exact birth time (uses 12:00 noon)
+              </label>
             </div>
           </div>
 
@@ -330,6 +354,15 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
   )
 }
 
+function ApproximateTimeBanner({ chart }) {
+  if (!chart?.birth_data?.birth_time_approximate) return null
+  return (
+    <div className="approx-time-banner" role="status">
+      <strong>Birth time approximate.</strong> Chart uses 12:00 noon local time — Lagna and house placements may differ from your actual chart. Moon sign and Dasha remain reliable.
+    </div>
+  )
+}
+
 // ── MY CHART TAB ──────────────────────────────────────────────────────────────
 function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
   if (!chart) return <NeedChart onGoHome={onGoHome} />
@@ -341,6 +374,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
           <AuthPanel variant="nudge" />
         </div>
       )}
+
+      <ApproximateTimeBanner chart={chart} />
 
       <NotificationSettings placeOfBirth={placeOfBirth} />
 
@@ -484,7 +519,7 @@ function HomeApp() {
   )
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [syncNotice, setSyncNotice] = useState('')
-  const [form, setForm]   = useState(saved?.form  || { name:'', dob:'', tob:'', place_of_birth:'', gender:'male' })
+  const [form, setForm]   = useState(saved?.form  || { name:'', dob:'', tob:'', place_of_birth:'', gender:'male', time_unknown: false })
   const [chart, setChart] = useState(saved?.chart || null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -553,6 +588,7 @@ function HomeApp() {
           dob: bd.dob || f.dob,
           tob: bd.tob || f.tob,
           place_of_birth: data.place_of_birth || f.place_of_birth,
+          time_unknown: bd.birth_time_approximate ?? f.time_unknown,
         }))
       })
       .catch(async (err) => {
@@ -571,21 +607,18 @@ function HomeApp() {
       .finally(() => setChartRefreshing(false))
   }, [userId])
 
-  // Refresh stale session charts missing ISO dasha dates (anonymous only)
+  // Backfill dasha on guest session charts (signed-in users use GET /natal-chart)
   useEffect(() => {
-    if (userId) return
-    const s = loadFromStorage(null)
-    if (!s?.form?.dob || !s?.chart) return
-    if (s.chart.dasha?.mahadasha?.start_iso) return
+    if (userId || !chart || !chartNeedsDasha(chart)) return
     setChartRefreshing(true)
-    api.post('/natal-chart', s.form)
-      .then(({ data }) => {
+    backfillChartDasha(chart)
+      .then((data) => {
         setChart(data)
-        saveToStorage(s.form, data, null)
+        saveToStorage(form, data, null)
       })
       .catch(() => {})
       .finally(() => setChartRefreshing(false))
-  }, [userId])
+  }, [chart, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cosmic alert watcher (while app is open / installed as PWA)
   useEffect(() => {
@@ -627,7 +660,9 @@ function HomeApp() {
     setLoading(true)
     setError('')
     try {
-      const payload = userId ? { ...form, user_id: userId } : form
+      const payload = userId
+        ? { ...form, user_id: userId, birth_time_approximate: !!form.time_unknown }
+        : { ...form, birth_time_approximate: !!form.time_unknown }
       const { data } = await api.post('/natal-chart', payload)
       setChart(data)
       saveToStorage(form, data, userId)

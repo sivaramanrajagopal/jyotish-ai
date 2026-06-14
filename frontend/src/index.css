@@ -698,6 +698,61 @@ html[data-theme="dark"] .prashna-audit-verdict-box {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.prashna-audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.prashna-audit-action-btn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prashna-audit-action-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.approx-time-banner {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #f59e0b55;
+  background: #fff8e855;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+html[data-theme="dark"] .approx-time-banner {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.approx-time-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.approx-time-check input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .prashna-history-item {
   padding: 10px 12px;
   margin-bottom: 8px;
@@ -2715,6 +2770,46 @@ html[data-theme="dark"] .prashna-disclaimer {
   .legal-accept {
     border-radius: 16px 16px 0 0;
     max-height: 92vh;
+  }
+
+  .approx-time-check {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .approx-time-check input {
+    width: 18px;
+    height: 18px;
+  }
+
+  .prashna-audit-card .prashna-result-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prashna-audit-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .prashna-audit-action-btn {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .chat-header-badge {
+    order: 3;
+    width: 100%;
+    text-align: center;
+  }
+
+  .forecast-date-row input[type="date"],
+  .forecast-date-row input[type="time"] {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
   }
 }
 

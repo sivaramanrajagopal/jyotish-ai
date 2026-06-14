@@ -99,9 +99,63 @@ function AuditTable({ headers, rows }) {
   )
 }
 
+function formatAuditText(audit) {
+  if (!audit) return ''
+  const lines = [
+    'Parashara Jyotish — Prashna Calculation Audit',
+    audit.method?.note || '',
+    '',
+    `Question: ${audit.question?.text || '—'}`,
+    `Category: ${audit.question?.category_label || '—'}`,
+    `Verdict: ${audit.verdict_logic?.label || '—'}`,
+    `Cast: ${audit.moment?.timestamp_iso || '—'} (${audit.moment?.place || '—'})`,
+    '',
+    `Lagna: ${audit.lagna?.sign || '—'} · Lord ${audit.lagna?.lagna_lord || '—'}`,
+    `Matter house: H${audit.matter_house?.house_num || '—'} ${audit.matter_house?.house_sign || ''} · Lord ${audit.matter_house?.house_lord || '—'}`,
+    '',
+    'Testimonies:',
+  ]
+  for (const t of audit.testimonies_summary || []) {
+    const tone = t.polarity === 'positive' ? '+' : t.polarity === 'negative' ? '−' : '○'
+    lines.push(`  ${tone} [${t.category}] ${t.description}`)
+  }
+  lines.push('')
+  lines.push(`Rule: ${audit.verdict_logic?.rule_applied || '—'}`)
+  lines.push(`Counts: +${audit.verdict_logic?.positive_count ?? 0} / −${audit.verdict_logic?.negative_count ?? 0} / ○${audit.verdict_logic?.neutral_count ?? 0}`)
+  return lines.join('\n')
+}
+
 function PrashnaAuditCard({ audit }) {
   const [expanded, setExpanded] = useState(true)
+  const [copyStatus, setCopyStatus] = useState('')
   if (!audit) return null
+
+  const handleCopy = async () => {
+    const text = formatAuditText(audit)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyStatus('Copied!')
+      setTimeout(() => setCopyStatus(''), 2000)
+    } catch {
+      setCopyStatus('Copy failed')
+    }
+  }
+
+  const handleShare = async () => {
+    const text = formatAuditText(audit)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Prashna calculation audit',
+          text,
+        })
+        return
+      } catch (err) {
+        if (err?.name === 'AbortError') return
+      }
+    }
+    handleCopy()
+  }
 
   const fmtDeg = (d) => (d != null && d !== '' ? `${Number(d).toFixed(2)}°` : '—')
   const fmtCoord = (lat, lon) => {
@@ -144,7 +198,15 @@ function PrashnaAuditCard({ audit }) {
     <div className="prashna-result-card prashna-audit-card">
       <div className="prashna-result-card-header">
         <div className="prashna-result-card-title">📋 Calculation audit</div>
-        <span className="prashna-engine-badge prashna-engine-badge--rule">Verify calculation</span>
+        <div className="prashna-audit-actions">
+          <span className="prashna-engine-badge prashna-engine-badge--rule">Verify calculation</span>
+          <button type="button" className="prashna-audit-action-btn" onClick={handleCopy}>
+            {copyStatus || 'Copy'}
+          </button>
+          <button type="button" className="prashna-audit-action-btn" onClick={handleShare}>
+            Share
+          </button>
+        </div>
       </div>
       <p className="prashna-audit-intro">
         {audit.method?.note}

@@ -45,3 +45,29 @@ def test_current_dasha_covers_reference_date():
     bh = result["bhukti"]
     assert md["remaining_years"] >= 0
     assert bh["remaining_months"] >= 0
+
+
+def test_ensure_dasha_backfill_missing():
+    from chart_utils import ensure_dasha
+
+    chart = {
+        "planet_positions": {"Moon": {"longitude": 354.14, "sign": "Pisces"}},
+        "birth_data": {"dob": "1978-09-18"},
+        "dasha": {},
+    }
+    result = ensure_dasha(chart)
+    assert result["dasha_available"] is True
+    assert result["dasha"]["mahadasha"]["planet"]
+
+
+def test_ensure_dasha_skips_when_present():
+    from chart_utils import ensure_dasha
+
+    chart = {
+        "planet_positions": {"Moon": {"longitude": 100.0}},
+        "birth_data": {"dob": "1990-06-15"},
+        "dasha": {"mahadasha": {"planet": "Venus"}},
+    }
+    result = ensure_dasha(chart)
+    assert result["dasha"]["mahadasha"]["planet"] == "Venus"
+    assert result["dasha_available"] is True

@@ -29,6 +29,9 @@ const TR = {
     tapInstruction: 'Tap any area below for AI insight',
     forecastDate: 'Forecast date',
     forecastDateHint: 'Pick any date — e.g. “Is Tuesday good for my interview?”',
+    forecastTime: 'Transit time (local)',
+    forecastTimeHintToday: 'Leave empty to use the current time.',
+    forecastTimeHintOther: 'Time used for Gochara positions on that date (default 06:00).',
     today: 'Today',
     generatingReading: 'Generating your daily reading…',
     strengthScore: 'Strength Score',
@@ -64,6 +67,9 @@ const TR = {
     tapInstruction: 'AI கணிப்புக்கு கீழே ஒரு துறையை தட்டவும்',
     forecastDate: 'கணிப்பு தேதி',
     forecastDateHint: 'எந்த தேதியையும் தேர்ந்தெடுக்கவும் — நேர்முகம், திருமணம் போன்றவற்றுக்கு',
+    forecastTime: 'கோசார நேரம் (உள்ளூர்)',
+    forecastTimeHintToday: 'தற்போதைய நேரத்தைப் பயன்படுத்த காலியாக விடுங்கள்.',
+    forecastTimeHintOther: 'அந்த தேதியில் கோசாரம் கணக்கிடப்படும் நேரம் (இயல்பு 06:00).',
     today: 'இன்று',
     generatingReading: 'இன்றைய கணிப்பு உருவாகிறது…',
     strengthScore: 'வலிமை மதிப்பு',
@@ -427,8 +433,11 @@ function AtGlanceHero({
     }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {tx.atGlance}{!isToday ? ` · ${transitDate}` : ''}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {tx.atGlance}{!isToday ? ` · ${transitDate}` : ''}
+            </div>
+            <span className="prashna-engine-badge prashna-engine-badge--rule">{tx.ruleEngine}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
             <span style={{ fontSize: 34, fontWeight: 800, color: 'var(--orange)', lineHeight: 1 }}>{score}</span>
@@ -533,7 +542,7 @@ function DailyReadingExpandable({ expanded, onToggle, children, language, hasRea
         aria-expanded={expanded}
         disabled={loading}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
           padding: '12px 14px', borderRadius: 12, cursor: loading ? 'wait' : 'pointer',
           border: '1px solid var(--card-border)', background: 'var(--card-bg)',
           color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
@@ -541,7 +550,10 @@ function DailyReadingExpandable({ expanded, onToggle, children, language, hasRea
           opacity: loading ? 0.7 : 1,
         }}
       >
-        <span>{loading ? tx.generatingReading : label}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span>{loading ? tx.generatingReading : label}</span>
+          <span className="prashna-engine-badge prashna-engine-badge--ai">{tx.aiNarration}</span>
+        </span>
         <span style={{ fontSize: 10, opacity: 0.6 }}>{expanded ? '▲' : '▼'}</span>
       </button>
       {expanded && children}
@@ -629,6 +641,7 @@ function todayISO() {
 
 export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId, enabled = true }) {
   const [transitDate,  setTransitDate]  = useState(todayISO)
+  const [transitTime,  setTransitTime]  = useState('')
   const [scores,         setScores]         = useState(null)
   const [scoresLoading,  setScoresLoading]  = useState(false)
   const [scoresError,    setScoresError]    = useState('')
@@ -653,9 +666,9 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     return () => mq.removeEventListener('change', sync)
   }, [])
 
-  const insightKey = (houseNum) => `${houseNum}:${transitDate}:${language}`
+  const insightKey = (houseNum) => `${houseNum}:${transitDate}:${transitTime || 'auto'}:${language}`
 
-  // Deterministic scores — refetch on chart/date only (not language)
+  // Deterministic scores — refetch on chart/date/time only (not language)
   useEffect(() => {
     if (!chart || !enabled) return
     setScoresLoading(true)
@@ -664,21 +677,21 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     setInsightCache({})
     setReadingExpanded(false)
     setDailyReading(null)
-    api.post('/forecast/scores', forecastPayload(chart, userId, transitDate))
+    api.post('/forecast/scores', forecastPayload(chart, userId, transitDate, transitTime || undefined))
       .then(r => setScores(r.data))
       .catch(err => {
         setScoresError(formatApiError(err, 'Could not load forecast scores.'))
         setScores(null)
       })
       .finally(() => setScoresLoading(false))
-  }, [chart, transitDate, userId, enabled])
+  }, [chart, transitDate, transitTime, userId, enabled])
 
   const loadDailyReading = () => {
     if (!chart || !enabled || readingLoading || dailyReading?.reading) return
     setReadingLoading(true)
     setReadingError('')
     api.post('/forecast/daily-reading', {
-      ...forecastPayload(chart, userId, transitDate),
+      ...forecastPayload(chart, userId, transitDate, transitTime || undefined),
       gender,
       language,
     })
@@ -712,7 +725,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
     setInsightLoading(true)
     try {
       const res = await api.post('/forecast/house', {
-        ...forecastPayload(chart, userId, transitDate),
+        ...forecastPayload(chart, userId, transitDate, transitTime || undefined),
         house_num:   houseNum,
         gender,
         language,
@@ -776,7 +789,7 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
           borderRadius:12, padding:'12px 14px', marginBottom:16,
           boxShadow:'var(--card-shadow)',
         }}>
-          <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:10 }}>
+          <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:10 }} className="forecast-date-row">
             <label style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', flex:'1 1 120px' }}>
               📅 {tx.forecastDate}
             </label>
@@ -807,9 +820,45 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
               </button>
             )}
           </div>
+          <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:10, marginTop:10 }} className="forecast-date-row">
+            <label style={{ fontSize:12, fontWeight:700, color:'var(--text-secondary)', flex:'1 1 120px' }}>
+              🕐 {tx.forecastTime}
+            </label>
+            <input
+              type="time"
+              value={transitTime}
+              onChange={e => setTransitTime(e.target.value)}
+              style={{
+                flex:'1 1 160px', minWidth:0, width:'100%', maxWidth:'100%',
+                height:44, padding:'0 12px', fontSize:16,
+                borderRadius:8, border:'1px solid var(--input-border)',
+                background:'var(--input-bg)', color:'var(--input-text)',
+              }}
+            />
+            {transitTime && (
+              <button
+                type="button"
+                onClick={() => setTransitTime('')}
+                style={{
+                  padding:'10px 14px', minHeight:44, borderRadius:8, border:'1px solid var(--chip-border)',
+                  background:'var(--chip-bg)', color:'var(--text-secondary)',
+                  fontSize:12, fontWeight:600, cursor:'pointer',
+                }}
+              >
+                {isToday ? tx.today : '06:00'}
+              </button>
+            )}
+          </div>
           <p style={{ fontSize:11, color:'var(--text-muted)', margin:'8px 0 0' }}>
             {tx.forecastDateHint}
+            {' '}
+            {isToday ? tx.forecastTimeHintToday : tx.forecastTimeHintOther}
           </p>
+          {scores?.transit_moment && (
+            <p style={{ fontSize:11, color:'var(--text-muted)', margin:'6px 0 0' }}>
+              {tx.transitComputedAt}: {scores.transit_moment}
+            </p>
+          )}
         </div>
       )}
 
@@ -876,7 +925,11 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
 
       {gridExpanded && (
         <>
-          <p style={{ fontSize:12, color:'var(--text-muted)', margin:'0 0 12px' }}>{tx.tapInstruction}</p>
+          <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:8, margin:'0 0 12px' }}>
+            <p style={{ fontSize:12, color:'var(--text-muted)', margin:0, flex:'1 1 200px' }}>{tx.tapInstruction}</p>
+            <span className="prashna-engine-badge prashna-engine-badge--rule">{tx.ruleEngine}</span>
+            <span className="prashna-engine-badge prashna-engine-badge--ai">{tx.aiNarration}</span>
+          </div>
           <div className="forecast-tag-grid" style={{ marginBottom:8 }}>
             {Object.values(houses).map(h => {
               const status   = h.rag?.status || 'AMBER'
