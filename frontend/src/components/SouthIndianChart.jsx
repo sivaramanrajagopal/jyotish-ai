@@ -285,7 +285,6 @@ export default function SouthIndianChart({
 
   const centreStyle = {
     background: 'var(--chart-centre)',
-    border: isClassic ? '2px solid var(--chart-lagna-accent)' : '1px solid var(--card-border)',
     textAlign: 'center',
     verticalAlign: 'middle',
     padding: showDetails || isClassic ? '10px 8px' : '8px',
