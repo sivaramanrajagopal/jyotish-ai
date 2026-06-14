@@ -64,6 +64,13 @@ def ensure_dasha(natal_chart: dict) -> dict:
     """Compute Vimshottari dasha if missing from a saved chart."""
     dasha = natal_chart.get("dasha") or {}
     if dasha.get("mahadasha", {}).get("planet"):
+        if dasha.get("antardasha_sequence") and not dasha.get("bhukti_table_markdown"):
+            try:
+                from dasha_core import format_bhukti_table
+                dasha["bhukti_table_markdown"] = format_bhukti_table(dasha)
+                natal_chart["dasha"] = dasha
+            except Exception:
+                pass
         natal_chart["dasha_available"] = True
         return natal_chart
     try:

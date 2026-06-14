@@ -39,6 +39,14 @@ const TOPICS = [
     question: "What does my current Mahadasha and Bhukti mean for me?",
   },
   {
+    key: 'dasha_table',
+    label: '📊 Dasha Table',
+    color: '#fcd34d',
+    bg: 'rgba(252,211,77,0.18)',
+    border: 'rgba(252,211,77,0.4)',
+    question: "Show my full Mahadasha and Bhukti table in a table format with all dates.",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',
@@ -71,6 +79,7 @@ function detectTopics(text) {
   if (/panchangam|vaaram|tithi|nakshatra|yogam|karanam|rahu kalam|sunrise/.test(t))    found.push('panchangam')
   if (/tara|mitra|param|janma|sampat|naidhana|kshema|sadhana|pratyak/.test(t))        found.push('tara')
   if (/mahadasha|bhukti|antardasha|dasha|antar/.test(t))                              found.push('dasha')
+  if (/\|.*\|.*\|/.test(text) && /bhukti|dasha|mahadasha|start.*end/i.test(t))        found.push('dasha_table')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')
   if (/saturn|jupiter|mars|venus|mercury|sun|moon|rahu|ketu|graha|planet/.test(t))    found.push('planets')
@@ -99,13 +108,63 @@ const CHAT_TR = {
 }
 
 // ── Markdown renderer ────────────────────────────────────────────────────────
+function parseTableRow(line) {
+  return line.split('|').slice(1, -1).map(c => c.trim())
+}
+
+function isTableSeparator(line) {
+  const cells = parseTableRow(line.trim())
+  return cells.length > 0 && cells.every(c => /^:?-+:?$/.test(c))
+}
+
+function MarkdownTable({ header, rows }) {
+  return (
+    <div className="chat-md-table-wrap" role="region" aria-label="Dasha table — swipe horizontally on small screens">
+      <table className="chat-md-table">
+        <thead>
+          <tr>
+            {header.map((cell, i) => (
+              <th key={i}>{renderBoldSafe(cell)}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri}>
+              {row.map((cell, ci) => (
+                <td key={ci}>{renderBoldSafe(cell)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function MarkdownText({ text }) {
   if (!text) return null
   const lines = text.split('\n')
   const elements = []
   let key = 0
-  for (const line of lines) {
-    const trimmed = line.trim()
+  let i = 0
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim()
+
+    // Markdown pipe table: header | sep | rows
+    if (trimmed.startsWith('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const header = parseTableRow(trimmed)
+      i += 2
+      const rows = []
+      while (i < lines.length && lines[i].trim().startsWith('|') && !isTableSeparator(lines[i])) {
+        rows.push(parseTableRow(lines[i].trim()))
+        i += 1
+      }
+      elements.push(<MarkdownTable key={key++} header={header} rows={rows} />)
+      continue
+    }
+
     if (/^[-*]\s+/.test(trimmed)) {
       const content = trimmed.replace(/^[-*]\s+/, '')
       elements.push(
@@ -123,6 +182,7 @@ function MarkdownText({ text }) {
         </div>
       )
     }
+    i += 1
   }
   return <div style={{ lineHeight: '1.6' }}>{elements}</div>
 }
@@ -247,7 +307,7 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
       </div>
 
       {/* Topic chips */}
-      <div className="chat-topic-chips px-4 pt-3 pb-1 flex flex-wrap sm:flex-wrap gap-2">
+      <div className="chat-topic-chips px-4 pt-3 pb-1 flex flex-wrap gap-2">
         {TOPICS.map(topic => {
           const isActive = activeTopics.includes(topic.key)
           return (

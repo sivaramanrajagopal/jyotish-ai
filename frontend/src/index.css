@@ -3312,6 +3312,62 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   color: var(--error-text);
 }
 
+/* ── Chat markdown tables (dasha table in AI replies) ─────────────────────── */
+.chat-md-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  margin: 8px 0;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+
+.chat-md-table {
+  width: 100%;
+  min-width: 300px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.chat-md-table th,
+.chat-md-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--card-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.chat-md-table th {
+  background: var(--highlight-bg);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+.chat-md-table tr:last-child td {
+  border-bottom: none;
+}
+
+.chat-md-table tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.chat-md-table td:first-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 400px) {
+  .chat-md-table th:nth-child(4),
+  .chat-md-table td:nth-child(4) {
+    display: none;
+  }
+}
+
 @media (max-width: 639px) {
   .tab-content-wrap {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
@@ -3393,7 +3449,8 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
   .chat-topic-chips button {
     flex-shrink: 0;
-    min-height: 36px;
+    min-height: 44px;
+    min-width: 44px;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -3407,6 +3464,16 @@ html[data-theme="dark"] .si-chart__lagna-badge {
     min-height: 44px;
     width: 100%;
     text-align: center;
+  }
+
+  .chat-md-table {
+    min-width: 280px;
+    font-size: 11px;
+  }
+
+  .chat-md-table th,
+  .chat-md-table td {
+    padding: 10px 8px;
   }
 
   .error-boundary__btn {

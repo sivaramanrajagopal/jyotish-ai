@@ -26,6 +26,7 @@ from agents.transit_score_agent import (
     dasha_transit_correlation,
 )
 from agents.ashtakavarga_agent import bav_context_for_narrator
+from dasha_core import format_bhukti_table
 
 MODEL  = "gpt-4o-mini"
 TOKENS = 800   # per reply — keep responses concise
@@ -40,6 +41,9 @@ Be warm, direct, and concise (3–5 sentences per answer). \
 Name specific planets, signs, houses, or dashas from their chart. \
 Never give vague generic advice. Never add disclaimers. \
 When discussing Dasha/Bhukti sequences, always refer to the antardasha table provided — do not guess.
+When the user asks for a **dasha table**, **bhukti table**, or taps the Dasha Table topic, you MUST include \
+the exact Bhukti table (markdown) block from below in your reply without changing any dates or planet names. \
+Add a brief 2–3 sentence interpretation before or after the table.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -57,6 +61,9 @@ Bhukti    : {bhukti_planet} ({bhukti_start}–{bhukti_end}, {bhukti_rem} months 
 
 FULL ANTARDASHA SEQUENCE (all bhuktis within {maha_planet} Mahadasha, in order):
 {antardasha}
+
+Bhukti table (markdown — copy exactly when user asks for dasha/bhukti table):
+{bhukti_table}
 
 === TODAY'S PANCHANGAM ({today} · {location}) ===
 Vaaram    : {vaaram} (lord: {vaaram_lord})
@@ -279,6 +286,7 @@ def _build_system(natal_chart, location: str = "Chennai") -> str:
         bhukti_rem     = bh.get("remaining_months", ""),
         bhukti_trigger = bh.get("trigger", ""),
         antardasha     = "\n".join(antardasha_lines) or "  (not available)",
+        bhukti_table   = dasha.get("bhukti_table_markdown") or format_bhukti_table(dasha) or "(not available)",
         today          = today,
         location       = loc,
         vaaram         = panch.get("vaaram_name", ""),
