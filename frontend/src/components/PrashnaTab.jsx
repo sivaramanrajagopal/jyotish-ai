@@ -124,9 +124,14 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
         })
         setLocLoading(false)
       },
-      () => {
+      (err) => {
         setLocLoading(false)
-        setError('Could not get location. Using default or birth place.')
+        const blocked = err?.code === 1 || String(err?.message || '').includes('policy')
+        setError(
+          blocked
+            ? 'Location blocked by browser or site policy. Using Chennai or your birth place — Prashna still works.'
+            : 'Could not get location. Using default or birth place.',
+        )
       },
       { timeout: 10000, maximumAge: 60000 },
     )
