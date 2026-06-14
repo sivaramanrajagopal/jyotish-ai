@@ -11,6 +11,7 @@ import CosmosStrip from '../components/CosmosStrip'
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
+import GocharamTab from '../components/GocharamTab'
 import ChatPanel from '../components/ChatPanel'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
@@ -77,7 +78,8 @@ const G = {
 const BASE_TABS = [
   { key: 'home',       label: 'Home',       icon: '🏠' },
   { key: 'chart',      label: 'My Chart',   icon: '⭐' },
-  { key: 'panchangam', label: 'Panchangam', icon: '🗓' },
+  { key: 'gochar',     label: 'Gochar',     icon: '🪐', mobileLabel: 'Gochar' },
+  { key: 'panchangam', label: 'Panchangam', icon: '🗓', mobileLabel: 'Panch' },
   { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
   { key: 'chat',       label: 'Ask AI',     icon: '🔮' },
   { key: 'forecast',   label: 'Forecast',   icon: '📊' },
@@ -774,7 +776,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -822,6 +824,23 @@ function HomeApp() {
         {mountedTabs.has('chart') && (
         <div style={tabPane('chart')} role="tabpanel" id="panel-chart" aria-labelledby="tab-chart">
           <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} chartTabActive={chartTabActive} />
+        </div>
+        )}
+
+        {mountedTabs.has('gochar') && (
+        <div style={tabPane('gochar')} role="tabpanel" id="panel-gochar" aria-labelledby="tab-gochar">
+          {chart
+            ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <GocharamTab
+                  chart={chart}
+                  userId={userId}
+                  enabled={activeTab === 'gochar'}
+                  onOpenForecast={() => setTab('forecast')}
+                />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
         </div>
         )}
 
@@ -876,7 +895,7 @@ function HomeApp() {
 
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
       <nav
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
+        className="mobile-bottom-nav sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
         role="tablist"
         aria-label="Main navigation"
         style={{
@@ -895,12 +914,12 @@ function HomeApp() {
             aria-selected={activeTab === tab.key}
             aria-controls={`panel-${tab.key}`}
             onClick={() => setTab(tab.key)}
-            className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
+            className="mobile-bottom-nav__item flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
             style={{ color: activeTab === tab.key ? 'var(--orange)' : 'var(--text-muted)' }}
           >
             <span style={{ fontSize: '18px', lineHeight: 1 }}>{tab.icon}</span>
             <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.04em' }}>
-              {tab.label}
+              {tab.mobileLabel || tab.label}
             </span>
             {activeTab === tab.key && (
               <span
@@ -908,7 +927,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
