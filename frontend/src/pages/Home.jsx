@@ -417,7 +417,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
             <h3 className="text-xs sm:text-sm font-semibold mb-3 text-center uppercase tracking-wide"
               style={{ color: 'var(--text-muted)' }}>{title}</h3>
             <SouthIndianChart title={nav ? 'D9' : 'D1'} subtitle={sub}
-              planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav} />
+              planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav}
+              variant={nav ? 'default' : 'classic'} showDetails={!nav} />
           </div>
         ))}
       </div>

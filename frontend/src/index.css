@@ -1053,7 +1053,175 @@ html[data-theme="dark"] .prashna-disclaimer {
   text-align: right;
 }
 
+/* Classic variant — traditional Tamil house labels (variant="classic" only) */
+.si-chart-wrap--classic {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.si-chart-wrap--classic .si-chart {
+  border: 2px solid var(--card-border);
+}
+
+.si-chart-wrap--classic .si-chart__cell--classic {
+  min-height: 5rem;
+  padding: 20px 3px 6px;
+  border-width: 2px;
+  vertical-align: top;
+}
+
+.si-chart__cell--lagna-classic {
+  box-shadow: inset 0 0 0 2px var(--chart-lagna-accent);
+  background-color: var(--chart-lagna-bg);
+}
+
+.si-chart__classic-house {
+  text-align: center;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.si-chart__classic-rashi {
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin-bottom: 4px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.si-chart__lagna-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  color: var(--accent-dark);
+  background: var(--chart-lagna-accent);
+  border-radius: 4px;
+  padding: 1px 4px;
+  line-height: 1.3;
+  z-index: 2;
+}
+
+.si-chart__planets--classic {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-height: 2rem;
+}
+
+.si-chart__classic-planet {
+  border-radius: 4px;
+  border: 1px solid var(--card-border);
+  padding: 2px 4px;
+  font-size: 0.5625rem;
+  line-height: 1.2;
+}
+
+.si-chart__classic-planet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.si-chart__classic-planet-name {
+  font-weight: 800;
+}
+
+.si-chart__classic-planet-deg {
+  font-weight: 600;
+  font-size: 0.5rem;
+  opacity: 0.9;
+}
+
+.si-chart__classic-planet-varga {
+  color: var(--chart-lagna-accent);
+  font-size: 0.5rem;
+}
+
+.si-chart__classic-planet-nak {
+  font-size: 0.5rem;
+  opacity: 0.75;
+  margin-top: 1px;
+}
+
+.si-chart__centre--classic .si-chart__centre-title {
+  font-size: 0.95rem;
+}
+
+.si-chart__centre-tamil {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.si-chart__classic-legend {
+  margin-top: 8px;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.si-chart__classic-legend summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.si-chart__classic-legend ul {
+  margin: 6px 0 0;
+  padding-left: 1.1rem;
+  line-height: 1.5;
+}
+
+html[data-theme="dark"] .si-chart__classic-planet {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .si-chart__lagna-badge {
+  color: #1a1200;
+}
+
 @media (max-width: 639px) {
+  .si-chart-wrap--classic .si-chart__cell--classic {
+    min-height: 4.5rem;
+    padding-top: 18px;
+  }
+
+  .si-chart__classic-rashi {
+    font-size: 0.5625rem;
+  }
+
+  .si-chart__classic-planet {
+    font-size: 0.5rem;
+    padding: 2px 3px;
+  }
+
+  .si-chart__classic-planet-nak {
+    font-size: 0.4375rem;
+  }
+
+  .si-chart__centre--classic .si-chart__centre-title {
+    font-size: 0.8125rem;
+  }
+
+  .si-chart__centre-tamil {
+    font-size: 0.625rem;
+  }
+
   .si-chart__cell--detail {
     min-height: 3.75rem;
     padding-top: 16px;
