@@ -333,6 +333,161 @@ input:focus, select:focus, textarea:focus {
   .prashna-category-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
+.prashna-form-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.prashna-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 8px;
+}
+
+.prashna-question-preview {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.prashna-location-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.prashna-link-btn {
+  padding: 8px 12px;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #C9A227;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prashna-error {
+  color: #EF9A9A;
+  background: rgba(231, 76, 60, 0.12);
+  border: 1px solid rgba(231, 76, 60, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.prashna-submit-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #C9A227, #E8B923);
+  color: #1a1033;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.prashna-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.prashna-verdict-card {
+  border-radius: 16px;
+  padding: 20px 18px;
+  margin-bottom: 16px;
+  border: 2px solid;
+  text-align: center;
+}
+.prashna-verdict-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.prashna-verdict-title {
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.prashna-verdict-text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 10px;
+}
+.prashna-verdict-counts {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.prashna-disclaimer {
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.45);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  margin-top: 8px;
+}
+
+.prashna-history-item {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+html:not([data-theme="dark"]) .prashna-form-card select option {
+  color: #1a1033;
+  background: #fff;
+}
+
+html:not([data-theme="dark"]) .prashna-form-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+}
+html:not([data-theme="dark"]) .prashna-label {
+  color: var(--text-secondary);
+}
+html:not([data-theme="dark"]) .prashna-form-card select {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+html:not([data-theme="dark"]) .prashna-question-preview {
+  background: rgba(255, 153, 0, 0.08);
+  border-color: rgba(255, 153, 0, 0.35);
+  color: var(--text-primary);
+}
+html:not([data-theme="dark"]) .prashna-location-row {
+  color: var(--text-muted);
+}
+html:not([data-theme="dark"]) .prashna-link-btn {
+  color: var(--orange-dark);
+  border-color: var(--chip-border);
+}
+
 .panch-controls {
   display: grid;
   grid-template-columns: 1fr;

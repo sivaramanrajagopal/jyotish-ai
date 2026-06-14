@@ -11,6 +11,9 @@ CATEGORY_HOUSE: dict[str, int] = {
     "travel": 9,
     "education": 5,
     "general": 11,
+    "lost_and_found": 4,
+    "competitive_exam": 6,
+    "key_interest": 11,
 }
 
 CATEGORY_LABELS: dict[str, str] = {
@@ -22,7 +25,107 @@ CATEGORY_LABELS: dict[str, str] = {
     "travel": "Travel",
     "education": "Education",
     "general": "General",
+    "lost_and_found": "Lost & Found",
+    "competitive_exam": "Competitive Exam",
+    "key_interest": "Key Areas of Interest",
 }
+
+CATEGORY_ICONS: dict[str, str] = {
+    "career": "🏆",
+    "marriage": "💑",
+    "money": "💰",
+    "property": "🏠",
+    "health": "⚕️",
+    "travel": "✈️",
+    "education": "📚",
+    "general": "🔮",
+    "lost_and_found": "🔍",
+    "competitive_exam": "📝",
+    "key_interest": "⭐",
+}
+
+# Pre-defined horary questions per category (dropdown — no free-text required)
+CATEGORY_QUESTIONS: dict[str, list[dict[str, str]]] = {
+    "career": [
+        {"id": "promotion", "text": "Will I get a promotion soon?"},
+        {"id": "job_offer", "text": "Will I receive a job offer?"},
+        {"id": "job_change", "text": "Is changing jobs favourable now?"},
+        {"id": "business", "text": "Will my business venture succeed?"},
+    ],
+    "marriage": [
+        {"id": "marriage_soon", "text": "Will marriage happen soon?"},
+        {"id": "relationship", "text": "Is this relationship favourable?"},
+        {"id": "reconcile", "text": "Will reconciliation with my partner occur?"},
+        {"id": "proposal", "text": "Will a proposal be accepted?"},
+    ],
+    "money": [
+        {"id": "financial_gain", "text": "Will I gain financially soon?"},
+        {"id": "loan", "text": "Will I get the loan or funding I need?"},
+        {"id": "investment", "text": "Is this investment favourable?"},
+        {"id": "debt", "text": "Will I overcome financial difficulty?"},
+    ],
+    "property": [
+        {"id": "buy_property", "text": "Will I buy property successfully?"},
+        {"id": "sell_property", "text": "Will I sell my property favourably?"},
+        {"id": "vehicle", "text": "Will I acquire a vehicle soon?"},
+    ],
+    "health": [
+        {"id": "recovery", "text": "Will recovery from illness occur?"},
+        {"id": "treatment", "text": "Will the treatment be effective?"},
+        {"id": "surgery", "text": "Is surgery advisable and favourable?"},
+    ],
+    "travel": [
+        {"id": "travel_abroad", "text": "Will foreign travel materialise?"},
+        {"id": "trip_safe", "text": "Will my journey be safe and successful?"},
+        {"id": "visa", "text": "Will visa or travel approval come through?"},
+    ],
+    "education": [
+        {"id": "admission", "text": "Will I get admission to the desired course?"},
+        {"id": "exam_pass", "text": "Will I pass the upcoming exam?"},
+        {"id": "scholarship", "text": "Will I receive a scholarship or grant?"},
+    ],
+    "general": [
+        {"id": "overall", "text": "Is the overall outlook favourable now?"},
+        {"id": "wish", "text": "Will my current wish be fulfilled?"},
+        {"id": "obstacle", "text": "Will the main obstacle be removed?"},
+    ],
+    "lost_and_found": [
+        {"id": "recover_lost", "text": "Will I recover my lost item?"},
+        {"id": "still_findable", "text": "Is the lost article still findable?"},
+        {"id": "where_direction", "text": "Is recovery of the lost object indicated?"},
+        {"id": "stolen", "text": "If stolen, is return of the item possible?"},
+    ],
+    "competitive_exam": [
+        {"id": "pass_exam", "text": "Will I pass the competitive exam?"},
+        {"id": "get_selected", "text": "Will I get selected in the exam?"},
+        {"id": "rank", "text": "Will I achieve a good rank or score?"},
+        {"id": "interview", "text": "Will the interview stage be successful?"},
+    ],
+    "key_interest": [
+        {"id": "focus_career", "text": "Should I focus on career at this time?"},
+        {"id": "focus_relationship", "text": "Should I prioritise relationships now?"},
+        {"id": "focus_finance", "text": "Is finance the key area to focus on now?"},
+        {"id": "focus_health", "text": "Should health be my primary concern now?"},
+        {"id": "most_favourable", "text": "Which life area looks most favourable now?"},
+    ],
+}
+
+
+def resolve_question(category: str, question_id: str | None, question_text: str | None) -> tuple[str, str]:
+    """Return (question_id, question_text) from id or explicit text."""
+    cat = category.lower().strip()
+    questions = CATEGORY_QUESTIONS.get(cat, [])
+    if question_id:
+        for q in questions:
+            if q["id"] == question_id:
+                return q["id"], q["text"]
+        raise ValueError(f"Unknown question_id '{question_id}' for category '{cat}'.")
+    text = (question_text or "").strip()
+    if text:
+        return question_id or "custom", text
+    if questions:
+        return questions[0]["id"], questions[0]["text"]
+    raise ValueError("A question must be selected.")
 
 SIGNS = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",

@@ -15,6 +15,7 @@ def test_analyze_prashna_structure():
     result = analyze_prashna(
         question="Will I get the promotion this quarter?",
         category="career",
+        question_id="promotion",
         timestamp_iso="2026-06-06T14:30:00",
         timezone="Asia/Kolkata",
         lat=13.0827,
@@ -55,7 +56,15 @@ def test_verdict_likely_yes():
     assert v["result"] == "likely_yes"
 
 
-def test_verdict_unclear():
+def test_new_categories():
+    from agents.prashna.constants import CATEGORY_HOUSE, resolve_question
+    assert CATEGORY_HOUSE["lost_and_found"] == 4
+    assert CATEGORY_HOUSE["competitive_exam"] == 6
+    assert CATEGORY_HOUSE["key_interest"] == 11
+    _, text = resolve_question("lost_and_found", "recover_lost", None)
+    assert "lost" in text.lower()
+    _, text2 = resolve_question("competitive_exam", "pass_exam", None)
+    assert "exam" in text2.lower()
     testimonies = {
         "counts": {"positive": 1, "negative": 0, "neutral": 1, "total": 2},
         "positive": [], "negative": [], "neutral": [],

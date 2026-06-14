@@ -6,6 +6,7 @@ from agents.prashna.constants import (
     CATEGORY_HOUSE,
     CATEGORY_LABELS,
     PRASHNA_DISCLAIMER,
+    resolve_question,
 )
 from agents.prashna.chart_engine import (
     cast_prashna_chart,
@@ -31,11 +32,13 @@ def analyze_prashna(
     lat: float | None = None,
     lon: float | None = None,
     place: str | None = None,
+    question_id: str | None = None,
 ) -> dict:
     cat = category.lower().strip()
     if cat not in CATEGORY_HOUSE:
         raise ValueError(f"Unknown category: {category}")
 
+    qid, qtext = resolve_question(cat, question_id, question)
     house_num = CATEGORY_HOUSE[cat]
     category_label = CATEGORY_LABELS[cat]
 
@@ -78,7 +81,7 @@ def analyze_prashna(
 
     verdict = compute_verdict(testimonies, moon["outcome"])
     interpretation = generate_interpretation(
-        question,
+        qtext,
         category_label,
         verdict,
         testimonies,
@@ -90,8 +93,8 @@ def analyze_prashna(
 
     return {
         "question": {
-            "id": None,
-            "text": question.strip(),
+            "id": qid,
+            "text": qtext.strip(),
             "category": cat,
             "category_label": category_label,
             "timestamp": chart["prashna_moment"]["iso"],

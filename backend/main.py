@@ -1275,33 +1275,35 @@ def ashtakavarga_endpoint(
 
 PRASHNA_CATEGORIES = frozenset({
     "career", "marriage", "money", "property", "health", "travel", "education", "general",
+    "lost_and_found", "competitive_exam", "key_interest",
 })
 
 
 class PrashnaAnalyzeRequest(BaseModel):
-    question: str
     category: str
     timestamp: str
+    question_id: Optional[str] = None
+    question: Optional[str] = None
     timezone: str = "Asia/Kolkata"
     lat: Optional[float] = None
     lon: Optional[float] = None
     place: Optional[str] = None
+    include_ai: bool = True
+    language: str = "english"
     model_config = {"str_strip_whitespace": True}
 
 
 @app.post("/prashna/analyze")
 @limiter.limit("20/minute")
-def prashna_analyze(request: Request, req: PrashnaAnalyzeRequest):
+def prashna_analyze(
+    request: Request,
+    req: PrashnaAnalyzeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
     """
     Cast a Prashna chart at question time and return rule-based testimonies + verdict.
-    Uses Swiss Ephemeris (Lahiri) — no fabricated positions.
+    Optional AI narration (Phase 2) uses only pre-computed testimonies.
     """
-    q = (req.question or "").strip()
-    if len(q) < 5:
-        raise HTTPException(status_code=422, detail="Question must be at least 5 characters.")
-    if len(q) > 500:
-        raise HTTPException(status_code=422, detail="Question must be at most 500 characters.")
-
     cat = (req.category or "").lower().strip()
     if cat not in PRASHNA_CATEGORIES:
         raise HTTPException(
@@ -1309,20 +1311,43 @@ def prashna_analyze(request: Request, req: PrashnaAnalyzeRequest):
             detail=f"Invalid category. Choose one of: {', '.join(sorted(PRASHNA_CATEGORIES))}",
         )
 
+    from agents.prashna.constants import resolve_question
+    try:
+        qid, qtext = resolve_question(cat, req.question_id, req.question)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    if len(qtext) > 500:
+        raise HTTPException(status_code=422, detail="Question must be at most 500 characters.")
+
     try:
         result = analyze_prashna(
-            question=q,
+            question=qtext,
             category=cat,
             timestamp_iso=req.timestamp,
             timezone=req.timezone or "Asia/Kolkata",
             lat=req.lat,
             lon=req.lon,
             place=req.place,
+            question_id=qid,
         )
-        track_event("prashna_analyze", properties={"category": cat})
+
+        if req.include_ai:
+            check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+            from agents.prashna.ai_narrator import narrate_prashna
+            ai_reading = narrate_prashna(result, req.language or "english")
+            if ai_reading:
+                result["ai_reading"] = ai_reading
+                result["interpretation"]["ai_note"] = (
+                    "AI narration below is based solely on the computed testimonies above."
+                )
+
+        track_event("prashna_analyze", properties={"category": cat, "question_id": qid})
         return result
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except HTTPException:
+        raise
     except Exception as exc:
         import logging, traceback
         logging.getLogger(__name__).error("prashna/analyze: %s\n%s", exc, traceback.format_exc())
@@ -1331,10 +1356,18 @@ def prashna_analyze(request: Request, req: PrashnaAnalyzeRequest):
 
 @app.get("/prashna/categories")
 def prashna_categories():
-    from agents.prashna.constants import CATEGORY_LABELS, CATEGORY_HOUSE
+    from agents.prashna.constants import (
+        CATEGORY_LABELS, CATEGORY_HOUSE, CATEGORY_ICONS, CATEGORY_QUESTIONS,
+    )
     return {
         "categories": [
-            {"key": k, "label": CATEGORY_LABELS[k], "house": CATEGORY_HOUSE[k]}
+            {
+                "key": k,
+                "label": CATEGORY_LABELS[k],
+                "house": CATEGORY_HOUSE[k],
+                "icon": CATEGORY_ICONS.get(k, "🔮"),
+                "questions": CATEGORY_QUESTIONS.get(k, []),
+            }
             for k in sorted(CATEGORY_LABELS.keys())
         ]
     }
