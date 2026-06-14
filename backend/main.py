@@ -62,6 +62,7 @@ from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
 from agents.ashtakavarga_agent import calculate_ashtakavarga, bav_context_for_narrator
 from agents.sky_today_agent import build_sky_today
+from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
 from geopy.geocoders import Photon
 from pydantic import BaseModel
@@ -1266,3 +1267,74 @@ def ashtakavarga_endpoint(
             "Ashtakavarga error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Ashtakavarga calculation failed.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Prashna (Horary)
+# ─────────────────────────────────────────────────────────────────────────────
+
+PRASHNA_CATEGORIES = frozenset({
+    "career", "marriage", "money", "property", "health", "travel", "education", "general",
+})
+
+
+class PrashnaAnalyzeRequest(BaseModel):
+    question: str
+    category: str
+    timestamp: str
+    timezone: str = "Asia/Kolkata"
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    place: Optional[str] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/prashna/analyze")
+@limiter.limit("20/minute")
+def prashna_analyze(request: Request, req: PrashnaAnalyzeRequest):
+    """
+    Cast a Prashna chart at question time and return rule-based testimonies + verdict.
+    Uses Swiss Ephemeris (Lahiri) — no fabricated positions.
+    """
+    q = (req.question or "").strip()
+    if len(q) < 5:
+        raise HTTPException(status_code=422, detail="Question must be at least 5 characters.")
+    if len(q) > 500:
+        raise HTTPException(status_code=422, detail="Question must be at most 500 characters.")
+
+    cat = (req.category or "").lower().strip()
+    if cat not in PRASHNA_CATEGORIES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid category. Choose one of: {', '.join(sorted(PRASHNA_CATEGORIES))}",
+        )
+
+    try:
+        result = analyze_prashna(
+            question=q,
+            category=cat,
+            timestamp_iso=req.timestamp,
+            timezone=req.timezone or "Asia/Kolkata",
+            lat=req.lat,
+            lon=req.lon,
+            place=req.place,
+        )
+        track_event("prashna_analyze", properties={"category": cat})
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error("prashna/analyze: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Prashna analysis failed.")
+
+
+@app.get("/prashna/categories")
+def prashna_categories():
+    from agents.prashna.constants import CATEGORY_LABELS, CATEGORY_HOUSE
+    return {
+        "categories": [
+            {"key": k, "label": CATEGORY_LABELS[k], "house": CATEGORY_HOUSE[k]}
+            for k in sorted(CATEGORY_LABELS.keys())
+        ]
+    }

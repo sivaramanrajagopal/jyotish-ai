@@ -14,6 +14,7 @@ import ForecastPanel from '../components/ForecastPanel'
 import ChatPanel from '../components/ChatPanel'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
+import PrashnaTab from '../components/PrashnaTab'
 import AshtakavargaPanel from '../components/AshtakavargaPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
@@ -75,6 +76,7 @@ const BASE_TABS = [
   { key: 'home',       label: 'Home',       icon: '🏠' },
   { key: 'chart',      label: 'My Chart',   icon: '⭐' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓' },
+  { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
   { key: 'chat',       label: 'Ask AI',     icon: '🔮' },
   { key: 'forecast',   label: 'Forecast',   icon: '📊' },
 ]
@@ -784,6 +786,12 @@ function HomeApp() {
         {mountedTabs.has('panchangam') && (
         <div style={tabPane('panchangam')} role="tabpanel" id="panel-panchangam" aria-labelledby="tab-panchangam">
           <PanchangamTab />
+        </div>
+        )}
+
+        {mountedTabs.has('prashna') && (
+        <div style={tabPane('prashna')} role="tabpanel" id="panel-prashna" aria-labelledby="tab-prashna">
+          <PrashnaTab enabled={activeTab === 'prashna'} chart={chart} />
         </div>
         )}
 

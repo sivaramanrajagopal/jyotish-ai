@@ -307,6 +307,32 @@ input:focus, select:focus, textarea:focus {
   .big-three-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
 }
 
+/* ── Prashna (horary) tab — deep indigo / gold ─────────────────────────────── */
+.prashna-root {
+  --prashna-bg: linear-gradient(160deg, #0f0a1e 0%, #1a1033 45%, #12102a 100%);
+}
+.prashna-hero {
+  background: var(--prashna-bg);
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  box-shadow: 0 8px 32px rgba(15, 10, 30, 0.4);
+}
+.prashna-glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+.prashna-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 480px) {
+  .prashna-category-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
 .panch-controls {
   display: grid;
   grid-template-columns: 1fr;
