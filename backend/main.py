@@ -309,6 +309,54 @@ def ping(request: Request):
     return {"pong": True}
 
 
+# ─────────────────────────────────────────────
+# Product analytics (optional app_events table)
+# ─────────────────────────────────────────────
+
+_EVENT_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+
+
+class AnalyticsEventRequest(BaseModel):
+    event_name: str
+    properties: dict = {}
+
+
+def _sanitize_event_properties(props: dict) -> dict:
+    clean: dict = {}
+    if not isinstance(props, dict):
+        return clean
+    for key, val in list(props.items())[:20]:
+        k = str(key)[:64]
+        if isinstance(val, bool):
+            clean[k] = val
+        elif isinstance(val, (int, float)):
+            clean[k] = val
+        elif isinstance(val, str):
+            clean[k] = val[:200]
+        elif val is None:
+            clean[k] = None
+    return clean
+
+
+@app.post("/analytics/event")
+@limiter.limit("120/minute")
+def analytics_event(
+    request: Request,
+    req: AnalyticsEventRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Best-effort product event — stored in Supabase app_events when configured."""
+    name = (req.event_name or "").strip().lower()
+    if not _EVENT_NAME_RE.match(name):
+        raise HTTPException(status_code=400, detail="Invalid event_name.")
+    track_event(
+        name,
+        user_id=auth_user.id if auth_user else None,
+        properties=_sanitize_event_properties(req.properties),
+    )
+    return {"ok": True}
+
+
 @app.get("/health")
 @limiter.limit("60/minute")
 def health(request: Request):
@@ -736,6 +784,11 @@ def forecast(
             target_date=req.date,
         )
         result = generate_forecast(context)
+        track_event(
+            "forecast_generated",
+            user_id=auth_user.id if auth_user else None,
+            properties={"date": context.get("date"), "location": req.location},
+        )
         return {
             "date":          context["date"],
             "location":      context["location"],

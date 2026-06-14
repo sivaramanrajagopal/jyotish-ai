@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getAuthRedirectUrl } from '../lib/authRedirect'
+import { trackEvent } from '../lib/analytics'
 
 export function useAuth() {
   const configured = isSupabaseConfigured()
@@ -22,9 +23,12 @@ export function useAuth() {
       }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
       setLoading(false)
+      if (event === 'SIGNED_IN') {
+        trackEvent('sign_in', { provider: session?.user?.app_metadata?.provider || 'email' })
+      }
     })
 
     return () => {

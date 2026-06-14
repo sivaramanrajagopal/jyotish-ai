@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { registerServiceWorker } from './lib/notifications'
+import { initAnalytics } from './lib/analytics'
+
+initAnalytics()
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

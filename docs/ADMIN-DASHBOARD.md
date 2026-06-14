@@ -42,6 +42,7 @@ Direct link: `https://jyotish-ai-zeta.vercel.app/?tab=admin`
 | `GET /admin/locations` | Birth places + current cities |
 | `GET /admin/ai-usage` | Daily AI call trend |
 | `GET /admin/signups` | Daily sign-up trend |
+| `GET /admin/app-events` | Product events (`app_events` table) |
 
 Auth: Bearer JWT (owner email) **or** header `X-Admin-Token`.
 

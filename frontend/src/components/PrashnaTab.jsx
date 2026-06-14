@@ -598,6 +598,9 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
                 subtitle={`${result.chart.moment?.date} ${result.chart.moment?.time}`}
                 planetPositions={result.chart.planet_positions}
                 lagnaSignIndex={result.chart.ascendant?.sign_index}
+                variant="classic"
+                showDetails={true}
+                chartKind="prashna"
               />
             </div>
           )}

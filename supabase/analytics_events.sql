@@ -1,6 +1,6 @@
 -- analytics_events.sql (optional)
 -- Lightweight server-side event log — complements GA4 page-view data.
--- Run once if you want product events queryable in Supabase alongside GA4.
+-- Safe to re-run (idempotent policies).
 
 CREATE TABLE IF NOT EXISTS app_events (
   id          BIGSERIAL PRIMARY KEY,
@@ -19,13 +19,18 @@ CREATE INDEX IF NOT EXISTS app_events_user_idx
 
 ALTER TABLE app_events ENABLE ROW LEVEL SECURITY;
 
--- Users can insert their own events; admins use service role to read all
+-- Users can insert their own events; backend uses service role (bypasses RLS) to read/write all
+DROP POLICY IF EXISTS "app_events_insert_own" ON app_events;
 CREATE POLICY "app_events_insert_own" ON app_events
   FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
+DROP POLICY IF EXISTS "app_events_service_read" ON app_events;
 CREATE POLICY "app_events_service_read" ON app_events
   FOR SELECT USING (auth.role() = 'service_role');
 
 -- Example insert from backend (service role):
 -- INSERT INTO app_events (user_id, event_name, properties)
 -- VALUES ('uuid', 'chart_calculated', '{"place":"Chennai, India"}');
+
+-- Quick check after run:
+-- SELECT event_name, COUNT(*) FROM app_events GROUP BY 1 ORDER BY 2 DESC;

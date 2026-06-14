@@ -29,6 +29,23 @@ function fmtDate(iso) {
   }
 }
 
+function fmtProps(props) {
+  if (!props || typeof props !== 'object') return '—'
+  if (props.tab) return `tab: ${props.tab}`
+  if (props.category) {
+    return props.question_id ? `${props.category} · ${props.question_id}` : props.category
+  }
+  if (props.place) return props.place
+  if (props.language) return `lang: ${props.language}`
+  if (props.date) return `date: ${props.date}`
+  const s = JSON.stringify(props)
+  return s.length > 48 ? `${s.slice(0, 45)}…` : s
+}
+
+function eventLabel(name) {
+  return (name || '').replace(/_/g, ' ')
+}
+
 export default function AdminPanel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -37,6 +54,7 @@ export default function AdminPanel() {
   const [locations, setLocations] = useState({ birth_places: [], current_cities: [] })
   const [aiUsage, setAiUsage] = useState([])
   const [signups, setSignups] = useState([])
+  const [appEvents, setAppEvents] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -47,13 +65,15 @@ export default function AdminPanel() {
       api.get('/admin/locations'),
       api.get('/admin/ai-usage', { params: { days: 14 } }),
       api.get('/admin/signups', { params: { days: 30 } }),
+      api.get('/admin/app-events', { params: { days: 14 } }),
     ])
-      .then(([ov, us, loc, ai, su]) => {
+      .then(([ov, us, loc, ai, su, ev]) => {
         setOverview(ov.data)
         setUsers(us.data.users || [])
         setLocations(loc.data)
         setAiUsage(ai.data.days || [])
         setSignups(su.data.signups || [])
+        setAppEvents(ev.data)
       })
       .catch((err) => {
         const status = err.response?.status
@@ -90,12 +110,16 @@ export default function AdminPanel() {
     ...aiUsage.map(d => (d.total_chat_calls || 0) + (d.total_forecast_calls || 0)),
   )
 
+  const maxEventDay = Math.max(1, ...(appEvents?.daily || []).map(d => d.count || 0))
+  const maxEventName = Math.max(1, ...(appEvents?.by_event || []).map(e => e.count || 0))
+  const ae = overview?.app_events
+
   return (
     <div className="admin-panel max-w-5xl mx-auto px-4 py-6 sm:py-8">
       <header className="admin-header">
         <div>
           <h1 className="admin-title">Owner Dashboard</h1>
-          <p className="admin-subtitle">Users · locations · AI usage · sign-ups</p>
+          <p className="admin-subtitle">Users · locations · AI usage · product events · sign-ups</p>
         </div>
         <button type="button" className="admin-refresh" onClick={load}>Refresh</button>
       </header>
@@ -106,11 +130,108 @@ export default function AdminPanel() {
         <StatCard label="With location" value={overview?.users_with_location} />
         <StatCard label="AI today" value={(overview?.chat_calls_today ?? 0) + (overview?.forecast_calls_today ?? 0)}
           sub={`${overview?.chat_calls_today ?? 0} chat · ${overview?.forecast_calls_today ?? 0} forecast`} />
+        {ae?.available && (
+          <StatCard label="Product events" value={ae.total}
+            sub={`${ae.last_7_days ?? 0} last 7 days`} />
+        )}
       </div>
+
+      {appEvents?.available && (
+        <>
+          <section className="admin-section">
+            <h2 className="admin-section__title">Product events by type (14 days)</h2>
+            <div className="admin-bars">
+              {(appEvents.by_event || []).map((e) => (
+                <div key={e.event_name} className="admin-bar-row">
+                  <span className="admin-bar-label admin-bar-label--event">{eventLabel(e.event_name)}</span>
+                  <div className="admin-bar-track">
+                    <div className="admin-bar-fill admin-bar-fill--events" style={{ width: `${(e.count / maxEventName) * 100}%` }} />
+                  </div>
+                  <span className="admin-bar-val" title={`${e.unique_users} unique users`}>{e.count}</span>
+                </div>
+              ))}
+              {!appEvents.by_event?.length && <p className="admin-empty">No events in range</p>}
+            </div>
+            {appEvents.funnel && (
+              <p className="admin-funnel">
+                Funnel (unique users): {appEvents.funnel.chart_calculated ?? 0} charts →{' '}
+                {appEvents.funnel.chart_then_chat ?? 0} then chat ·{' '}
+                {appEvents.funnel.prashna_analyze ?? 0} prashna
+              </p>
+            )}
+          </section>
+
+          <div className="admin-grid-2">
+            <section className="admin-section">
+              <h2 className="admin-section__title">Events per day (14 days)</h2>
+              <div className="admin-bars">
+                {(appEvents.daily || []).map((d) => (
+                  <div key={d.event_date} className="admin-bar-row">
+                    <span className="admin-bar-label">{d.event_date?.slice(5)}</span>
+                    <div className="admin-bar-track">
+                      <div className="admin-bar-fill admin-bar-fill--events" style={{ width: `${(d.count / maxEventDay) * 100}%` }} />
+                    </div>
+                    <span className="admin-bar-val">{d.count}</span>
+                  </div>
+                ))}
+                {!appEvents.daily?.length && <p className="admin-empty">No daily events</p>}
+              </div>
+            </section>
+
+            <section className="admin-section">
+              <h2 className="admin-section__title">Prashna categories</h2>
+              <ul className="admin-list">
+                {(appEvents.prashna_categories || []).slice(0, 10).map((row) => (
+                  <li key={row.category}>
+                    <span>{row.category}</span>
+                    <strong>{row.count}</strong>
+                  </li>
+                ))}
+                {!appEvents.prashna_categories?.length && (
+                  <li className="admin-empty">No prashna events in range</li>
+                )}
+              </ul>
+            </section>
+          </div>
+
+          <section className="admin-section">
+            <h2 className="admin-section__title">Recent product events</h2>
+            <div className="admin-table-wrap admin-table-wrap--events">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Time (IST)</th>
+                    <th>Event</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(appEvents.recent || []).length === 0 && (
+                    <tr><td colSpan={3} className="admin-empty">No events yet</td></tr>
+                  )}
+                  {(appEvents.recent || []).map((ev, i) => (
+                    <tr key={`${ev.created_at}-${ev.event_name}-${i}`}>
+                      <td>{fmtDate(ev.created_at)}</td>
+                      <td>{eventLabel(ev.event_name)}</td>
+                      <td>{fmtProps(ev.properties)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+
+      {appEvents && !appEvents.available && (
+        <section className="admin-section">
+          <p className="admin-empty">{appEvents.message || 'Product events table not configured.'}</p>
+        </section>
+      )}
 
       <section className="admin-section">
         <h2 className="admin-section__title">Recent users</h2>
-        <div className="admin-table-wrap">
+        <div className="admin-table-wrap admin-table-wrap--users">
           <table className="admin-table">
             <thead>
               <tr>

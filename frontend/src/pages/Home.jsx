@@ -36,6 +36,7 @@ import LegalDocumentModal from '../components/LegalDocumentModal'
 import LegalFooter from '../components/LegalFooter'
 import { TERMS_SECTIONS, PRIVACY_SECTIONS, SHORT_DISCLAIMER } from '../constants/legal'
 import { hasLegalConsent, isAtLeast18 } from '../lib/legalConsent'
+import { trackTabView } from '../lib/analytics'
 
 // Apply persisted theme immediately on load
 applyStoredTheme()
@@ -418,7 +419,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
               style={{ color: 'var(--text-muted)' }}>{title}</h3>
             <SouthIndianChart title={nav ? 'D9' : 'D1'} subtitle={sub}
               planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav}
-              variant={nav ? 'default' : 'classic'} showDetails={!nav} />
+              variant="classic" showDetails={true} chartKind="natal" />
           </div>
         ))}
       </div>
@@ -544,6 +545,7 @@ function HomeApp() {
     setMountedTabs(prev => new Set(prev).add(key))
     setActiveTab(key)
     if (section) setScrollTarget(section)
+    trackTabView(key)
     try {
       const url = new URL(window.location.href)
       if (key === 'home') {
@@ -574,6 +576,10 @@ function HomeApp() {
     }, 100)
     return () => clearTimeout(timer)
   }, [activeTab, scrollTarget])
+
+  useEffect(() => {
+    trackTabView(activeTab)
+  }, []) // initial tab only — eslint-disable-line react-hooks/exhaustive-deps
 
   // Load chart from server when signed in; sync session chart if none saved yet
   useEffect(() => {

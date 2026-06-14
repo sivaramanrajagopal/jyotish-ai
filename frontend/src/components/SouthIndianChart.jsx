@@ -4,6 +4,7 @@
  */
 
 import { isPlanetRetrograde } from '../lib/planetRetrograde'
+import { formatNakshatraLine } from '../lib/chartFormat'
 
 /**
  * Props:
@@ -48,11 +49,6 @@ const PLANET_COLORS = {
   Saturn:  { bg: '#fee2e2', fg: '#991b1b' },
   Rahu:    { bg: '#f5f3ff', fg: '#6d28d9' },
   Ketu:    { bg: '#fdf4ff', fg: '#7e22ce' },
-}
-
-function nakshatraAbbr(name) {
-  if (!name || typeof name !== 'string') return ''
-  return name.length <= 4 ? name : name.substring(0, 3)
 }
 
 // ── Planet badge — compact (no details) ─────────────────────────────────────
@@ -101,13 +97,6 @@ function PlanetBadgeDetail({ planet, retrograde, vargottama, degreeInSign, pada 
       {vargottama && <span className="si-chart__badge-varga">★</span>}
     </span>
   )
-}
-
-function formatNakshatraLine(nakshatra, pada, useFullName = true) {
-  if (!nakshatra && pada == null) return null
-  const name = useFullName ? nakshatra : nakshatraAbbr(nakshatra)
-  if (!name) return pada != null ? `P${pada}` : null
-  return pada != null ? `${name} · P${pada}` : name
 }
 
 // ── Planet badge — classic stacked row (traditional readability) ───────────────
@@ -238,6 +227,9 @@ function ClassicLegend({ chartKind = 'natal' }) {
       <ul>
         {chartKind === 'natal' && (
           <li><strong>Lagna ↑</strong> — rising sign at birth (most important reference point)</li>
+        )}
+        {chartKind === 'prashna' && (
+          <li><strong>Lagna ↑</strong> — rising sign at the moment of the question</li>
         )}
         {chartKind === 'transit' && (
           <li>Fixed-sign sky map for the date shown — Ascendant and house placements are in the table below</li>

@@ -2018,12 +2018,15 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .admin-refresh {
   font-size: 12px;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 10px 16px;
+  min-height: 44px;
   border-radius: 8px;
   border: 1px solid var(--card-border);
   background: var(--card-bg);
   color: var(--text-secondary);
   cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .admin-stats {
@@ -2034,7 +2037,7 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 }
 
 @media (min-width: 640px) {
-  .admin-stats { grid-template-columns: repeat(4, 1fr); }
+  .admin-stats { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
 }
 
 .admin-stat {
@@ -2083,7 +2086,18 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   margin: 0 0 12px;
 }
 
-.admin-table-wrap { overflow-x: auto; }
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table-wrap--events .admin-table {
+  min-width: 480px;
+}
+
+.admin-table-wrap--users .admin-table {
+  min-width: 560px;
+}
 
 .admin-table {
   width: 100%;
@@ -2133,7 +2147,7 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
 .admin-bar-row {
   display: grid;
-  grid-template-columns: 44px 1fr 32px;
+  grid-template-columns: minmax(3.5rem, 28%) 1fr 2rem;
   align-items: center;
   gap: 8px;
   font-size: 11px;
@@ -2155,6 +2169,23 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 }
 
 .admin-bar-fill--signup { background: #60a5fa; }
+
+.admin-bar-fill--events { background: #a78bfa; }
+
+.admin-bar-label--event {
+  text-transform: capitalize;
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-funnel {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
 
 .admin-bar-val {
   text-align: right;
@@ -2184,6 +2215,88 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   color: var(--text-muted);
   text-align: center;
   margin-top: 8px;
+}
+
+@media (max-width: 639px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-refresh {
+    width: 100%;
+  }
+
+  .admin-subtitle {
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .admin-stat {
+    padding: 12px;
+  }
+
+  .admin-stat__value {
+    font-size: 1.25rem;
+  }
+
+  .admin-section {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .admin-section__title {
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+
+  .admin-bar-row {
+    grid-template-columns: minmax(4.25rem, 34%) 1fr 1.75rem;
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .admin-bar-label--event {
+    max-width: none;
+    white-space: normal;
+    line-height: 1.25;
+    hyphens: auto;
+  }
+
+  .admin-funnel {
+    font-size: 0.6875rem;
+    word-break: break-word;
+  }
+
+  .admin-table {
+    font-size: 11px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 8px;
+    vertical-align: top;
+  }
+
+  .admin-table td:last-child {
+    word-break: break-word;
+    max-width: 9rem;
+  }
+
+  .admin-list li {
+    font-size: 12px;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .admin-list li span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-list li strong {
+    flex-shrink: 0;
+  }
 }
 
 /* ── Ashtakavarga Prokerala grids ─────────────────────────────────────────── */

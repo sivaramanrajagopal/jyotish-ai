@@ -5,7 +5,8 @@ admin_router.py — owner dashboard API (reads Supabase analytics views).
 from __future__ import annotations
 
 import logging
-from datetime import date, timedelta
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -86,6 +87,96 @@ def _users_fallback(limit: int) -> list[dict[str, Any]]:
     return out
 
 
+def _app_events_available() -> bool:
+    if not _SB:
+        return False
+    try:
+        sb = get_supabase()
+        sb.table("app_events").select("id", count="exact").limit(0).execute()
+        return True
+    except Exception:
+        return False
+
+
+def _app_events_count(since_iso: Optional[str] = None) -> int:
+    sb = get_supabase()
+    q = sb.table("app_events").select("*", count="exact").limit(0)
+    if since_iso:
+        q = q.gte("created_at", since_iso)
+    return q.execute().count or 0
+
+
+def _fetch_app_events(since_iso: str, limit: int = 2000) -> list[dict[str, Any]]:
+    sb = get_supabase()
+    res = (
+        sb.table("app_events")
+        .select("event_name, user_id, properties, created_at")
+        .gte("created_at", since_iso)
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return res.data or []
+
+
+def _aggregate_app_events(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    totals: dict[str, int] = defaultdict(int)
+    unique: dict[str, set] = defaultdict(set)
+    daily: dict[str, int] = defaultdict(int)
+    prashna_cats: dict[str, int] = defaultdict(int)
+
+    for row in rows:
+        name = row.get("event_name") or "unknown"
+        totals[name] += 1
+        uid = row.get("user_id")
+        if uid:
+            unique[name].add(uid)
+        day = (row.get("created_at") or "")[:10]
+        if day:
+            daily[day] += 1
+        if name == "prashna_analyze":
+            props = row.get("properties") or {}
+            cat = props.get("category") if isinstance(props, dict) else None
+            if cat:
+                prashna_cats[str(cat)] += 1
+
+    by_event = sorted(
+        [
+            {
+                "event_name": name,
+                "count": count,
+                "unique_users": len(unique[name]),
+            }
+            for name, count in totals.items()
+        ],
+        key=lambda x: -x["count"],
+    )
+    daily_rows = [
+        {"event_date": d, "count": daily[d]}
+        for d in sorted(daily.keys())
+    ]
+
+    chart_users = unique.get("chart_calculated", set())
+    chat_users = unique.get("chat_sent", set())
+    prashna_users = unique.get("prashna_analyze", set())
+
+    return {
+        "by_event": by_event,
+        "daily": daily_rows,
+        "prashna_categories": sorted(
+            [{"category": k, "count": v} for k, v in prashna_cats.items()],
+            key=lambda x: -x["count"],
+        ),
+        "funnel": {
+            "chart_calculated": len(chart_users),
+            "chat_sent": len(chat_users),
+            "prashna_analyze": len(prashna_users),
+            "chart_then_chat": len(chart_users & chat_users),
+        },
+        "total_in_range": len(rows),
+    }
+
+
 @router.get("/overview")
 @limiter.limit("30/minute")
 def admin_overview(request: Request, _admin: AuthUser = Depends(require_admin)):
@@ -120,6 +211,14 @@ def admin_overview(request: Request, _admin: AuthUser = Depends(require_admin)):
         ).data or []
         chat_today = sum(r.get("chat_count") or 0 for r in ai_calls)
         forecast_today = sum(r.get("forecast_count") or 0 for r in ai_calls)
+        app_events = {"available": False}
+        if _app_events_available():
+            week_since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+            app_events = {
+                "available": True,
+                "total": _app_events_count(),
+                "last_7_days": _app_events_count(week_since),
+            }
     except Exception as exc:
         logger.exception("admin overview failed: %s", exc)
         raise HTTPException(status_code=500, detail="Could not load overview.")
@@ -132,6 +231,7 @@ def admin_overview(request: Request, _admin: AuthUser = Depends(require_admin)):
         "ai_users_today": ai_today,
         "chat_calls_today": chat_today,
         "forecast_calls_today": forecast_today,
+        "app_events": app_events,
         "as_of": today,
     }
 
@@ -297,3 +397,50 @@ def admin_signups(
     except Exception as exc:
         logger.exception("admin signups failed: %s", exc)
         raise HTTPException(status_code=500, detail="Could not load signups.")
+
+
+@router.get("/app-events")
+@limiter.limit("30/minute")
+def admin_app_events(
+    request: Request,
+    days: int = Query(14, ge=1, le=90),
+    _admin: AuthUser = Depends(require_admin),
+):
+    """Product event totals, daily trend, funnel, and recent rows from app_events."""
+    if not _SB:
+        raise HTTPException(status_code=503, detail="Database not configured.")
+    if not _app_events_available():
+        return {
+            "available": False,
+            "message": "Run supabase/analytics_events.sql to enable product events.",
+            "by_event": [],
+            "daily": [],
+            "recent": [],
+            "prashna_categories": [],
+            "funnel": {},
+        }
+
+    since_dt = datetime.now(timezone.utc) - timedelta(days=days - 1)
+    since_iso = since_dt.isoformat()
+    try:
+        rows = _fetch_app_events(since_iso)
+        agg = _aggregate_app_events(rows)
+        recent = [
+            {
+                "event_name": r.get("event_name"),
+                "properties": r.get("properties") or {},
+                "user_id": r.get("user_id"),
+                "created_at": r.get("created_at"),
+            }
+            for r in rows[:40]
+        ]
+        return {
+            "available": True,
+            "days": days,
+            "total_all_time": _app_events_count(),
+            **agg,
+            "recent": recent,
+        }
+    except Exception as exc:
+        logger.exception("admin app-events failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Could not load product events.")
