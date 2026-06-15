@@ -175,8 +175,17 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
   }
 
+  const scrollToBirthForm = () => {
+    document.getElementById('birth-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    window.setTimeout(() => document.getElementById('birth-name')?.focus(), 400)
+  }
+
   const handleFeatureClick = ({ tab, section }) => {
-    onGoToTab(tab, section)
+    if (chart) {
+      onGoToTab(tab, section)
+      return
+    }
+    scrollToBirthForm()
   }
 
   const handleValueCardClick = (card) => {
@@ -184,130 +193,93 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       onGoToTab(card.tab)
       return
     }
-    document.getElementById('birth-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    window.setTimeout(() => document.getElementById('birth-name')?.focus(), 400)
+    scrollToBirthForm()
   }
 
-  return (
-    <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
-      {!userId && chart && (
-        <p className="guest-session-hint" role="status">
-          Guest mode: your chart is saved for this browser session only (about 24 hours). Sign in to keep it permanently.
-        </p>
-      )}
+  const isNewVisitor = !chart
 
-      {userId && (
-        <div className="auth-save-hint">
-          Signed in as <strong>{userEmail}</strong> — new charts save to your account.
+  const heroSection = (
+    <header className={`home-hero home-hero--compact${isNewVisitor ? ' home-hero--guest' : ''}`}>
+      <div className="home-hero__glow" aria-hidden="true" />
+      <div className="home-hero__art">
+        <div className="home-hero__img-wrap">
+          <img
+            src="/images/ganesha.png"
+            alt="Lord Ganesha — Om"
+            className="home-hero__img"
+            width={isNewVisitor ? 96 : 112}
+            height={isNewVisitor ? 96 : 112}
+            loading="eager"
+            decoding="async"
+          />
         </div>
-      )}
-
-      {userId && (
-        <AccountSettings />
-      )}
-
-      {chart && form.name && (
-        <div className="welcome-back">
-          <div className="welcome-back__text">
-            <span className="welcome-back__name">Welcome back, {form.name}</span>
-            <span className="welcome-back__meta">{form.dob} · {form.place_of_birth}</span>
-          </div>
-          <div className="welcome-back__actions">
-            <button
-              type="button"
-              className="welcome-back__btn welcome-back__btn--primary"
-              onClick={() => onGoToTab('chart')}
-            >
-              View chart →
-            </button>
-            <button
-              type="button"
-              className="welcome-back__btn welcome-back__btn--ghost"
-              onClick={onClearRequest}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Hero — artistic Ganesha + short copy */}
-      <header className="home-hero">
-        <div className="home-hero__glow" aria-hidden="true" />
-        <div className="home-hero__art">
-          <div className="home-hero__img-wrap">
-            <img
-              src="/images/ganesha.png"
-              alt="Lord Ganesha — Om"
-              className="home-hero__img"
-              width={152}
-              height={152}
-              loading="eager"
-              decoding="async"
-            />
-          </div>
-        </div>
-        <h1 className="home-hero__title">
-          {APP_SHORT} <span>Jyotish</span>
-        </h1>
-        <p className="home-hero__tagline">{APP_TAGLINE}</p>
-        <p className="home-hero__trust">{APP_TRUST_LINE}</p>
+      </div>
+      <h1 className="home-hero__title">
+        {APP_SHORT} <span>Jyotish</span>
+      </h1>
+      <p className="home-hero__tagline">{APP_TAGLINE}</p>
+      <p className="home-hero__trust">{APP_TRUST_LINE}</p>
+      {!isNewVisitor && (
         <div className="home-hero__features" aria-label="Features">
-          {APP_FEATURE_LINKS.map((link) =>
-            chart ? (
-              <button
-                key={link.label}
-                type="button"
-                className="home-hero__chip home-hero__chip--link"
-                onClick={() => handleFeatureClick(link)}
-              >
-                {link.label}
-              </button>
-            ) : (
-              <span key={link.label} className="home-hero__chip">{link.label}</span>
-            )
-          )}
-        </div>
-      </header>
-
-      <div className="home-value-cards-block">
-        <h2 className="home-value-cards__heading">What you get</h2>
-        <p className="home-value-cards__hint" role="status">
-          {chart
-            ? 'Tap a card to open that feature'
-            : 'Tap a card — you’ll jump to the birth form below (chart required first)'}
-        </p>
-        <div className="home-value-cards" aria-label="What you get">
-          {APP_VALUE_CARDS.map((card) => (
+          {APP_FEATURE_LINKS.map((link) => (
             <button
-              key={card.title}
+              key={link.label}
               type="button"
-              className="home-value-card home-value-card--link"
-              onClick={() => handleValueCardClick(card)}
-              title={card.hint}
+              className="home-hero__chip home-hero__chip--link"
+              onClick={() => handleFeatureClick(link)}
             >
-              <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
-              <span className="home-value-card__title">{card.title}</span>
-              <span className="home-value-card__desc">{card.desc}</span>
+              {link.label}
             </button>
           ))}
         </div>
-      </div>
+      )}
+    </header>
+  )
 
-      <div className="home-auth-block">
-        {!userId && (
-          chart
-            ? <AuthPanel variant="nudge" />
-            : <AuthPanel variant="card" />
-        )}
+  const valueCardsSection = (
+    <div className="home-value-cards-block">
+      <h2 className="home-value-cards__heading">
+        {isNewVisitor ? 'Included free with your chart' : 'Quick access'}
+      </h2>
+      <p className="home-value-cards__hint" role="status">
+        {isNewVisitor
+          ? 'Calculate above first — then tap to open Chart, Gochar, or Ask AI'
+          : 'Tap a card to open that feature'}
+      </p>
+      <div className="home-value-cards" aria-label="What you get">
+        {APP_VALUE_CARDS.map((card) => (
+          <button
+            key={card.title}
+            type="button"
+            className="home-value-card home-value-card--link"
+            onClick={() => handleValueCardClick(card)}
+            title={card.hint}
+          >
+            <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
+            <span className="home-value-card__title">{card.title}</span>
+            <span className="home-value-card__desc">{card.desc}</span>
+          </button>
+        ))}
       </div>
+    </div>
+  )
 
-      {/* Birth form */}
-      <div id="birth-form" className="rounded-2xl p-4 sm:p-6" style={G.card}>
-        <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-          Enter birth details
-        </h2>
-        <form onSubmit={onChartReady} className="space-y-4">
+  const authSection = !userId ? (
+    <div className="home-auth-block">
+      {chart ? <AuthPanel variant="nudge" /> : <AuthPanel variant="card" />}
+    </div>
+  ) : null
+
+  const formSection = (
+    <div
+      id="birth-form"
+      className={`rounded-2xl p-4 sm:p-6${isNewVisitor ? ' home-birth-form-primary' : ''}`}
+      style={G.card}
+    >
+      <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+        {chart ? 'Update birth details' : 'Enter birth details'}
+      </h2>
+      <form onSubmit={onChartReady} className="space-y-4">
 
           <div>
             <label htmlFor="birth-name" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Full Name</label>
@@ -319,7 +291,6 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             />
           </div>
 
-          {/* Mobile: stack vertically; sm+: side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="birth-dob" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Date of Birth</label>
@@ -390,10 +361,70 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             className="w-full font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"
             style={G.btn}
           >
-            {loading ? 'Calculating…' : 'Calculate Chart →'}
+            {loading ? 'Calculating…' : chart ? 'Recalculate chart' : 'Calculate my chart — free'}
           </button>
         </form>
-      </div>
+    </div>
+  )
+
+  return (
+    <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
+      {!userId && chart && (
+        <p className="guest-session-hint" role="status">
+          Guest mode: your chart is saved for this browser session only (about 24 hours). Sign in to keep it permanently.
+        </p>
+      )}
+
+      {userId && (
+        <div className="auth-save-hint">
+          Signed in as <strong>{userEmail}</strong> — new charts save to your account.
+        </div>
+      )}
+
+      {userId && (
+        <AccountSettings />
+      )}
+
+      {chart && form.name && (
+        <div className="welcome-back">
+          <div className="welcome-back__text">
+            <span className="welcome-back__name">Welcome back, {form.name}</span>
+            <span className="welcome-back__meta">{form.dob} · {form.place_of_birth}</span>
+          </div>
+          <div className="welcome-back__actions">
+            <button
+              type="button"
+              className="welcome-back__btn welcome-back__btn--primary"
+              onClick={() => onGoToTab('chart')}
+            >
+              View chart →
+            </button>
+            <button
+              type="button"
+              className="welcome-back__btn welcome-back__btn--ghost"
+              onClick={onClearRequest}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isNewVisitor ? (
+        <>
+          {heroSection}
+          {formSection}
+          {authSection}
+          {valueCardsSection}
+        </>
+      ) : (
+        <>
+          {heroSection}
+          {valueCardsSection}
+          {authSection}
+          {formSection}
+        </>
+      )}
     </div>
   )
 }

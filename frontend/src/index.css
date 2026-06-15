@@ -1615,6 +1615,51 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   margin-bottom: 1.25rem;
 }
 
+.home-hero--compact {
+  padding: 0.5rem 0 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.home-hero--compact .home-hero__glow {
+  height: 88px;
+  inset: -12px 12% auto;
+}
+
+.home-hero--compact .home-hero__art {
+  margin-bottom: 0.45rem;
+}
+
+.home-hero--compact .home-hero__img-wrap {
+  padding: 6px;
+  border-radius: 16px;
+}
+
+.home-hero--compact .home-hero__img {
+  width: clamp(72px, 22vw, 112px);
+}
+
+.home-hero--compact .home-hero__title {
+  font-size: clamp(1.4rem, 4.5vw, 1.85rem);
+  margin-bottom: 0.3rem;
+}
+
+.home-hero--compact .home-hero__tagline {
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+}
+
+.home-hero--compact .home-hero__trust {
+  margin-bottom: 0.55rem;
+}
+
+.home-hero--guest .home-hero__trust {
+  margin-bottom: 0;
+}
+
+.home-hero--compact .home-hero__features {
+  margin-top: 0.5rem;
+}
+
 .home-hero__glow {
   position: absolute;
   inset: -20px 10% auto;
@@ -1722,6 +1767,11 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 }
 
 .home-value-cards-block {
+  margin-bottom: 1rem;
+  margin-top: 0.25rem;
+}
+
+.home-birth-form-primary {
   margin-bottom: 1rem;
 }
 
