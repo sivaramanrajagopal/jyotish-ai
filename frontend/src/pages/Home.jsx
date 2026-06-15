@@ -5,7 +5,14 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
-import { APP_NAME, APP_SHORT, APP_TAGLINE, APP_FEATURE_LINKS } from '../constants/brand'
+import {
+  APP_NAME,
+  APP_SHORT,
+  APP_TAGLINE,
+  APP_TRUST_LINE,
+  APP_VALUE_CARDS,
+  APP_FEATURE_LINKS,
+} from '../constants/brand'
 import GaneshaIllustration from '../components/GaneshaIllustration'
 import CosmosStrip from '../components/CosmosStrip'
 import SouthIndianChart from '../components/SouthIndianChart'
@@ -235,6 +242,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           {APP_SHORT} <span>Jyotish</span>
         </h1>
         <p className="home-hero__tagline">{APP_TAGLINE}</p>
+        <p className="home-hero__trust">{APP_TRUST_LINE}</p>
         <div className="home-hero__features" aria-label="Features">
           {APP_FEATURE_LINKS.map((link) =>
             chart ? (
@@ -252,6 +260,29 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           )}
         </div>
       </header>
+
+      <div className="home-value-cards" aria-label="What you get">
+        {APP_VALUE_CARDS.map((card) =>
+          chart ? (
+            <button
+              key={card.title}
+              type="button"
+              className="home-value-card home-value-card--link"
+              onClick={() => onGoToTab(card.tab)}
+            >
+              <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
+              <span className="home-value-card__title">{card.title}</span>
+              <span className="home-value-card__desc">{card.desc}</span>
+            </button>
+          ) : (
+            <div key={card.title} className="home-value-card">
+              <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
+              <span className="home-value-card__title">{card.title}</span>
+              <span className="home-value-card__desc">{card.desc}</span>
+            </div>
+          )
+        )}
+      </div>
 
       <div className="home-auth-block">
         {!userId && (
@@ -744,13 +775,11 @@ function HomeApp() {
         <GaneshaBanner />
       )}
 
-      {activeTab !== 'home' && (
-        <CosmosStrip
-          location={form.place_of_birth}
-          chart={chart}
-          onOpenPanchangam={() => setTab('panchangam')}
-        />
-      )}
+      <CosmosStrip
+        location={form.place_of_birth}
+        chart={chart}
+        onOpenPanchangam={() => setTab('panchangam')}
+      />
 
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
