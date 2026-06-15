@@ -8,11 +8,29 @@ export const APP_TAGLINE = 'Free Vedic chart, Dasha & Gochara — AI with daily 
 /** Credibility strip under tagline */
 export const APP_TRUST_LINE = 'Sidereal · Lahiri · Vimshottari · Parashari'
 
-/** Value props on Home (above birth form) */
+/** Value props on Home (above birth form) — shortcuts to main tabs after chart exists */
 export const APP_VALUE_CARDS = [
-  { icon: '⭐', title: 'Free natal chart', desc: 'D1, D9, Dasha & Ashtakavarga', tab: 'chart' },
-  { icon: '🪐', title: 'Gochar scores', desc: 'Rule-based transit ratings', tab: 'gochar' },
-  { icon: '🔮', title: 'AI guidance', desc: 'Chat & forecast — sign in for more', tab: 'chat' },
+  {
+    icon: '⭐',
+    title: 'Birth chart',
+    desc: 'D1, D9, Dasha & Ashtakavarga',
+    tab: 'chart',
+    hint: 'Your sidereal natal chart and dasha timeline',
+  },
+  {
+    icon: '🪐',
+    title: 'Transit scores',
+    desc: 'Gochara ratings by house',
+    tab: 'gochar',
+    hint: 'How today’s planets affect your chart',
+  },
+  {
+    icon: '🔮',
+    title: 'Ask Jyotish AI',
+    desc: 'Chat & daily forecast',
+    tab: 'chat',
+    hint: 'AI answers grounded in your chart',
+  },
 ]
 
 /** Compact feature pills (home hero) — tab + optional section scroll */

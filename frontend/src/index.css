@@ -1721,6 +1721,26 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   line-height: 1.4;
 }
 
+.home-value-cards-block {
+  margin-bottom: 1rem;
+}
+
+.home-value-cards__heading {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.home-value-cards__hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
 .home-value-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

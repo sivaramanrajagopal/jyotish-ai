@@ -179,6 +179,15 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
     onGoToTab(tab, section)
   }
 
+  const handleValueCardClick = (card) => {
+    if (chart) {
+      onGoToTab(card.tab)
+      return
+    }
+    document.getElementById('birth-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    window.setTimeout(() => document.getElementById('birth-name')?.focus(), 400)
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 py-4 sm:py-8">
       {!userId && chart && (
@@ -261,27 +270,28 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
         </div>
       </header>
 
-      <div className="home-value-cards" aria-label="What you get">
-        {APP_VALUE_CARDS.map((card) =>
-          chart ? (
+      <div className="home-value-cards-block">
+        <h2 className="home-value-cards__heading">What you get</h2>
+        <p className="home-value-cards__hint" role="status">
+          {chart
+            ? 'Tap a card to open that feature'
+            : 'Tap a card — you’ll jump to the birth form below (chart required first)'}
+        </p>
+        <div className="home-value-cards" aria-label="What you get">
+          {APP_VALUE_CARDS.map((card) => (
             <button
               key={card.title}
               type="button"
               className="home-value-card home-value-card--link"
-              onClick={() => onGoToTab(card.tab)}
+              onClick={() => handleValueCardClick(card)}
+              title={card.hint}
             >
               <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
               <span className="home-value-card__title">{card.title}</span>
               <span className="home-value-card__desc">{card.desc}</span>
             </button>
-          ) : (
-            <div key={card.title} className="home-value-card">
-              <span className="home-value-card__icon" aria-hidden="true">{card.icon}</span>
-              <span className="home-value-card__title">{card.title}</span>
-              <span className="home-value-card__desc">{card.desc}</span>
-            </div>
-          )
-        )}
+          ))}
+        </div>
       </div>
 
       <div className="home-auth-block">
@@ -293,7 +303,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       </div>
 
       {/* Birth form */}
-      <div className="rounded-2xl p-4 sm:p-6" style={G.card}>
+      <div id="birth-form" className="rounded-2xl p-4 sm:p-6" style={G.card}>
         <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
           Enter birth details
         </h2>
