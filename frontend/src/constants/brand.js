@@ -2,6 +2,14 @@
 export const APP_NAME = 'Parashara Jyotish'
 export const APP_SHORT = 'Parashara'
 
+/** Traditional Ganesha photo (banner + home hero) */
+export const APP_GANESHA_IMG = '/images/ganesha-traditional.png'
+
+/** Ganesha mantra — English, Sanskrit (Devanagari), Tamil */
+export const APP_MANTRA_EN = 'Om Shri Maha Ganapatheye Namah'
+export const APP_MANTRA_SANSKRIT = 'ॐ श्री महा गणपतये नमः'
+export const APP_MANTRA_TAMIL = 'ஓம் ஸ்ரீ மஹா கணபதியே நமஹ'
+
 /** One line under the title on the home hero */
 export const APP_TAGLINE = 'Free Vedic chart, Dasha & Gochara — AI with daily limits'
 

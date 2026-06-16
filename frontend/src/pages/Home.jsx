@@ -12,6 +12,10 @@ import {
   APP_TRUST_LINE,
   APP_VALUE_CARDS,
   APP_FEATURE_LINKS,
+  APP_GANESHA_IMG,
+  APP_MANTRA_EN,
+  APP_MANTRA_SANSKRIT,
+  APP_MANTRA_TAMIL,
 } from '../constants/brand'
 import GaneshaIllustration from '../components/GaneshaIllustration'
 import CosmosStrip from '../components/CosmosStrip'
@@ -119,25 +123,40 @@ function clearSessionAndReload() {
   window.location.reload()
 }
 
-// ── Compact header — Ganesha + app name (hidden on Home; hero has Ganesha) ───
+// ── Compact header — traditional Ganesha + Om SVG + trilingual mantra ────────
 function GaneshaBanner() {
   return (
-    <div
-      className="flex items-center gap-2.5 sm:gap-3 py-2.5 px-3 sm:px-4"
+    <header
+      className="ganesha-banner"
       style={{ background: 'var(--nav-bg)', borderBottom: '2px solid var(--banner-border)' }}
     >
-      <GaneshaIllustration size={36} compact />
-      <div className="flex-1 text-left min-w-0">
-        <div className="text-sm sm:text-base font-bold truncate" style={{ color: 'var(--orange)', letterSpacing: '0.04em' }}>
-          {APP_NAME}
+      <div className="ganesha-banner__brand">
+        <div className="ganesha-banner__icons" aria-hidden="true">
+          <img
+            src={APP_GANESHA_IMG}
+            alt=""
+            className="ganesha-banner__photo"
+            width={44}
+            height={44}
+            decoding="async"
+          />
+          <GaneshaIllustration size={30} compact className="ganesha-banner__svg" />
         </div>
-        <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          ॐ श्री கணபதியே நமஹ
+        <div className="ganesha-banner__text">
+          <div className="ganesha-banner__title">{APP_NAME}</div>
+          <div className="ganesha-banner__mantra-en">{APP_MANTRA_EN}</div>
+          <div className="ganesha-banner__mantra-scripts">
+            <span lang="sa">{APP_MANTRA_SANSKRIT}</span>
+            <span className="ganesha-banner__mantra-dot" aria-hidden="true">·</span>
+            <span lang="ta">{APP_MANTRA_TAMIL}</span>
+          </div>
         </div>
       </div>
-      <DarkModeToggle small onDarkBg />
-      <AuthPanel compact onDarkBg />
-    </div>
+      <div className="ganesha-banner__actions">
+        <DarkModeToggle small onDarkBg />
+        <AuthPanel compact onDarkBg />
+      </div>
+    </header>
   )
 }
 
@@ -204,16 +223,25 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
       <div className="home-hero__art">
         <div className="home-hero__img-wrap">
           <img
-            src="/images/ganesha.png"
-            alt="Lord Ganesha — Om"
+            src={APP_GANESHA_IMG}
+            alt="Lord Ganesha"
             className="home-hero__img"
             width={isNewVisitor ? 96 : 112}
             height={isNewVisitor ? 96 : 112}
             loading="eager"
             decoding="async"
           />
+          <div className="home-hero__om-badge" aria-hidden="true">
+            <GaneshaIllustration size={28} compact />
+          </div>
         </div>
       </div>
+      <p className="home-hero__mantra">{APP_MANTRA_EN}</p>
+      <p className="home-hero__mantra-scripts">
+        <span lang="sa">{APP_MANTRA_SANSKRIT}</span>
+        <span aria-hidden="true"> · </span>
+        <span lang="ta">{APP_MANTRA_TAMIL}</span>
+      </p>
       <h1 className="home-hero__title">
         {APP_SHORT} <span>Jyotish</span>
       </h1>

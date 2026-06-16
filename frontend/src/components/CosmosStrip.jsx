@@ -54,8 +54,8 @@ export default function CosmosStrip({ location, chart, onOpenPanchangam }) {
   const items = [
     { key: 'date', text: sky.date_label },
     sky.vaaram && { key: 'vaaram', text: sky.vaaram },
-    { key: 'moon', text: `☽ ${sky.moon_sign_short}`, accent: true },
-    { key: 'sun', text: `☉ ${sky.sun_sign_short}` },
+    { key: 'moon', text: `🌙 ${sky.moon_sign_short}`, accent: true },
+    { key: 'sun', text: `☀️ ${sky.sun_sign_short}` },
     sky.retrograde_short?.length > 0 && {
       key: 'retro', text: sky.retrograde_short.join(' '),
     },
@@ -63,9 +63,6 @@ export default function CosmosStrip({ location, chart, onOpenPanchangam }) {
       key: 'tara',
       text: `Tara: ${personal.tara_name}`,
       accent: personal.tara_favourable,
-    },
-    personal?.moon_house && {
-      key: 'mh', text: `Moon H${personal.moon_house}`,
     },
   ].filter(Boolean)
 
