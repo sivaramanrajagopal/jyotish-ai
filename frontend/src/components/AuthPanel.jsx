@@ -270,7 +270,9 @@ export default function AuthPanel({
           <span className="auth-nudge__title">Save your chart to your account</span>
           <span className="auth-nudge__sub">Access it from any device — sign in with email.</span>
         </div>
-        {form}
+        <div className="auth-nudge__form-wrap">
+          {form}
+        </div>
       </div>
     )
   }

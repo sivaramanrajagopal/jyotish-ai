@@ -204,8 +204,8 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
 
   return (
     <div className="mt-3 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-      <table style={{
-        width: '100%', minWidth: '520px', borderCollapse: 'collapse',
+      <table className="panch-transit-planet-table" style={{
+        width: '100%', minWidth: '420px', borderCollapse: 'collapse',
         fontFamily: "'Inter', system-ui, sans-serif",
         fontSize: '0.72rem', color: 'var(--text-primary)',
       }}>
@@ -216,7 +216,6 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
             <th style={{ ...th, textAlign: 'right' }}>Deg</th>
             <th style={{ ...th, textAlign: 'center' }}>Pada</th>
             <th style={th}>Nakshatra</th>
-            <th style={{ ...th, textAlign: 'center' }}>H</th>
             <th style={{ ...th, textAlign: 'center' }}>R</th>
           </tr>
         </thead>
@@ -231,7 +230,6 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
               </td>
               <td style={{ ...td, textAlign: 'center', color: 'var(--text-secondary)' }}>{ascendant.pada}</td>
               <td style={{ ...td, color: 'var(--text-secondary)' }}>{ascendant.nakshatra}</td>
-              <td style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>—</td>
               <td style={{ ...td, textAlign: 'center', color: 'var(--text-muted)' }}>—</td>
             </tr>
           )}
@@ -254,7 +252,6 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
                 </td>
                 <td style={{ ...td, textAlign: 'center', color: 'var(--text-secondary)' }}>{p.pada}</td>
                 <td style={{ ...td, color: 'var(--text-secondary)' }}>{p.nakshatra}</td>
-                <td style={{ ...td, textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>H{p.house}</td>
                 <td style={{ ...td, textAlign: 'center', fontWeight: 700 }}>
                   {retro
                     ? <sup className="retro-sup-r">R</sup>
@@ -328,23 +325,27 @@ export default function PanchangamTab() {
 
       {/* ── Controls ── */}
       <div className="panch-controls mb-6">
-        <input
-          type="date" value={date}
-          min="2020-01-01" max="2030-12-31"
-          onChange={e => setDate(e.target.value)}
-          className="w-full px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl"
-          style={S.input}
-        />
-        <select
-          value={location}
-          onChange={e => setLocation(e.target.value)}
-          className="w-full px-3 py-2.5 text-base sm:text-sm focus:outline-none rounded-xl"
-          style={S.input}
-        >
+        <label className="panch-controls__field">
+          <span className="panch-controls__label">Date</span>
+          <input
+            type="date" value={date}
+            min="2020-01-01" max="2030-12-31"
+            onChange={e => setDate(e.target.value)}
+            className="panch-controls__input"
+          />
+        </label>
+        <label className="panch-controls__field">
+          <span className="panch-controls__label">Location</span>
+          <select
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            className="panch-controls__input"
+          >
           {LOCATIONS.map(l => (
             <option key={l} value={l}>{l}</option>
           ))}
         </select>
+        </label>
       </div>
 
       {/* ── Two-column layout: Panchangam left, Transit chart right ── */}
