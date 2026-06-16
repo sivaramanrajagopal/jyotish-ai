@@ -17,7 +17,6 @@ import {
   APP_MANTRA_SANSKRIT,
   APP_MANTRA_TAMIL,
 } from '../constants/brand'
-import GaneshaIllustration from '../components/GaneshaIllustration'
 import CosmosStrip from '../components/CosmosStrip'
 import SouthIndianChart from '../components/SouthIndianChart'
 import PlanetTable from '../components/PlanetTable'
@@ -123,7 +122,7 @@ function clearSessionAndReload() {
   window.location.reload()
 }
 
-// ── Compact header — traditional Ganesha + Om SVG + trilingual mantra ────────
+// ── Compact header — traditional Ganesha + trilingual mantra ─────────────────
 function GaneshaBanner() {
   return (
     <header
@@ -131,17 +130,14 @@ function GaneshaBanner() {
       style={{ background: 'var(--nav-bg)', borderBottom: '2px solid var(--banner-border)' }}
     >
       <div className="ganesha-banner__brand">
-        <div className="ganesha-banner__icons" aria-hidden="true">
-          <img
-            src={APP_GANESHA_IMG}
-            alt=""
-            className="ganesha-banner__photo"
-            width={44}
-            height={44}
-            decoding="async"
-          />
-          <GaneshaIllustration size={30} compact className="ganesha-banner__svg" />
-        </div>
+        <img
+          src={APP_GANESHA_IMG}
+          alt=""
+          className="ganesha-banner__photo"
+          width={44}
+          height={44}
+          decoding="async"
+        />
         <div className="ganesha-banner__text">
           <div className="ganesha-banner__title">{APP_NAME}</div>
           <div className="ganesha-banner__mantra-en">{APP_MANTRA_EN}</div>
@@ -231,9 +227,6 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             loading="eager"
             decoding="async"
           />
-          <div className="home-hero__om-badge" aria-hidden="true">
-            <GaneshaIllustration size={28} compact />
-          </div>
         </div>
       </div>
       <p className="home-hero__mantra">{APP_MANTRA_EN}</p>
