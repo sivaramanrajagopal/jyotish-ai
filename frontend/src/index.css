@@ -1743,16 +1743,15 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
 .home-hero__img {
   display: block;
-  width: clamp(120px, 34vw, 152px);
-  height: clamp(120px, 34vw, 152px);
-  object-fit: cover;
-  object-position: center top;
-  border-radius: 14px;
+  width: clamp(120px, 38vw, 180px);
+  height: auto;
+  aspect-ratio: 410 / 340;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
 .home-hero--compact .home-hero__img {
-  width: clamp(72px, 22vw, 112px);
-  height: clamp(72px, 22vw, 112px);
+  width: clamp(88px, 28vw, 140px);
 }
 
 .home-hero__mantra {
@@ -2136,19 +2135,13 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   min-width: 0;
 }
 
-.ganesha-banner__icons {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
 .ganesha-banner__photo {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center top;
+  flex-shrink: 0;
+  width: 48px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #ffffff;
   border: 2px solid rgba(255, 153, 0, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
@@ -2208,8 +2201,8 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   }
 
   .ganesha-banner__photo {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 44px;
   }
 
   .ganesha-banner__title {

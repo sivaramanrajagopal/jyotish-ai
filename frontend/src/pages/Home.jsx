@@ -134,8 +134,8 @@ function GaneshaBanner() {
           src={APP_GANESHA_IMG}
           alt=""
           className="ganesha-banner__photo"
-          width={44}
-          height={44}
+          width={48}
+          height={40}
           decoding="async"
         />
         <div className="ganesha-banner__text">
@@ -222,8 +222,8 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             src={APP_GANESHA_IMG}
             alt="Lord Ganesha"
             className="home-hero__img"
-            width={isNewVisitor ? 96 : 112}
-            height={isNewVisitor ? 96 : 112}
+            width={180}
+            height={149}
             loading="eager"
             decoding="async"
           />
