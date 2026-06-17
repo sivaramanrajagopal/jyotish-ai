@@ -63,6 +63,14 @@ const TOPICS = [
     question: "Explain my natal Tamil doshas (dagdha, Vadhai, Vainasikam, Yogi) and suggest practical parihara remedies for each affected house.",
   },
   {
+    key: 'indu_lagna',
+    label: '💰 Indu Lagna',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.15)',
+    border: 'rgba(245,158,11,0.35)',
+    question: "Explain my Indu Lagna fortune periods — when do Dasa/Bhukti and transits through my Indu sign favour wealth and prosperity?",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',

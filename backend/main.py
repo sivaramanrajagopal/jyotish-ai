@@ -62,6 +62,7 @@ from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
 from agents.ashtakavarga_agent import calculate_ashtakavarga, bav_context_for_narrator
 from agents.tamil_dosha_agent import compute_tamil_doshas
+from agents.indu_lagna_agent import compute_indu_lagna
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
@@ -1423,6 +1424,46 @@ def tamil_doshas_endpoint(
             "Tamil doshas error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Tamil doshas calculation failed.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Indu Lagna (fortune lagna)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class InduLagnaRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    dasa_years: int = 90
+    transit_years: int = 10
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/indu-lagna")
+@limiter.limit("30/minute")
+def indu_lagna_endpoint(
+    request: Request,
+    req: InduLagnaRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """
+    Natal Indu Lagna, Dasa/Bhukti fortune windows, and transit periods
+    when fortune planets occupy the Indu sign.
+    """
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    dasa_years = max(1, min(int(req.dasa_years), 120))
+    transit_years = max(1, min(int(req.transit_years), 30))
+    try:
+        return compute_indu_lagna(
+            chart,
+            dasa_years=dasa_years,
+            transit_years=transit_years,
+        )
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Indu Lagna error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Indu Lagna calculation failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

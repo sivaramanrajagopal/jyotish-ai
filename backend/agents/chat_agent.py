@@ -27,6 +27,7 @@ from agents.transit_score_agent import (
 )
 from agents.ashtakavarga_agent import bav_context_for_narrator
 from agents.tamil_dosha_agent import dosha_context_for_narrator
+from agents.indu_lagna_agent import indu_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
     format_full_dasha_cycle_markdown,
@@ -385,7 +386,12 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
     except Exception:
         dosha_ctx = ""
 
-    return ("\n\n" + gochara if gochara else "") + bav_ctx + dosha_ctx
+    try:
+        indu_ctx = "\n\n" + indu_context_for_narrator(natal_chart)
+    except Exception:
+        indu_ctx = ""
+
+    return ("\n\n" + gochara if gochara else "") + bav_ctx + dosha_ctx + indu_ctx
 
 
 _TAMIL_CHAT_SUFFIX = """
