@@ -65,18 +65,57 @@ def test_natal_judgment_canonical():
     assert out["summary"]["natal_verdict"] == j["verdict"]
 
 
-def test_dasa_bhukti_matches_reference_first_periods():
-    out = compute_indu_lagna(_chennai_chart(), transit_years=1)
+def test_dasa_bhukti_matches_standard_vimshottari():
+    """Fortune Dasa/Bhukti uses dasha_core (same as Dasha Roadmap)."""
+    from dasha_core import generate_dashas, generate_bhuktis
+
+    chart = _chennai_chart()
+    moon_lon = chart["planet_positions"]["Moon"]["longitude"]
+    fortune = {"Sun", "Mercury", "Saturn"}
+
+    out = compute_indu_lagna(chart, transit_years=1)
     timeline = out["dasa_bhukti_periods"]
     assert len(timeline) == 36
-    assert timeline[0]["activation_tier"] == "primary"
     assert timeline[0] == {
         "maha_dasa": "Mercury",
-        "bukti": "Ketu",
+        "bukti": "Mercury",
         "start": "1978-09-18",
-        "end": "1979-02-24",
+        "end": "1979-10-09",
         "activation_tier": "primary",
-        "label": "Mercury–Ketu Dasa/Bhukti",
+        "label": "Mercury–Mercury Dasa/Bhukti",
+    }
+
+    # Cross-check a few windows against dasha_core directly
+    expected: list[dict] = []
+    birth_dt = datetime.datetime(1978, 9, 18)
+    cutoff = birth_dt + datetime.timedelta(days=90 * 365.25)
+    for dasa in generate_dashas(moon_lon, "1978-09-18"):
+        if dasa["start"] >= cutoff:
+            break
+        for b in generate_bhuktis(dasa):
+            if b["end"] <= birth_dt or b["start"] >= cutoff:
+                continue
+            if dasa["planet"] in fortune or b["planet"] in fortune:
+                expected.append({
+                    "maha_dasa": dasa["planet"],
+                    "bukti": b["planet"],
+                    "start": b["start"].strftime("%Y-%m-%d"),
+                    "end": b["end"].strftime("%Y-%m-%d"),
+                })
+    assert [(p["maha_dasa"], p["bukti"], p["start"], p["end"]) for p in timeline] == [
+        (e["maha_dasa"], e["bukti"], e["start"], e["end"]) for e in expected
+    ]
+
+    moon_mercury = next(
+        p for p in timeline if p["maha_dasa"] == "Moon" and p["bukti"] == "Mercury"
+    )
+    assert moon_mercury == {
+        "maha_dasa": "Moon",
+        "bukti": "Mercury",
+        "start": "2025-01-06",
+        "end": "2026-06-08",
+        "activation_tier": "primary",
+        "label": "Moon–Mercury Dasa/Bhukti",
     }
 
 

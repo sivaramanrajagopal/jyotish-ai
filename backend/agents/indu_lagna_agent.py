@@ -13,14 +13,12 @@ import datetime
 from typing import Optional
 
 import ephemeris as swe
-from dasha_core import DASA_DURATIONS, generate_dashas
+from dasha_core import generate_dashas, generate_bhuktis
 from agents.prashna.dignity_engine import planetary_state
 from agents.tamil_dosha.constants import RASI_ENGLISH, RASI_ORDER, SIGN_LORDS
 from agents.transit_score_agent import _planet_aspects
 
 RASI_VALUES = [6, 12, 8, 16, 30, 8, 12, 6, 10, 1, 1, 10]
-
-DASA_ORDER = list(DASA_DURATIONS.keys())
 
 SLOW_TRANSIT_PLANETS = ("Jupiter", "Saturn")
 FAST_TRANSIT_PLANETS = ("Sun", "Mercury", "Moon")
@@ -320,27 +318,6 @@ def _judgment_summary(
     return " ".join(parts)
 
 
-def _generate_bhukti_periods_openai_style(
-    dasa_start: datetime.datetime,
-    dasa_end: datetime.datetime,
-    dasa_planet: str,
-) -> list[dict]:
-    total_days = (dasa_end - dasa_start).days
-    bhukti_list: list[dict] = []
-    current_start = dasa_start
-    for planet in DASA_ORDER:
-        fraction = DASA_DURATIONS[planet] / 120.0
-        b_end = current_start + datetime.timedelta(days=int(total_days * fraction))
-        bhukti_list.append({
-            "maha_dasa": dasa_planet,
-            "bukti": planet,
-            "start": current_start,
-            "end": b_end,
-        })
-        current_start = b_end
-    return bhukti_list
-
-
 def _fortune_dasa_periods(
     moon_longitude: float,
     birth_date: str,
@@ -348,6 +325,7 @@ def _fortune_dasa_periods(
     *,
     years: int = 90,
 ) -> list[dict]:
+    """Filter Vimshottari Dasa/Bhukti (standard order via dasha_core) for fortune grahas."""
     birth_dt = datetime.datetime.strptime(birth_date, "%Y-%m-%d")
     cutoff = birth_dt + datetime.timedelta(days=years * 365.25)
     periods: list[dict] = []
@@ -355,17 +333,19 @@ def _fortune_dasa_periods(
     for dasa in generate_dashas(moon_longitude, birth_date):
         if dasa["start"] >= cutoff:
             break
-        for b in _generate_bhukti_periods_openai_style(dasa["start"], dasa["end"], dasa["planet"]):
+        maha = dasa["planet"]
+        for b in generate_bhuktis(dasa):
             if b["end"] <= birth_dt or b["start"] >= cutoff:
                 continue
-            if b["maha_dasa"] in relevant_planets or b["bukti"] in relevant_planets:
+            bukti = b["planet"]
+            if maha in relevant_planets or bukti in relevant_planets:
                 periods.append({
-                    "maha_dasa": b["maha_dasa"],
-                    "bukti": b["bukti"],
+                    "maha_dasa": maha,
+                    "bukti": bukti,
                     "start": b["start"].strftime("%Y-%m-%d"),
                     "end": b["end"].strftime("%Y-%m-%d"),
                     "activation_tier": "primary",
-                    "label": f"{b['maha_dasa']}–{b['bukti']} Dasa/Bhukti",
+                    "label": f"{maha}–{bukti} Dasa/Bhukti",
                 })
     return periods
 
@@ -641,6 +621,7 @@ def compute_indu_lagna(
             "dasa_horizon_years": dasa_years,
             "transit_horizon_years": transit_years,
             "transit_targets": [t["label"] for t in transit_targets],
+            "dasa_bhukti_engine": "dasha_core Vimshottari (standard antardasha order)",
         },
     }
 
