@@ -223,7 +223,7 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
             alt="Lord Ganesha"
             className="home-hero__img"
             width={180}
-            height={149}
+            height={159}
             loading="eager"
             decoding="async"
           />

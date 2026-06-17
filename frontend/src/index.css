@@ -1733,21 +1733,22 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .home-hero__img-wrap {
   position: relative;
   display: inline-block;
-  padding: 10px;
-  border-radius: 20px;
+  padding: 8px;
+  border-radius: 16px;
   background: #ffffff;
+  overflow: hidden;
   box-shadow:
-    0 4px 24px rgba(255, 153, 0, 0.18),
-    0 0 0 1px rgba(255, 153, 0, 0.12);
+    0 2px 16px rgba(255, 153, 0, 0.14),
+    0 0 0 1px rgba(255, 153, 0, 0.1);
 }
 
 .home-hero__img {
   display: block;
   width: clamp(120px, 38vw, 180px);
   height: auto;
-  aspect-ratio: 410 / 340;
+  aspect-ratio: 384 / 340;
   object-fit: contain;
-  border-radius: 12px;
+  background: #ffffff;
 }
 
 .home-hero--compact .home-hero__img {
@@ -1787,8 +1788,8 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
 [data-theme="dark"] .home-hero__img-wrap {
   box-shadow:
-    0 4px 28px rgba(255, 153, 0, 0.22),
-    0 0 0 1px rgba(255, 153, 0, 0.2);
+    0 2px 18px rgba(255, 153, 0, 0.18),
+    0 0 0 1px rgba(255, 153, 0, 0.16);
 }
 
 .ganesha-art .ganesha-halo {
