@@ -229,17 +229,17 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
           />
         </div>
       </div>
+      <h1 className="home-hero__title">
+        {APP_SHORT} <span>Jyotish</span>
+      </h1>
+      <p className="home-hero__tagline">{APP_TAGLINE}</p>
+      <p className="home-hero__trust">{APP_TRUST_LINE}</p>
       <p className="home-hero__mantra">{APP_MANTRA_EN}</p>
       <p className="home-hero__mantra-scripts">
         <span lang="sa">{APP_MANTRA_SANSKRIT}</span>
         <span aria-hidden="true"> · </span>
         <span lang="ta">{APP_MANTRA_TAMIL}</span>
       </p>
-      <h1 className="home-hero__title">
-        {APP_SHORT} <span>Jyotish</span>
-      </h1>
-      <p className="home-hero__tagline">{APP_TAGLINE}</p>
-      <p className="home-hero__trust">{APP_TRUST_LINE}</p>
       {!isNewVisitor && (
         <div className="home-hero__features" aria-label="Features">
           {APP_FEATURE_LINKS.map((link) => (
@@ -828,7 +828,17 @@ function HomeApp() {
       {/* Header — full banner on inner tabs; slim dark-mode bar on Home (mobile) */}
       {activeTab === 'home' ? (
         <div className="banner-minimal">
-          <span className="banner-minimal__label">Parashara Jyotish</span>
+          <div className="banner-minimal__brand">
+            <img
+              src={APP_GANESHA_IMG}
+              alt=""
+              className="banner-minimal__icon"
+              width={32}
+              height={27}
+              decoding="async"
+            />
+            <span className="banner-minimal__label">{APP_NAME}</span>
+          </div>
           <div className="banner-minimal__actions">
             <DarkModeToggle small onDarkBg />
           </div>
