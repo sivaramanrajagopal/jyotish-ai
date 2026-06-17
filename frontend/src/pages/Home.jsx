@@ -27,6 +27,7 @@ import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
 import PrashnaTab from '../components/PrashnaTab'
 import AshtakavargaPanel from '../components/AshtakavargaPanel'
+import TamilDoshasPanel from '../components/TamilDoshasPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
@@ -571,6 +572,25 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
         </div>
         <div className="px-4 sm:px-5 py-4">
           <AshtakavargaPanel chart={chart} userId={userId} enabled={chartTabActive} />
+        </div>
+      </div>
+
+      {/* Tamil predictive doshas */}
+      <div
+        id="tamil-doshas"
+        className="rounded-xl mb-6 sm:mb-8 scroll-mt-20 td-section-wrap"
+        style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}
+      >
+        <div className="px-4 sm:px-5 py-3" style={{ borderBottom:'1px solid var(--card-border)', background:'var(--table-header)' }}>
+          <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color:'var(--text-secondary)' }}>
+            Tamil Predictive Doshas
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color:'var(--text-muted)' }}>
+            Thithi Soonyam · Vadhai/Vainasikam · Yogi · Mudakku
+          </p>
+        </div>
+        <div className="px-4 sm:px-5 py-4">
+          <TamilDoshasPanel chart={chart} userId={userId} enabled={chartTabActive} />
         </div>
       </div>
 

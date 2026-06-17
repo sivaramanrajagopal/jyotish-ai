@@ -61,6 +61,7 @@ from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
 from agents.ashtakavarga_agent import calculate_ashtakavarga, bav_context_for_narrator
+from agents.tamil_dosha_agent import compute_tamil_doshas
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
@@ -1388,6 +1389,40 @@ def ashtakavarga_endpoint(
             "Ashtakavarga error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Ashtakavarga calculation failed.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tamil predictive doshas (natal)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TamilDoshasRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    shashti_variant: str = "mesha_simha"
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/tamil-doshas")
+@limiter.limit("30/minute")
+def tamil_doshas_endpoint(
+    request: Request,
+    req: TamilDoshasRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """
+    Natal Tamil predictive doshas: Thithi Soonyam, Mudakku (A/B),
+    Vadhai/Vainasikam red zones from Janma Moon, Yogi/Avayogi.
+    """
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    variant = req.shashti_variant if req.shashti_variant in ("mesha_simha", "mesha_kataka") else "mesha_simha"
+    try:
+        return compute_tamil_doshas(chart, shashti_variant=variant)
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Tamil doshas error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Tamil doshas calculation failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
