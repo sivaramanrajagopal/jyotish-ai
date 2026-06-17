@@ -26,6 +26,7 @@ from agents.transit_score_agent import (
     dasha_transit_correlation,
 )
 from agents.ashtakavarga_agent import bav_context_for_narrator
+from agents.tamil_dosha_agent import dosha_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
     format_full_dasha_cycle_markdown,
@@ -60,6 +61,10 @@ When the user asks about **next Mahadasha** or **Mahadasha timeline**, include t
 When the user asks for **full dasa cycle**, **full dasha bhukti cycle**, or taps the Dasa Cycle topic, you MUST include \
 the exact FULL DASA CYCLE block below (both tables, unchanged) plus 2–3 sentences on what is active now and what is next. \
 Add a brief 2–3 sentence interpretation before or after any other table.
+
+When the user asks about **Tamil doshas**, **dagdha**, **Mudakku**, **Vadhai**, **Vainasikam**, **Yogi/Avayogi**, or **parihara/remedies** for doshas, \
+use ONLY the TAMIL PREDICTIVE DOSHAS block appended below. Give house-specific upaya (2–4 steps per affected house). \
+Prefer Mudakku Method B; note Method A as unverified. Never invent mantras.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -375,7 +380,12 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
     except Exception:
         bav_ctx = ""
 
-    return ("\n\n" + gochara if gochara else "") + bav_ctx
+    try:
+        dosha_ctx = "\n\n" + dosha_context_for_narrator(natal_chart)
+    except Exception:
+        dosha_ctx = ""
+
+    return ("\n\n" + gochara if gochara else "") + bav_ctx + dosha_ctx
 
 
 _TAMIL_CHAT_SUFFIX = """

@@ -55,6 +55,14 @@ const TOPICS = [
     question: "Show my high-level full Vimshottari Dasa–Bhukti cycle: Mahadasha roadmap plus all bhuktis in my current Mahadasha, in tables.",
   },
   {
+    key: 'tamil_doshas',
+    label: '🔯 Tamil Doshas',
+    color: '#e879f9',
+    bg: 'rgba(232,121,249,0.15)',
+    border: 'rgba(232,121,249,0.35)',
+    question: "Explain my natal Tamil doshas (dagdha, Vadhai, Vainasikam, Yogi) and suggest practical parihara remedies for each affected house.",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',
@@ -89,6 +97,7 @@ function detectTopics(text) {
   if (/mahadasha|bhukti|antardasha|dasha|antar/.test(t))                              found.push('dasha')
   if (/\|.*\|.*\|/.test(text) && /bhukti|antardasha/i.test(t) && !/mahadasha cycle/i.test(t)) found.push('dasha_table')
   if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
+  if (/dagdha|soonya|mudakku|vadhai|vainasikam|avayogi|yogi graha|tamil dosha|parihara/.test(t)) found.push('tamil_doshas')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')
   if (/saturn|jupiter|mars|venus|mercury|sun|moon|rahu|ketu|graha|planet/.test(t))    found.push('planets')
