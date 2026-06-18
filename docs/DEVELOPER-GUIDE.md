@@ -3,7 +3,7 @@
 Comprehensive reference for building, deploying, debugging, and extending the app.  
 Audience: engineers who may never have seen this codebase before.
 
-**Related docs:** [DEPLOY.md](../DEPLOY.md) · [SECURITY.md](../SECURITY.md) · [STEP-1](../docs/STEP-1-PRODUCTION-CONFIG.md) through [STEP-4-7](../docs/STEP-4-7-COMPLETE.md) · [ADMIN-DASHBOARD.md](../docs/ADMIN-DASHBOARD.md) · [SUPABASE-ANALYTICS-DASHBOARD.md](../docs/SUPABASE-ANALYTICS-DASHBOARD.md)
+**Related docs:** [README.md](../README.md) · [docs/README.md](./README.md) · [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md) · [SECURITY.md](../SECURITY.md) · [STEP-1](./STEP-1-PRODUCTION-CONFIG.md) through [STEP-4-7](./STEP-4-7-COMPLETE.md) · [ADMIN-DASHBOARD.md](./ADMIN-DASHBOARD.md) · [SUPABASE-ANALYTICS-DASHBOARD.md](./SUPABASE-ANALYTICS-DASHBOARD.md)
 
 ---
 
@@ -27,6 +27,8 @@ Audience: engineers who may never have seen this codebase before.
 16. [Debugging playbook](#16-debugging-playbook)
 17. [How to extend the app](#17-how-to-extend-the-app)
 18. [Astrological conventions](#18-astrological-conventions)
+19. [Vimshottari Dasha engine & Chat AI grounding](#19-vimshottari-dasha-engine--chat-ai-grounding)
+20. [Feature modules (Career, Health, Bhavam)](#20-feature-modules-career-health-bhavam)
 
 ---
 
@@ -42,6 +44,11 @@ Audience: engineers who may never have seen this codebase before.
 - **Ask AI** — multi-turn chat grounded in the user's chart.
 - **Prashna** — horary astrology via a **12-engine rule pipeline**, optional AI narration.
 - **Ashtakavarga** — BAV/SAV grid.
+- **Career** — D1 + D10 Dasamsa, 10 PDF10 rules, profession tags, Dasa timing.
+- **Health** — D3 Drekkana body map, Dasa/Bhukti + transit awareness (bilingual EN/TA).
+- **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers).
+- **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi.
+- **Indu Lagna** — fortune lagna + wealth-favourable Dasa/transit windows.
 
 **Production layout:**
 
@@ -162,9 +169,18 @@ jyotish-ai/
 │   │   ├── sky_today_agent.py    # Cosmos strip header
 │   │   ├── orchestrator.py     # Forecast context assembly
 │   │   ├── narrator.py         # AI forecast XML sections
-│   │   ├── chat_agent.py       # AI chat
+│   │   ├── chat_agent.py       # AI chat + multi-context grounding
+│   │   ├── career_agent.py     # D1+D10 career prediction
+│   │   ├── career/             # d10, rules, profession, timing, atmakaraka
+│   │   ├── health_agent.py     # D3 health awareness
+│   │   ├── health/             # d3, body_map, warnings
+│   │   ├── bhavat_bhavam_agent.py
+│   │   ├── bhavat_bhavam/      # core + slices
+│   │   ├── tamil_dosha_agent.py
+│   │   ├── tamil_dosha/        # soonyam, mudakku, yogi, red_zones
+│   │   ├── indu_lagna_agent.py
 │   │   └── prashna/            # 12 rule engines + ai_narrator
-│   ├── tests/                  # pytest (no network/OpenAI)
+│   ├── tests/                  # pytest (~90 tests, no network/OpenAI)
 │   └── requirements.txt
 │
 ├── frontend/                   # React + Vite (Vercel root directory)
@@ -186,8 +202,8 @@ jyotish-ai/
 │   ├── prashna_sessions.sql
 │   └── panchangam_sql/         # Bulk panchangam cache inserts
 │
-├── docs/                       # Step guides + this file
-├── DEPLOY.md
+├── docs/                       # Step guides + this file + FEATURES-TECHNICAL-REFERENCE.md
+├── README.md                   # Quick start pointer
 ├── SECURITY.md
 └── .github/workflows/ci.yml
 ```
@@ -545,13 +561,19 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Tab key | Component | Requires chart? | Uses AI? |
 |---------|-----------|-----------------|----------|
 | `home` | Inline `HomeTab` | No | No |
-| `chart` | `MyChartTab` | Yes | No |
+| `chart` | `MyChartTab` + sub-panels | Yes | No |
+| `career` | `CareerPanel` | Yes | No* |
+| `health` | `HealthPanel` | Yes | No* |
 | `gochar` | `GocharamTab` | Yes | No |
 | `panchangam` | `PanchangamTab` | No | No |
 | `prashna` | `PrashnaTab` | Optional | Optional |
 | `chat` | `ChatPanel` | Yes | Yes |
 | `forecast` | `ForecastPanel` | Yes | Yes |
 | `admin` | `AdminPanel` | No | No |
+
+\*Career/Health tabs are rule-only; chat injects `career_context_for_narrator` / `health_context_for_narrator`.
+
+**My Chart sub-panels** (same tab, scroll sections): `AshtakavargaPanel`, `TamilDoshasPanel`, `InduLagnaPanel`, `DashaRoadmap`.
 
 **Lazy mounting:** tabs mount on first visit (`mountedTabs` Set) to preserve Chat/Forecast state.
 
@@ -574,7 +596,10 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 
 | Component | API endpoints |
 |-----------|---------------|
-| `SouthIndianChart` | — (renders chart JSON) |
+| `SouthIndianChart` | — (renders chart JSON; props: `drekkana`, `dasamsa`) |
+| `CareerPanel` | `POST /career/predict` |
+| `HealthPanel` | `POST /health/analyze` |
+| `BhavatBhavamLayer` | bundled in career/health responses |
 | `GocharamTab` | `POST /forecast/scores` |
 | `ForecastPanel` | `/forecast/scores`, `/forecast/daily-reading`, `/forecast/house` |
 | `ChatPanel` | `POST /chat` |
@@ -582,6 +607,8 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `PanchangamTab` | `GET /panchangam/today`, `/date`, `/locations` |
 | `PersonalPanchangamCard` | `GET /personal-panchangam/*` |
 | `AshtakavargaPanel` | `POST /ashtakavarga` |
+| `TamilDoshasPanel` | `POST /tamil-doshas` |
+| `InduLagnaPanel` | `POST /indu-lagna` |
 | `AdminPanel` | `GET /admin/*` |
 
 ### Styling
@@ -610,7 +637,14 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Prashna verdict | `POST /prashna/analyze` | prashna engines | No |
 | Prashna narration | same, `include_ai=true` | ai_narrator | **Yes** |
 | Ashtakavarga | `POST /ashtakavarga` | ashtakavarga_agent | No |
+| Tamil Doshas | `POST /tamil-doshas` | tamil_dosha_agent | No |
+| Indu Lagna | `POST /indu-lagna` | indu_lagna_agent | No |
+| Career | `POST /career/predict` | career_agent | No* |
+| Health | `POST /health/analyze` | health_agent | No* |
+| Bhavat Bhavam | bundled in career/health | bhavat_bhavam_agent | No |
 | Tara/Ashtama | `GET /personal-panchangam/*` | tara_engine | No |
+
+\*Chat narrator context only — see [FEATURES-TECHNICAL-REFERENCE.md §8](./FEATURES-TECHNICAL-REFERENCE.md#8-chat-ai-grounding).
 
 ### AI quota kinds
 
@@ -709,12 +743,21 @@ Auth: optional `Authorization: Bearer <supabase_jwt>`.
 | POST | `/forecast/house` | AI per-house insight |
 | GET | `/transit-chart` | Query: date, time, lat, lon |
 
+### Career & Health
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/career/predict` | D1+D10 rules, profession tags, timing, `bhavat_bhavam` |
+| POST | `/health/analyze` | D3 body map, factor_groups, transit_today, `bhavat_bhavam` |
+
 ### Other
 
 | Method | Path | Notes |
 |--------|------|-------|
 | POST | `/chat` | `{ messages: [{role, content}] }` |
 | POST | `/ashtakavarga` | BAV/SAV |
+| POST | `/tamil-doshas` | Tamil predictive doshas |
+| POST | `/indu-lagna` | Indu Lagna fortune periods |
 | POST | `/prashna/analyze` | Horary |
 | GET | `/prashna/categories` | Question catalog |
 | GET | `/panchangam/today` | Query: location |
@@ -759,7 +802,7 @@ See [SECURITY.md](../SECURITY.md) for OWASP audit notes.
 
 ## 14. Deployment
 
-Full walkthrough: [DEPLOY.md](../DEPLOY.md).
+Full walkthrough: [STEP-1-PRODUCTION-CONFIG.md](./STEP-1-PRODUCTION-CONFIG.md) and [STEP-4-7-COMPLETE.md](./STEP-4-7-COMPLETE.md).
 
 ### Render (backend)
 
@@ -816,8 +859,14 @@ pytest tests/ -q
 | `test_chat_dasha_context.py` | Chat prompt dasha grounding |
 | `test_analytics.py` | Event name validation |
 | `test_admin_app_events.py` | Admin aggregation |
+| `test_career.py` | D10 + PDF10 rules |
+| `test_health.py` | D3 body map + factors |
+| `test_bhavat_bhavam.py` | House-from-house links |
+| `test_tamil_doshas.py` | Tamil dosha engines |
+| `test_indu_lagna.py` | Indu Lagna periods |
+| `test_chat_*_context.py` | Chat prompt grounding per feature |
 
-Tests run **without network or OpenAI**.
+Tests run **without network or OpenAI** (~90 tests total).
 
 ### Frontend — Vitest
 
@@ -863,6 +912,11 @@ npm test
 | Admin tab missing | Email not in list | Match `VITE_ADMIN_EMAILS` and `ADMIN_EMAILS` |
 | Prashna catalog mismatch | Frontend/backend drift | Run `test_prashna_catalog.py` |
 | Indigo broken chart borders | CSS cell rings | Use tint-only Lagna highlight (see `index.css`) |
+| SW error on `?tab=health` | Service worker | Bump `sw.js` cache version; add tab to `ALLOWED_TABS` |
+| Health Awareness (0) | Stale deploy | Backend needs `factor_groups` (≥7ecfd53) |
+| `[ashtama_agent] duplicate key` | Upsert conflict | `on_conflict=user_id,date` on daily panchangam row |
+| Career/Health 500 | Missing dob | Recalculate chart; check `birth_data` in `natal_charts` |
+| Bhavam layer empty | No active primary | Expected if H6/H8/H12 quiet; see FEATURES doc |
 
 ### Debug commands
 
@@ -1022,6 +1076,36 @@ CSS in `index.css`:
 
 ---
 
+## 20. Feature modules (Career, Health, Bhavam)
+
+Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md)** — file maps, API shapes, scoring rules, chat chips, and production troubleshooting.
+
+### Career (`POST /career/predict`)
+
+- **Engines:** `career/d10.py`, `career/rules.py` (10 PDF10 rules), `career/profession.py`, `career/timing.py`
+- **Frontend:** `CareerPanel.jsx` — D1+D10 charts, rules checklist, timing tables, `BhavatBhavamLayer`
+- **Chat:** 💼 chip → `career_context_for_narrator()`
+
+### Health (`POST /health/analyze`)
+
+- **Engines:** `health/d3.py` (Parasara decans), `health/body_map.py`, `health/warnings.py`
+- **Frontend:** `HealthPanel.jsx` + `BodyMapSvg.jsx` — transits, grouped factors, zone rationale
+- **Chat:** 🏥 chip → `health_context_for_narrator()`
+- **Disclaimer:** informational only — not medical diagnosis
+
+### Bhavat Bhavam (bundled)
+
+- **Engines:** `bhavat_bhavam/core.py`, `bhavat_bhavam/slices.py`
+- **Health slice:** H6→11, H8→3, H12→11 when primary active
+- **Career slice:** H10→7 (always), H2→3 when active
+- **Chat:** 🏠 chip → `bhavat_bhavam_context_for_narrator()`
+
+### Service worker
+
+After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` and bump `CACHE_SHELL` version. See FEATURES doc §10.
+
+---
+
 ## Quick reference card
 
 ```
@@ -1035,10 +1119,11 @@ Dasha:    dasha_core.py → chat tables (Bhukti / Dasa Cycle tags)
 Auth:     Supabase magic link + JWT on API
 Gochar:   POST /forecast/scores → GocharamTab (no AI)
 Forecast: Same scores + POST /forecast/daily-reading (AI)
-Tests:    pytest (backend) · vitest (frontend)
-Deploy:   DEPLOY.md
+Tests:    pytest (~90) · vitest (frontend)
+Features: docs/FEATURES-TECHNICAL-REFERENCE.md
+Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
 ```
 
 ---
 
-*Last updated: 2026-06-14 — Gochar tab, dasha_core, chat Dasa Cycle/Bhukti tables, anti-hallucination grounding.*
+*Last updated: 2026-06-06 — Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*
