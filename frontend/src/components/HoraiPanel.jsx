@@ -59,7 +59,18 @@ function HoraiCell({ slot, active, ubaPlanet, showUba }) {
 export default function HoraiPanel({ displayDate, location, panch, enabled = true, onSelectDate }) {
   const [mode, setMode] = useState(HORAI_MODES.FIXED)
   const [nextSunrise, setNextSunrise] = useState(null)
+  const [nightOpen, setNightOpen] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 640px)').matches : true
+  ))
   const now = useNowTick(1000)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)')
+    const sync = () => setNightOpen(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   const timeZone = panch?.timezone || 'Asia/Kolkata'
   const weekdaySun0 = weekdaySunZeroFromVaaram(panch?.vaaram_name)
@@ -203,7 +214,7 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
         <>
           <details className="hr-section" open>
             <summary className="hr-section__summary">
-              Day horai
+              <span className="hr-section__title">Day horai</span>
               <span className="hr-section__hint">
                 {mode === HORAI_MODES.FIXED ? '6 AM – 6 PM' : 'Sunrise – Sunset'}
               </span>
@@ -221,9 +232,9 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
             </div>
           </details>
 
-          <details className="hr-section" open>
+          <details className="hr-section" open={nightOpen} onToggle={e => setNightOpen(e.target.open)}>
             <summary className="hr-section__summary">
-              Night horai
+              <span className="hr-section__title">Night horai</span>
               <span className="hr-section__hint">
                 {mode === HORAI_MODES.FIXED
                   ? `6 PM ${displayDate} – 6 AM ${addDaysYmd(displayDate, 1)}`

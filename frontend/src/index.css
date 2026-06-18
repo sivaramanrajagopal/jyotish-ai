@@ -5677,8 +5677,10 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .hr-mode-btn {
   border: none;
   background: transparent;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 0.8rem;
   font-weight: 600;
   border-radius: 0.3rem;
   cursor: pointer;
@@ -5739,10 +5741,20 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   font-weight: 600;
   font-size: 0.85rem;
   list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
 }
 
+.hr-section__title { font-weight: 600; }
+
 .hr-section__summary::-webkit-details-marker { display: none; }
-.hr-section__hint { margin-left: 0.5rem; font-weight: 400; font-size: 0.72rem; color: var(--text-muted); }
+.hr-section__hint { font-weight: 400; font-size: 0.72rem; color: var(--text-muted); flex: 1 1 100%; }
+
+@media (min-width: 640px) {
+  .hr-section__hint { flex: 0 1 auto; margin-left: 0.5rem; }
+}
 
 .hr-grid {
   display: grid;
@@ -5772,8 +5784,13 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
 .hr-cell__planet { font-weight: 700; font-size: 0.78rem; }
 .hr-cell__en { color: var(--text-muted); font-size: 0.65rem; }
-.hr-cell__time { margin-top: 0.2rem; font-size: 0.62rem; color: var(--text-muted); }
-.hr-cell__uba { margin-top: 0.2rem; font-size: 0.62rem; color: var(--orange); font-weight: 600; }
+.hr-cell__time { margin-top: 0.2rem; font-size: 0.68rem; color: var(--text-muted); line-height: 1.25; }
+.hr-cell__uba { margin-top: 0.2rem; font-size: 0.65rem; color: var(--orange); font-weight: 600; }
+
+@media (max-width: 639px) {
+  .hr-cell__time { font-size: 0.72rem; }
+  .hr-now__range { margin-left: 0; width: 100%; margin-top: 0.15rem; }
+}
 
 .hr-primer {
   margin-top: 0.75rem;
