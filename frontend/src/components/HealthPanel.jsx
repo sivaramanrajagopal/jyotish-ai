@@ -46,6 +46,49 @@ function Disclaimer({ text }) {
   )
 }
 
+function HealthHousesPrimer() {
+  return (
+    <details className="hl-primer">
+      <summary className="hl-primer__summary">
+        <Bilingual
+          en="What are D3 health houses (6, 8, 12)?"
+          ta="D3 ஆரோக்கிய வீடுகள் (6, 8, 12) என்றால்?"
+          inline
+        />
+      </summary>
+      <p className="hl-primer__body">
+        <Bilingual
+          en="In the D3 Drekkana chart, houses 6, 8, and 12 are dusthana (challenging) zones linked to vitality and recovery. Planets here — especially malefics — raise awareness for the mapped body part. Colors on the map reflect combined natal, Dasa, and transit scores — not a medical diagnosis."
+          ta="D3 திரேக்கான வரைபடத்தில் 6, 8, 12ம் வீடுகள் துஷ்ட வீடுகள் — உடல் நிலை மற்றும் குணமடைதலுடன் தொடர்புடையவை. இங்குள்ள கிரகங்கள் — குறிப்பாக பாப கிரகங்கள் — உடல் பகுதிக்கு விழிப்புணர்வை உயர்த்தும். வரைபட நிறங்கள் ஜாதகம், தசை, கோசார மதிப்பெண்களின் தொகை — மருத்துவ நோயறிதல் அல்ல."
+          inline
+        />
+      </p>
+    </details>
+  )
+}
+
+function ZoneRationale({ region, labelPrefix }) {
+  if (!region?.rationale_en) return null
+  const prefix = labelPrefix || region.label_en
+  return (
+    <p className="hl-zone-rationale">
+      <strong>{prefix}</strong>
+      {' — '}
+      <Bilingual en={region.rationale_en} ta={region.rationale_ta} inline />
+    </p>
+  )
+}
+
+function HouseBadge({ house, kind }) {
+  if (![6, 8, 12].includes(house)) return house
+  return (
+    <span className="hl-house-badge" title={`D${kind} health house`}>
+      {house}
+      <span className="hl-house-badge__dot" aria-hidden>●</span>
+    </span>
+  )
+}
+
 function TagChips({ tags }) {
   if (!tags?.length) return null
   return (
@@ -57,10 +100,10 @@ function TagChips({ tags }) {
   )
 }
 
-function D3FactorCard({ f }) {
+function D3FactorCard({ f, id }) {
   const cls = RISK_CLASS[f.risk] || RISK_CLASS.moderate
   return (
-    <article className={`hl-warning ${cls}`}>
+    <article id={id} className={`hl-warning ${cls}`}>
       <div className="hl-warning__top">
         <Bilingual en={f.body_part_en} ta={f.body_part_ta} inline />
         <span className={`hl-risk-badge ${cls}`}>
@@ -170,6 +213,7 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
   const [error, setError] = useState('')
   const [selectedZone, setSelectedZone] = useState(null)
   const tableRef = useRef(null)
+  const factorsRef = useRef(null)
 
   const load = useCallback(() => {
     if (!chart || !enabled) return
@@ -195,7 +239,17 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
 
   const handleZoneSelect = (zone) => {
     setSelectedZone(zone)
-    if (zone && tableRef.current) {
+    const factor = (data?.factor_groups?.d3_natal || []).find(f => f.body_zone === zone)
+    if (factor) {
+      const el = document.getElementById(`hl-factor-${factor.planet}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        el.classList.add('hl-warning--pulse')
+        window.setTimeout(() => el.classList.remove('hl-warning--pulse'), 1600)
+      } else if (factorsRef.current) {
+        factorsRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    } else if (tableRef.current) {
       tableRef.current.open = true
       tableRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
@@ -221,6 +275,9 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
   const zoneDetail = selectedZone
     ? (data.body_regions || []).find(r => r.zone === selectedZone)
     : null
+
+  const topRegion = (data.body_regions || [])[0] || null
+  const displayRegion = zoneDetail || topRegion
 
   const highlightedPlanets = selectedZone
     ? new Set(
@@ -248,7 +305,7 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
         </p>
         <p className="hl-hero__meta">
           D3 Lagna <strong>{s.d3_lagna}</strong> ({s.d3_lagna_ta}) ·{' '}
-          <Bilingual en="Lagna body" ta="லக்ன உடல் பகுதி" inline />:{' '}
+          <Bilingual en="Lagna body (chart anchor)" ta="லக்ன உடல் (அடிப்படை)" inline />:{' '}
           <strong>{s.lagna_body_en}</strong> / {s.lagna_body_ta}
         </p>
         <p className="hl-hero__meta">
@@ -258,6 +315,8 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
       </div>
 
       <TransitTodayTable rows={data.transit_today} date={s.transit_date} />
+
+      <HealthHousesPrimer />
 
       <div className="hl-charts-grid">
         <div className="hl-chart-card">
@@ -274,6 +333,16 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
             <span className="hl-legend__item hl-risk--moderate">Moderate / மிதம்</span>
             <span className="hl-legend__item hl-risk--high">Higher / அதிகம்</span>
           </div>
+          {displayRegion && (
+            <ZoneRationale
+              region={displayRegion}
+              labelPrefix={
+                selectedZone
+                  ? `${displayRegion.label_en} (selected)`
+                  : `${displayRegion.label_en} (highest score)`
+              }
+            />
+          )}
           {zoneDetail && (
             <p className="hl-zone-detail">
               <strong>{zoneDetail.label_en}</strong> / {zoneDetail.label_ta}
@@ -312,7 +381,7 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
           />
         </p>
       ) : (
-        <div className="hl-factor-groups">
+        <div className="hl-factor-groups" ref={factorsRef}>
           <FactorSection
             id="hl-d3-natal"
             titleEn="D3 natal"
@@ -325,7 +394,11 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
             ) : (
               <div className="hl-warnings">
                 {d3Natal.map(f => (
-                  <D3FactorCard key={`${f.planet}-${f.d3_house}`} f={f} />
+                  <D3FactorCard
+                    key={`${f.planet}-${f.d3_house}`}
+                    id={`hl-factor-${f.planet}`}
+                    f={f}
+                  />
                 ))}
               </div>
             )}
@@ -364,7 +437,7 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
               <tr>
                 <th>Planet / கிரகம்</th>
                 <th>D1 H</th>
-                <th>D3 H</th>
+                <th>D3 H <span className="hl-col-hint" title="● = health house 6/8/12">●</span></th>
                 <th>Body EN</th>
                 <th>உடல் பகுதி</th>
               </tr>
@@ -376,13 +449,21 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
                   <tr
                     key={row.planet}
                     className={[
-                      row.health_house_d3 ? 'hl-table__sensitive' : '',
+                      row.health_house_d3 || row.health_house_d1 ? 'hl-table__sensitive' : '',
                       highlight ? 'hl-table__highlight' : '',
                     ].filter(Boolean).join(' ')}
                   >
-                    <td>{row.planet}</td>
-                    <td>{row.d1_house}</td>
-                    <td>{row.d3_house}</td>
+                    <td>
+                      {row.planet}
+                      {row.health_house_d3 && (
+                        <span className="hl-row-badge" title="D3 health house">D3</span>
+                      )}
+                      {row.health_house_d1 && (
+                        <span className="hl-row-badge hl-row-badge--d1" title="D1 health house">D1</span>
+                      )}
+                    </td>
+                    <td><HouseBadge house={row.d1_house} kind="1" /></td>
+                    <td><HouseBadge house={row.d3_house} kind="3" /></td>
                     <td>{row.body_part_en}</td>
                     <td>{row.body_part_ta}</td>
                   </tr>

@@ -13,6 +13,7 @@ from agents.health.warnings import (
     apply_transit_scores,
     build_body_regions,
     build_factor_groups,
+    enrich_body_regions_rationale,
     build_planet_rows,
     build_transit_today,
     flatten_warnings_for_chat,
@@ -99,6 +100,12 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         maha=maha,
         bhukti=bhukti,
     )
+    body_regions = enrich_body_regions_rationale(
+        body_regions,
+        rows,
+        factor_groups.get("d3_natal") or [],
+        transit_items,
+    )
     warnings = flatten_warnings_for_chat(factor_groups)
     transit_today = build_transit_today(
         transit_pp,
@@ -106,6 +113,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         d3_asc_idx=d3_asc_idx,
     )
 
+    top_region = body_regions[0] if body_regions else {}
     top_factor = (factor_groups.get("d3_natal") or [None])[0]
     overall = top_factor["risk"] if top_factor else (body_regions[0]["risk"] if body_regions else "low")
     transit_date = datetime.date.today().isoformat()
@@ -127,6 +135,10 @@ def compute_health_analysis(natal_chart: dict) -> dict:
             "transit_date": transit_date,
             "top_zone_en": top_factor["body_part_en"] if top_factor else "",
             "top_zone_ta": top_factor["body_part_ta"] if top_factor else "",
+            "focus_zone_en": top_region.get("label_en", ""),
+            "focus_zone_ta": top_region.get("label_ta", ""),
+            "focus_rationale_en": top_region.get("rationale_en", ""),
+            "focus_rationale_ta": top_region.get("rationale_ta", ""),
         },
         "current_dasa": {
             "maha_dasa": maha,

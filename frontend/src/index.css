@@ -5188,6 +5188,83 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 
 .hl-table--transit { font-size: 0.8rem; }
 
+.hl-primer {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.hl-primer__summary {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.hl-primer__summary::-webkit-details-marker { display: none; }
+
+.hl-primer__body {
+  margin: 0;
+  padding: 0 0.75rem 0.65rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.hl-zone-rationale {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  border-radius: 0.5rem;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+}
+
+.hl-house-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 600;
+}
+
+.hl-house-badge__dot {
+  color: #d97706;
+  font-size: 0.55rem;
+  line-height: 1;
+}
+
+.hl-col-hint {
+  color: #d97706;
+  font-size: 0.65rem;
+}
+
+.hl-row-badge {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 0.2rem;
+  background: rgba(245, 158, 11, 0.2);
+  color: #d97706;
+  vertical-align: middle;
+}
+
+.hl-row-badge--d1 {
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+.hl-warning--pulse {
+  animation: hl-pulse 0.6s ease-in-out 2;
+}
+
+@keyframes hl-pulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45); }
+}
+
 @media (max-width: 768px) {
   .hl-charts-grid {
     grid-template-columns: 1fr;

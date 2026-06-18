@@ -70,6 +70,9 @@ def test_health_analysis_structure():
     assert out["summary"]["transit_date"]
     assert all("house_d1" in t for t in out["transit_today"])
     assert all("house_d3" in t for t in out["transit_today"])
+    top = out["body_regions"][0]
+    assert top.get("rationale_en")
+    assert out["summary"].get("focus_rationale_en")
 
 
 def test_health_narrator_context():

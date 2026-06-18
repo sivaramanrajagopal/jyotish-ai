@@ -316,6 +316,42 @@ def build_factor_groups(
     }
 
 
+def enrich_body_regions_rationale(
+    regions: list[dict],
+    rows: list[dict],
+    d3_natal: list[dict],
+    transit_items: list[dict],
+) -> list[dict]:
+    """Attach short EN/TA explanations for why each body zone is scored."""
+    en_parts: dict[str, list[str]] = defaultdict(list)
+    ta_parts: dict[str, list[str]] = defaultdict(list)
+
+    for f in d3_natal:
+        z = f["body_zone"]
+        en_parts[z].append(f"{f['planet']} D3 H{f['d3_house']} → {f['body_part_en']}")
+        ta_parts[z].append(f"{f['planet']} D3 {f['d3_house']} → {f['body_part_ta']}")
+
+    part_to_zone = {r["body_part_en"]: r["body_zone"] for r in rows}
+    for t in transit_items:
+        bp_en = t.get("body_part_en") or ""
+        bp_ta = t.get("body_part_ta") or ""
+        if not bp_en:
+            continue
+        z = part_to_zone.get(bp_en)
+        if z:
+            en_parts[z].append(f"Transit {t['planet']} → {bp_en}")
+            ta_parts[z].append(f"கோசார {t['planet']} → {bp_ta}")
+
+    for region in regions:
+        z = region["zone"]
+        triggers_en = en_parts.get(z, [])
+        triggers_ta = ta_parts.get(z, [])
+        region["rationale_en"] = "; ".join(triggers_en[:3]) if triggers_en else ""
+        region["rationale_ta"] = "; ".join(triggers_ta[:3]) if triggers_ta else ""
+
+    return regions
+
+
 def build_body_regions(zone_scores: dict[str, float]) -> list[dict]:
     zone_labels = {
         "head": {"en": "Head / face", "ta": "தலை / முகம்"},
