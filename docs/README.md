@@ -6,7 +6,7 @@ Start here when spinning up, debugging production, or extending features.
 
 1. [../README.md](../README.md) — clone, env, run locally (5 min)
 2. [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md) — architecture, DB, API, auth, deploy, debugging
-3. [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md) — Career, Health, Bhavam, chat grounding, SW issues
+3. [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md) — Career, Health, Dosha Radar, Horai, Bhavam, chat grounding, SW issues
 
 ## Setup & production
 
@@ -33,6 +33,8 @@ All in [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md):
 
 - Career (D1 + D10, PDF10 rules)
 - Health (D3, body map, transits)
+- **Dosha Radar** (obstruction doshas, Pushkara Navamsa, 90-day forecast)
+- **Horai & Uba Horai** (Panchangam tab — fixed 6 AM or sunrise modes)
 - Bhavat Bhavam
 - Tamil Doshas, Indu Lagna
 - Chat AI context blocks

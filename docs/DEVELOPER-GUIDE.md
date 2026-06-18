@@ -28,7 +28,7 @@ Audience: engineers who may never have seen this codebase before.
 17. [How to extend the app](#17-how-to-extend-the-app)
 18. [Astrological conventions](#18-astrological-conventions)
 19. [Vimshottari Dasha engine & Chat AI grounding](#19-vimshottari-dasha-engine--chat-ai-grounding)
-20. [Feature modules (Career, Health, Bhavam)](#20-feature-modules-career-health-bhavam)
+20. [Feature modules (Career, Health, Dosha Radar, Horai, Bhavam)](#20-feature-modules-career-health-dosha-radar-horai-bhavam)
 
 ---
 
@@ -46,8 +46,10 @@ Audience: engineers who may never have seen this codebase before.
 - **Ashtakavarga** — BAV/SAV grid.
 - **Career** — D1 + D10 Dasamsa, 10 PDF10 rules, profession tags, Dasa timing.
 - **Health** — D3 Drekkana body map, Dasa/Bhukti + transit awareness (bilingual EN/TA).
+- **Dosha Radar** — live obstruction doshas, Pushkara Navamsa, 90-day forecast (dedicated tab).
+- **Horai & Uba Horai** — planetary hours inside Panchangam (fixed 6 AM or sunrise slots).
 - **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers).
-- **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi.
+- **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi (My Chart; links to Dosha Radar).
 - **Indu Lagna** — fortune lagna + wealth-favourable Dasa/transit windows.
 
 **Production layout:**
@@ -68,7 +70,7 @@ Audience: engineers who may never have seen this codebase before.
 
 | Pattern | Present? | Where |
 |---------|----------|-------|
-| Deterministic calculation engines | ✅ | `natal_agent`, `dasha_agent`, `panchangam_agent`, `transit_score_agent`, `ashtakavarga_agent`, `tara_engine`, `prashna/*_engine.py` |
+| Deterministic calculation engines | ✅ | `natal_agent`, `dasha_agent`, `panchangam_agent`, `transit_score_agent`, `ashtakavarga_agent`, `dosha_radar_agent`, `tara_engine`, `prashna/*_engine.py` |
 | Context assembly before LLM | ✅ | `orchestrator.py` gathers natal + dasha + panchangam + tara + SAV → `narrator.py` |
 | LLM for natural language | ✅ | OpenAI `gpt-4o-mini` in `narrator.py`, `chat_agent.py`, `prashna/ai_narrator.py`, inline in `main.py` |
 | Multi-step rule pipeline | ✅ | Prashna: chart → lagna → house → moon → verdict (no LLM until optional narrate step) |
@@ -178,16 +180,18 @@ jyotish-ai/
 │   │   ├── bhavat_bhavam/      # core + slices
 │   │   ├── tamil_dosha_agent.py
 │   │   ├── tamil_dosha/        # soonyam, mudakku, yogi, red_zones
+│   │   ├── dosha_radar_agent.py
+│   │   ├── dosha_radar/        # pushkara, afflictions, obstruction
 │   │   ├── indu_lagna_agent.py
 │   │   └── prashna/            # 12 rule engines + ai_narrator
-│   ├── tests/                  # pytest (~90 tests, no network/OpenAI)
+│   ├── tests/                  # pytest (~95 tests, no network/OpenAI)
 │   └── requirements.txt
 │
 ├── frontend/                   # React + Vite (Vercel root directory)
 │   ├── src/
 │   │   ├── pages/Home.jsx      # Single-page app — all tabs
-│   │   ├── components/         # UI by feature
-│   │   ├── lib/                # Payload builders, storage, analytics
+│   │   ├── components/         # UI by feature (DoshaRadarPanel, HoraiPanel, …)
+│   │   ├── lib/                # chartPayload, horai.js, analytics, …
 │   │   ├── api/client.js       # Axios + JWT interceptor
 │   │   ├── hooks/              # useAuth, useIsAdmin
 │   │   └── constants/          # Prashna catalog, legal text
@@ -564,6 +568,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `chart` | `MyChartTab` + sub-panels | Yes | No |
 | `career` | `CareerPanel` | Yes | No* |
 | `health` | `HealthPanel` | Yes | No* |
+| `dosha-radar` | `DoshaRadarPanel` | Yes | No* |
 | `gochar` | `GocharamTab` | Yes | No |
 | `panchangam` | `PanchangamTab` | No | No |
 | `prashna` | `PrashnaTab` | Optional | Optional |
@@ -573,7 +578,9 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 
 \*Career/Health tabs are rule-only; chat injects `career_context_for_narrator` / `health_context_for_narrator`.
 
-**My Chart sub-panels** (same tab, scroll sections): `AshtakavargaPanel`, `TamilDoshasPanel`, `InduLagnaPanel`, `DashaRoadmap`.
+**My Chart sub-panels** (same tab, scroll sections): `AshtakavargaPanel`, `TamilDoshasPanel` (links to Dosha Radar), `InduLagnaPanel`, `DashaRoadmap`.
+
+**Panchangam sub-panel:** `HoraiPanel` inside `PanchangamTab` (client-side; uses Panchangam sunrise/sunset).
 
 **Lazy mounting:** tabs mount on first visit (`mountedTabs` Set) to preserve Chat/Forecast state.
 
@@ -590,6 +597,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `analytics.js` | GA4 + `POST /analytics/event` |
 | `ensureChartDasha.js` | Client-side dasha backfill trigger |
 | `chartStale.js` | Detect outdated chart_data schema |
+| `horai.js` | Horai & Uba Horai slot math (Panchangam tab) |
 | `prashnaStorage.js` | Guest prashna history in browser |
 
 ### Components map
@@ -600,6 +608,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `CareerPanel` | `POST /career/predict` |
 | `HealthPanel` | `POST /health/analyze` |
 | `DoshaRadarPanel` | `POST /dosha-radar/analyze` |
+| `HoraiPanel` | — (Panchangam sunrise/sunset; optional `GET /panchangam/date` for next sunrise) |
 | `BhavatBhavamLayer` | bundled in career/health responses |
 | `GocharamTab` | `POST /forecast/scores` |
 | `ForecastPanel` | `/forecast/scores`, `/forecast/daily-reading`, `/forecast/house` |
@@ -867,9 +876,10 @@ pytest tests/ -q
 | `test_bhavat_bhavam.py` | House-from-house links |
 | `test_tamil_doshas.py` | Tamil dosha engines |
 | `test_indu_lagna.py` | Indu Lagna periods |
+| `test_dosha_radar.py` | Pushkara, obstruction, radar API shape |
 | `test_chat_*_context.py` | Chat prompt grounding per feature |
 
-Tests run **without network or OpenAI** (~90 tests total).
+Tests run **without network or OpenAI** (~95 tests total).
 
 ### Frontend — Vitest
 
@@ -883,6 +893,7 @@ npm test
 | `chartFormat.test.js` | Nakshatra formatting |
 | `formatMoment.test.js` | transit_moment display |
 | `prashnaCatalog.test.js` | Frontend/backend catalog sync |
+| `horai.test.js` | Horai midnight rule + sunrise label formatting |
 | `SouthIndianChart.test.jsx` | Chart component |
 
 **Note:** CI (`.github/workflows/ci.yml`) runs pytest + `npm run build` but **not** vitest yet.
@@ -920,6 +931,8 @@ npm test
 | `[ashtama_agent] duplicate key` | Upsert conflict | `on_conflict=user_id,date` on daily panchangam row |
 | Career/Health 500 | Missing dob | Recalculate chart; check `birth_data` in `natal_charts` |
 | Bhavam layer empty | No active primary | Expected if H6/H8/H12 quiet; see FEATURES doc |
+| Horai Invalid Date labels | Sunrise mode + old bundle | Deploy ≥ `185740d`; bump `sw.js` cache; hard refresh |
+| Dosha Radar offline blank | SW cache | `dosha-radar` in `ALLOWED_TABS`; cache v4+ |
 
 ### Debug commands
 
@@ -1042,6 +1055,9 @@ ensure_dasha(natal_chart)               # forecast/scores — backfill if missin
 | 🔄 My Dasha | `dasha` | Interpretation of current MD/Bhukti |
 | 📊 Bhukti Table | `dasha_table` | Exact `bhukti_table_markdown` (9 bhuktis in current MD) |
 | 🗓 Dasa Cycle | `dasha_cycle` | Exact `full_dasha_cycle_markdown` (MD roadmap + bhuktis) |
+| 🔥 Dosha Radar | `dosha_radar` | Obstruction doshas, Pushkara, Chandrashtama, 90d outlook |
+
+Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §10](./FEATURES-TECHNICAL-REFERENCE.md#10-chat-ai-grounding) (includes `dosha_radar_context_for_narrator` after Bhavam).
 
 **Anti-hallucination rules** in `chat_agent.py` system prompt:
 
@@ -1079,7 +1095,7 @@ CSS in `index.css`:
 
 ---
 
-## 20. Feature modules (Career, Health, Bhavam)
+## 20. Feature modules (Career, Health, Dosha Radar, Horai, Bhavam)
 
 Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md)** — file maps, API shapes, scoring rules, chat chips, and production troubleshooting.
 
@@ -1096,6 +1112,23 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 - **Chat:** 🏥 chip → `health_context_for_narrator()`
 - **Disclaimer:** informational only — not medical diagnosis
 
+### Dosha Radar (`POST /dosha-radar/analyze`)
+
+- **Engines:** `dosha_radar/pushkara.py` (24 Navamsa zones), `afflictions.py`, `obstruction.py`; reuses `tamil_dosha_agent` for blueprint
+- **Frontend:** `DoshaRadarPanel.jsx` — transit highlights, alerts, natal afflictions, 90d forecast, Pushkara windows
+- **Tab:** `?tab=dosha-radar` (🔥) between Health and Gochar; Home hero pill in `brand.js`
+- **My Chart link:** Tamil Doshas section → Dosha Radar for live transit layer
+- **Chat:** 🔥 chip → `dosha_radar_context_for_narrator()` (Pushkara, Divine Protection, obstruction alerts)
+- **Source:** ported from Mundane `hora-calculator` obstruction / `natal_protection` logic
+
+### Horai & Uba Horai (Panchangam tab)
+
+- **Engine:** `frontend/src/lib/horai.js` — weekday sequences, fixed 6 AM or sunrise modes, midnight owner-date rule
+- **Frontend:** `HoraiPanel.jsx` inside `PanchangamTab.jsx` — day/night grids, Uba sub-hora, countdown
+- **API:** none (uses Panchangam `sunrise`/`sunset`; fetches next-day sunrise for classical mode)
+- **Tests:** `frontend/src/lib/horai.test.js` (vitest)
+- **See:** FEATURES doc §5 for midnight rule and Invalid Date fix notes
+
 ### Bhavat Bhavam (bundled)
 
 - **Engines:** `bhavat_bhavam/core.py`, `bhavat_bhavam/slices.py`
@@ -1105,7 +1138,7 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 
 ### Service worker
 
-After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` and bump `CACHE_SHELL` version. See FEATURES doc §10.
+After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosha-radar`) and bump `CACHE_SHELL` (currently **v4**). See FEATURES doc §12.
 
 ---
 
@@ -1122,11 +1155,11 @@ Dasha:    dasha_core.py → chat tables (Bhukti / Dasa Cycle tags)
 Auth:     Supabase magic link + JWT on API
 Gochar:   POST /forecast/scores → GocharamTab (no AI)
 Forecast: Same scores + POST /forecast/daily-reading (AI)
-Tests:    pytest (~90) · vitest (frontend)
+Tests:    pytest (~95) · vitest (frontend, incl. horai.test.js)
 Features: docs/FEATURES-TECHNICAL-REFERENCE.md
 Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
 ```
 
 ---
 
-*Last updated: 2026-06-06 — Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*
+*Last updated: 2026-06-06 — Dosha Radar, Pushkara, Horai, Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*

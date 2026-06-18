@@ -1,6 +1,6 @@
 # Parashara Jyotish (jyotish-ai)
 
-Vedic astrology web app — sidereal natal chart, Gochara, Dasha, Career (D10), Health (D3), Prashna, and AI chat grounded in rule engines.
+Vedic astrology web app — sidereal natal chart, Gochara, Dasha, Career (D10), Health (D3), Dosha Radar (Pushkara + obstruction doshas), Horai, Prashna, and AI chat grounded in rule engines.
 
 ## Quick start (local)
 
@@ -28,7 +28,7 @@ Open **http://localhost:5173** · API docs **http://localhost:8000/docs**
 | Doc | Purpose |
 |-----|---------|
 | [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Architecture, DB, API, deploy, debugging playbook |
-| [docs/FEATURES-TECHNICAL-REFERENCE.md](docs/FEATURES-TECHNICAL-REFERENCE.md) | Per-feature implementation (Career, Health, Bhavam, etc.) |
+| [docs/FEATURES-TECHNICAL-REFERENCE.md](docs/FEATURES-TECHNICAL-REFERENCE.md) | Per-feature implementation (Career, Health, Dosha Radar, Horai, Bhavam, etc.) |
 | [docs/STEP-1-PRODUCTION-CONFIG.md](docs/STEP-1-PRODUCTION-CONFIG.md) | Production env checklist |
 | [docs/SUPABASE-ANALYTICS-DASHBOARD.md](docs/SUPABASE-ANALYTICS-DASHBOARD.md) | Analytics SQL + admin views |
 | [SECURITY.md](SECURITY.md) | Secrets and OWASP notes |

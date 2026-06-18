@@ -58,4 +58,4 @@ export const APP_FEATURE_LINKS = [
 
 /** Longer copy for SEO / meta only */
 export const APP_DESCRIPTION =
-  'Free Vedic natal chart (D1/D9), Vimshottari Dasha, Ashtakavarga, Gochara forecast with date picker, daily Panchangam, Tara Balam, and AI guidance.'
+  'Free Vedic natal chart (D1/D9), Vimshottari Dasha, Ashtakavarga, Gochara forecast with date picker, daily Panchangam with Horai, Dosha Radar (Pushkara), Tara Balam, and AI guidance.'

@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-06-06
+**Last updated:** 2026-06-06 (Dosha Radar, Pushkara, Horai)
 
 ---
 
@@ -12,14 +12,16 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 1. [Feature index](#1-feature-index)
 2. [Career (D1 + D10)](#2-career-d1--d10)
 3. [Health (D3 Drekkana)](#3-health-d3-drekkana)
-4. [Bhavat Bhavam](#4-bhavat-bhavam)
-5. [Tamil Doshas](#5-tamil-doshas)
-6. [Indu Lagna](#6-indu-lagna)
-7. [Gochara / Forecast](#7-gochara--forecast)
-8. [Chat AI grounding](#8-chat-ai-grounding)
-9. [My Chart sub-panels](#9-my-chart-sub-panels)
-10. [Service worker & PWA](#10-service-worker--pwa)
-11. [Production troubleshooting matrix](#11-production-troubleshooting-matrix)
+4. [Dosha Radar (obstruction + Pushkara)](#4-dosha-radar-obstruction--pushkara)
+5. [Horai & Uba Horai](#5-horai--uba-horai)
+6. [Bhavat Bhavam](#6-bhavat-bhavam)
+7. [Tamil Doshas](#7-tamil-doshas)
+8. [Indu Lagna](#8-indu-lagna)
+9. [Gochara / Forecast](#9-gochara--forecast)
+10. [Chat AI grounding](#10-chat-ai-grounding)
+11. [My Chart sub-panels](#11-my-chart-sub-panels)
+12. [Service worker & PWA](#12-service-worker--pwa)
+13. [Production troubleshooting matrix](#13-production-troubleshooting-matrix)
 
 ---
 
@@ -32,7 +34,8 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Forecast AI | Forecast tab | `/forecast/*` | scores + OpenAI | Yes | — |
 | Career | Career tab | `POST /career/predict` | `career_agent`, `career/*` | No* | 💼 |
 | Health | Health tab | `POST /health/analyze` | `health_agent`, `health/*` | No* | 🏥 |
-| Dosha Radar | Dosha Radar tab | `POST /dosha-radar/analyze` | `dosha_radar_agent`, `dosha_radar/*` | No* | 🔥 |
+| Dosha Radar | Dosha Radar tab (`?tab=dosha-radar`) | `POST /dosha-radar/analyze` | `dosha_radar_agent`, `dosha_radar/*` | No* | 🔥 |
+| Horai & Uba Horai | Panchangam tab (below limbs) | — (client-side) | `frontend/src/lib/horai.js` | No | — |
 | Bhavat Bhavam | Career + Health layers | bundled in above | `bhavat_bhavam/*` | No | 🏠 |
 | Tamil Doshas | My Chart section | `POST /tamil-doshas` | `tamil_dosha/*` | No | 🔯 |
 | Indu Lagna | My Chart section | `POST /indu-lagna` | `indu_lagna_agent` | No | 💰 |
@@ -216,20 +219,32 @@ Rate: 30/min
 
 ---
 
-## Dosha Radar (obstruction + Pushkara)
+## 4. Dosha Radar (obstruction + Pushkara)
 
 ### Purpose
 
-Live obstruction dosha scan: Thithi Soonya blueprint (from Tamil doshas), natal afflictions (combust/gandanta), Pushkara Navamsa, live transit flags, 90-day forecast, Pushkara transit windows. My Chart Tamil Doshas section links here for transit layer.
+Live **obstruction dosha** scan for timing awareness — ported from Mundane `hora-calculator` / `obstruction_dosha.py` / `natal_protection.py` logic:
+
+- **Tamil blueprint** — Thithi Soonya signs, Chandrashtama, Mudakku (22nd Drekkana), Vadhai/Vainasikam red-zone nakshatras (reuses `tamil_dosha_agent`)
+- **Natal afflictions** — combustion, Gandanta, Pushkara Navamsa, critical obstruction (Visha Gati) with **Divine Protection** when Pushkara applies
+- **Live transit scan** — per-planet flags today (Soonya, Chandrashtama, Mudakku, red zones, Pushkara)
+- **90-day forecast** — upcoming obstruction windows
+- **180-day Pushkara transit windows** — when planets enter/exit Pushkara zones
+
+**Not** a full Natal Protection score (Tab 7 parity from hora-calculator). **Not** medical or financial advice.
+
+**Discoverability:** `?tab=dosha-radar` · Home hero pill **Dosha Radar** (`brand.js`) · My Chart **Tamil Doshas** section link → Dosha Radar tab.
 
 ### Files
 
 ```
-backend/agents/dosha_radar_agent.py
-backend/agents/dosha_radar/pushkara.py
-backend/agents/dosha_radar/afflictions.py
-backend/agents/dosha_radar/obstruction.py
+backend/agents/dosha_radar_agent.py          # orchestrator + dosha_radar_context_for_narrator
+backend/agents/dosha_radar/pushkara.py       # 24 Pushkara Navamsa zones + transit scan
+backend/agents/dosha_radar/afflictions.py    # combust, gandanta, critical_obstruction
+backend/agents/dosha_radar/obstruction.py    # profile, live transit, 90d scan
 frontend/src/components/DoshaRadarPanel.jsx
+frontend/src/pages/Home.jsx                  # tab + Tamil Doshas deep link
+frontend/src/constants/brand.js              # APP_FEATURE_LINKS pill
 backend/tests/test_dosha_radar.py
 backend/tests/test_chat_dosha_radar_context.py
 ```
@@ -238,21 +253,182 @@ backend/tests/test_chat_dosha_radar_context.py
 
 ```
 POST /dosha-radar/analyze
-Body: { natal_chart?: object }
+Body: { natal_chart?: object }   // omitted when JWT + saved chart
+Auth: optional JWT (resolve_natal_chart)
 Rate: 30/min
 ```
 
 ### Response shape (key fields)
 
-`tamil_blueprint`, `obstruction_profile`, `natal_afflictions`, `pushkara_natal`, `transit_status.planets`, `active_alerts`, `forecast` (90d), `pushkara_transits` (180d).
+```json
+{
+  "disclaimer": { "en", "ta" },
+  "summary": {
+    "transit_date", "overall_status", "active_alert_count",
+    "natal_pushkara_count", "divine_protection_natal",
+    "soonya_signs", "chandrashtama_sign", "mudakku_sign",
+    "vadhai_nakshatra", "vainasikam_nakshatra",
+    "forecast_horizon_days", "transit_highlight_count"
+  },
+  "tamil_blueprint": { "thithi_soonyam", "mudakku", "yogi", ... },
+  "obstruction_profile": { "soonya_rasis", "soonya_signs", "mudakku", ... },
+  "natal_afflictions": {
+    "Mercury": {
+      "combust", "gandanta", "pushkara", "in_soonya", "critical_obstruction"
+    }
+  },
+  "pushkara_natal": [{ "planet", "pushkara", "zone" }],
+  "transit_status": { "transit_date", "planets": { ... } },
+  "active_alerts": [{ "planet", "severity", "note_en", "has_divine_protection" }],
+  "transit_highlights": [{ "planet", "flags", "has_divine_protection" }],
+  "forecast": { "days_ahead": 90, "events": [...] },
+  "pushkara_transits": [{ "planet", "currently_pushkara", "next_entry_days", ... }]
+}
+```
 
-### Service worker
+### Severity ranking (alerts)
 
-Add `dosha-radar` to `ALLOWED_TABS` in `frontend/public/sw.js` and bump cache version when shipping new tabs.
+| Severity | Meaning |
+|----------|---------|
+| `soonya` | Planet transiting dagdha (void) sign for birth tithi |
+| `mild` / `mild_divine` | Combustion or Gandanta obstruction; `_divine` = Pushkara relief |
+| `chandrashtama` | Moon in 8th from natal Moon sign |
+| `mudakku` | Planet in Mudakku Rasi (22nd Drekkana) |
+| `red_zone` | Vadhai or Vainasikam nakshatra transit |
+| `critical` / `critical_divine` | Combined harsh affliction (Visha Gati) |
+
+### Pushkara Navamsa
+
+- **24 classical zones** in `pushkara.py` (`_PUSHKARA_ZONES`) — sidereal longitude bands per sign/nakshatra/pada
+- `check_pushkara(lon)` → natal or transit flag
+- `scan_all_pushkara_transits()` → 180-day entry/exit windows for Sun–Ketu
+
+### UI sections (`DoshaRadarPanel.jsx`)
+
+1. Hero — overall status + bilingual disclaimer  
+2. Transit highlight cards (mobile-friendly)  
+3. Active alerts  
+4. Tamil blueprint summary  
+5. Natal afflictions table (combust / Gandanta / Pushkara / critical)  
+6. Live transit grid  
+7. 90-day forecast (collapsible)  
+8. Pushkara transit windows  
+9. Primer — “What is Dosha Radar?” (collapsible)
+
+### Chat integration
+
+- Chip **🔥 Dosha Radar** in `ChatPanel.jsx` `TOPICS`
+- Auto-detect topic on replies mentioning pushkara, chandrashtama, obstruction dosha, etc.
+- `dosha_radar_context_for_narrator()` appended in `chat_agent._build_gochara_block()` (after Bhavam)
+- Chat rules in `chat_agent.py` instruct narrator to cite Pushkara / Divine Protection when present
+
+### Relation to Tamil Doshas (My Chart)
+
+| Layer | My Chart `TamilDoshasPanel` | Dosha Radar tab |
+|-------|----------------------------|-----------------|
+| Natal blueprint | ✅ Full detail + parihara | ✅ Summary + link back |
+| Live transits | ❌ | ✅ |
+| Pushkara | ❌ | ✅ Natal + transit |
+| Forecast | ❌ | ✅ 90d obstruction + 180d Pushkara |
+
+**Mudakku note:** Radar uses **22nd Drekkana** method; My Chart may show Method A/B — both are documented in Tamil Doshas panel.
+
+### Golden test native
+
+`1978-09-18 17:35 Chennai` (`test_dosha_radar.py`):
+
+- Soonya signs: Dhanu, Meena  
+- Chandrashtama: Tula  
+- Mudakku: Kanni  
+- Natal Pushkara: Mercury, Jupiter, Ketu  
+
+### Debug checklist
+
+| Symptom | Check |
+|---------|--------|
+| Tab empty / 500 | Chart stale → recalculate; verify `birth_data` lat/lon/tz |
+| No Pushkara natal | Planet longitudes missing in `planet_positions` |
+| Alerts always empty | Ephemeris / server time; check `transit_status.planets` in API JSON |
+| Chat ignores Pushkara | Redeploy backend with `dosha_radar_context_for_narrator` wired |
+| Tab offline blank | `dosha-radar` in `sw.js` `ALLOWED_TABS`; cache ≥ v4 |
 
 ---
 
-## 4. Bhavat Bhavam
+## 5. Horai & Uba Horai
+
+### Purpose
+
+Classical **planetary hour** (Horai) calculator inside the **Panchangam** tab — weekday planet sequences, 12 day + 12 night slots, **Uba Horai** (5 sub-divisions per main hora). Ported from [hora-calculator](https://github.com/sivaramanrajagopal/hora-calculator). Uses **Panchangam location timezone** (not device TZ when abroad).
+
+**No backend API** — pure client logic from Panchangam `sunrise` / `sunset` ISO times.
+
+### Files
+
+```
+frontend/src/lib/horai.js              # sequences, slot math, midnight rule
+frontend/src/lib/horai.test.js         # vitest (10 cases)
+frontend/src/components/HoraiPanel.jsx
+frontend/src/components/PanchangamTab.jsx   # mounts HoraiPanel below limbs
+frontend/src/index.css                 # .hr-* styles
+```
+
+### Calculation modes
+
+| Mode | Day anchor | Night span |
+|------|------------|------------|
+| **Fixed 6 AM** (default) | 06:00–18:00 on calendar date | 18:00 same date → 06:00 next date |
+| **Sunrise** | Sunrise–sunset (12 equal slots) | Sunset → next sunrise (12 equal slots) |
+
+Toggle in `HoraiPanel` header. Sunrise mode fetches **next day’s sunrise** via `GET /panchangam/date?date={displayDate+1}`.
+
+### Midnight rule (critical)
+
+Times **before the day anchor** belong to the **previous calendar day’s night horas**:
+
+- **Fixed mode:** `[00:00, 06:00)` → owner date = **previous calendar day** (night slots 18–23 of that day’s sequence)
+- **Sunrise mode:** `[00:00, today_sunrise)` → same rule using sunrise instead of 6 AM
+
+**Display date** `D` always shows **D’s weekday** for the planet sequence grid. **Live highlight** only when `live.ownerYmd === displayDate`. Banner + tap jumps to owner date when viewing before anchor.
+
+### Slot index mapping
+
+- Day slots: indices **0–11**  
+- Night slots: indices **12–23**  
+- `expandPlanetSequence(weekdaySun0)` — 24 planets from Sunday=0 … Saturday=6 base sequence  
+- `getUbaPlanet(mainPlanet, minuteInHour)` — 12-minute sub-slots within current hora
+
+### Time label formatting (sunrise mode fix)
+
+Uneven day/night spans produce **fractional minute** boundaries when divided by 12. Labels use `divideSpanMinutes()` (rounded boundaries, pinned endpoints) and `formatMinutesLabel()` (direct wall-clock formatting — **no** `new Date()` parsing). Prevents **Invalid Date** in production.
+
+Before next-sunrise fetch completes, night span estimates `sunriseMin + 24h`.
+
+### UI sections
+
+1. Mode toggle (6 AM / Sunrise) — 44px touch targets  
+2. Mismatch banner (before anchor → link to owner date)  
+3. **Current horai** — planet, Uba, slot range, countdown  
+4. **Day horai** grid (12 cells)  
+5. **Night horai** grid — collapsed by default on viewports &lt;640px  
+6. Planet activities primer (Tamil tradition)
+
+### Tests
+
+```bash
+cd frontend && npm test -- src/lib/horai.test.js
+```
+
+Covers midnight rule, owner date, sunrise label regression (no Invalid Date).
+
+### Known gaps
+
+- No dedicated tab or Ask AI chip yet  
+- No Home “current horai” compact strip  
+- Horai times use Panchangam city TZ, not traveller device TZ (intentional)
+
+---
+
+## 6. Bhavat Bhavam
 
 ### Purpose
 
@@ -308,7 +484,7 @@ Shown when `primary_active`:
 
 ---
 
-## 5. Tamil Doshas
+## 7. Tamil Doshas
 
 ### Purpose
 
@@ -338,13 +514,15 @@ Body: { natal_chart?: object }
 
 Rendered inside **My Chart** tab (`Home.jsx` → `TamilDoshasPanel`), not a separate tab.
 
+**Link to Dosha Radar:** `TamilDoshasPanel` includes a button → `?tab=dosha-radar` for live transit + Pushkara layer.
+
 ### Chat chip
 
 **🔯 Tamil Doshas** — `dosha_context_for_narrator()` in chat prompt.
 
 ---
 
-## 6. Indu Lagna
+## 8. Indu Lagna
 
 ### Purpose
 
@@ -380,7 +558,7 @@ Body: { natal_chart?: object }
 
 ---
 
-## 7. Gochara / Forecast
+## 9. Gochara / Forecast
 
 Unchanged core — see DEVELOPER-GUIDE §8 `transit_score_agent.py`.
 
@@ -391,7 +569,7 @@ Unchanged core — see DEVELOPER-GUIDE §8 `transit_score_agent.py`.
 
 ---
 
-## 8. Chat AI grounding
+## 10. Chat AI grounding
 
 ### System prompt assembly (`chat_agent.py`)
 
@@ -404,6 +582,7 @@ Order appended to base prompt:
 5. Career (`career_context_for_narrator`)
 6. Health (`health_context_for_narrator`)
 7. Bhavat Bhavam (`bhavat_bhavam_context_for_narrator`)
+8. Dosha Radar (`dosha_radar_context_for_narrator`) — Pushkara, obstruction alerts, 90d summary
 
 Each block wrapped in try/except — failure is non-fatal.
 
@@ -420,6 +599,7 @@ Each block wrapped in try/except — failure is non-fatal.
 | 💰 Indu Lagna | indu_lagna | Fortune periods |
 | 💼 Career | career | D1+D10 career |
 | 🏥 Health | health | D3 awareness |
+| 🔥 Dosha Radar | dosha_radar | Obstruction + Pushkara scan |
 | 🏠 Bhavam | bhavam | BB recovery paths |
 | ✨ Yogas | yoga | Natal yogas |
 | 🕐 Muhurta | muhurta | Auspicious timing |
@@ -440,7 +620,7 @@ Each block wrapped in try/except — failure is non-fatal.
 
 ---
 
-## 9. My Chart sub-panels
+## 11. My Chart sub-panels
 
 All on **My Chart** tab (`chart`), lazy-enabled when tab active:
 
@@ -449,28 +629,29 @@ All on **My Chart** tab (`chart`), lazy-enabled when tab active:
 | D1 + D9 charts | `SouthIndianChart` | from stored chart |
 | Dasha roadmap | `DashaRoadmap`, `DashaSummaryCard` | chart JSON |
 | Ashtakavarga | `AshtakavargaPanel` | `POST /ashtakavarga` |
-| Tamil Doshas | `TamilDoshasPanel` | `POST /tamil-doshas` |
+| Tamil Doshas | `TamilDoshasPanel` | `POST /tamil-doshas` → link to Dosha Radar |
 | Indu Lagna | `InduLagnaPanel` | `POST /indu-lagna` |
 
 Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effect).
 
 ---
 
-## 10. Service worker & PWA
+## 12. Service worker & PWA
 
 ### File
 
-`frontend/public/sw.js` — registered with cache-bust query `?v=2` from app entry.
+`frontend/public/sw.js` — registered with cache-bust query from app entry.
 
 ### Cache
 
-- Shell: `jyotish-shell-v2`
+- Shell: `jyotish-shell-v4`
 - Precache: `/`, `/index.html`, `/manifest.json`, icons
 
 ### Allowed deep-link tabs
 
 ```javascript
-ALLOWED_TABS = home, chart, career, health, gochar, panchangam, chat, forecast, prashna, admin
+ALLOWED_TABS = home, chart, career, health, dosha-radar, gochar,
+  panchangam, chat, forecast, prashna, admin
 ```
 
 Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
@@ -484,13 +665,13 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 ### After adding a new tab
 
 1. Add key to `ALLOWED_TABS` in `sw.js`
-2. Bump `CACHE_SHELL` version (e.g. `v2` → `v3`)
-3. Update SW registration query string in frontend
+2. Bump `CACHE_SHELL` version (e.g. `v4` → `v5`)
+3. Update SW registration query string in frontend if used
 4. Users: hard refresh or clear site data once
 
 ---
 
-## 11. Production troubleshooting matrix
+## 13. Production troubleshooting matrix
 
 | Symptom | Feature | Likely cause | Resolution |
 |---------|---------|--------------|------------|
@@ -505,6 +686,10 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | D10 wrong positions | Career | Tropical vs sidereal | Confirm Lahiri in `ephemeris.py` |
 | Transit date wrong | Health | Server UTC vs TZ | Uses birth `timezone` at noon local |
 | Ashtama duplicate key | Panchangam | Repeat daily upsert | `on_conflict=user_id,date` in `ashtama_agent` |
+| Horai Invalid Date | Horai / Sunrise mode | Old JS bundle | Deploy ≥ `185740d`; bump SW cache; hard refresh |
+| Horai wrong “current” before 6 AM | Horai fixed mode | Owner date rule | Expected — banner links to previous calendar day |
+| Dosha Radar tab blank offline | Dosha Radar | SW missing tab | `dosha-radar` in `ALLOWED_TABS` |
+| Pushkara missing in chat | Chat | Old backend | `dosha_radar_context_for_narrator` in `chat_agent` |
 | Admin 403 | Admin | Email mismatch | `ADMIN_EMAILS` = `VITE_ADMIN_EMAILS` |
 | Analytics 404 | Analytics | Table missing | Run `supabase/analytics_events.sql` |
 
@@ -519,6 +704,10 @@ curl -s -X POST "$API/health/analyze" -H 'Content-Type: application/json' \
 curl -s -X POST "$API/career/predict" -H 'Content-Type: application/json' \
   -d '{"natal_chart":{...}}' | jq '.summary.rules_matched, .bhavat_bhavam'
 
+# Dosha Radar
+curl -s -X POST "$API/dosha-radar/analyze" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...}}' | jq '.summary, .pushkara_natal, .active_alerts'
+
 # Health check
 curl -s "$API/health" | jq .
 ```
@@ -530,8 +719,11 @@ cd backend
 pytest tests/test_career.py tests/test_chat_career_context.py -q
 pytest tests/test_health.py tests/test_chat_health_context.py -q
 pytest tests/test_bhavat_bhavam.py tests/test_chat_bhavam_context.py -q
+pytest tests/test_dosha_radar.py tests/test_chat_dosha_radar_context.py -q
 pytest tests/test_tamil_doshas.py tests/test_indu_lagna.py -q
-pytest tests/ -q   # full suite (~90 tests)
+pytest tests/ -q   # full suite (~95 tests)
+
+cd ../frontend && npm test -- src/lib/horai.test.js
 ```
 
 ---
