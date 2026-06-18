@@ -187,22 +187,29 @@ function minutesFromIsoOnDate(iso, displayYmd, timeZone) {
   return p.localMinutes
 }
 
-function formatMinutesLabel(minutes, timeZone, displayYmd) {
-  const h = Math.floor(minutes / 60) % 24
-  const m = minutes % 60
+function formatMinutesLabel(minutes) {
+  if (minutes == null || Number.isNaN(minutes)) return '—'
+  const total = Math.round(minutes)
+  const withinDay = ((total % (24 * 60)) + 24 * 60) % (24 * 60)
+  const h = Math.floor(withinDay / 60)
+  const m = withinDay % 60
   const pad = (n) => String(n).padStart(2, '0')
-  const date = minutes >= 24 * 60 ? addDaysYmd(displayYmd, 1) : displayYmd
-  try {
-    const d = new Date(`${date}T${pad(h)}:${pad(m)}:00`)
-    return d.toLocaleTimeString('en-IN', {
-      hour: '2-digit', minute: '2-digit', hour12: true, timeZone,
-    })
-  } catch {
-    return `${pad(h)}:${pad(m)}`
-  }
+  const hour12 = h % 12 || 12
+  const ampm = h < 12 ? 'am' : 'pm'
+  return `${pad(hour12)}:${pad(m)} ${ampm}`
 }
 
-function buildFixedSlotBounds(slotIndex, displayYmd) {
+/** `parts` equal segments → `parts + 1` rounded boundary minutes (inclusive start/end). */
+function divideSpanMinutes(start, end, parts) {
+  const boundaries = [Math.round(start)]
+  for (let i = 1; i < parts; i += 1) {
+    boundaries.push(Math.round(start + ((end - start) * i) / parts))
+  }
+  boundaries.push(Math.round(end))
+  return boundaries
+}
+
+function buildFixedSlotBounds(slotIndex) {
   const startMin = slotIndex < SLOTS_PER_HALF
     ? FIXED_DAY_START_MIN + slotIndex * 60
     : FIXED_DAY_END_MIN + (slotIndex - SLOTS_PER_HALF) * 60
@@ -210,26 +217,14 @@ function buildFixedSlotBounds(slotIndex, displayYmd) {
   return { startMin, endMin }
 }
 
-function buildSunriseSlotBounds(slotIndex, displayYmd, sunriseMin, sunsetMin, nextSunriseMin) {
-  const daySpan = sunsetMin - sunriseMin
-  const nightSpan = (24 * 60 - sunsetMin) + nextSunriseMin
-  let startMin
-  let endMin
+function buildSunriseSlotBounds(slotIndex, sunriseMin, sunsetMin, nextSunriseMin) {
   if (slotIndex < SLOTS_PER_HALF) {
-    const chunk = daySpan / SLOTS_PER_HALF
-    startMin = sunriseMin + slotIndex * chunk
-    endMin = sunriseMin + (slotIndex + 1) * chunk
-  } else {
-    const i = slotIndex - SLOTS_PER_HALF
-    const chunk = nightSpan / SLOTS_PER_HALF
-    startMin = sunsetMin + i * chunk
-    endMin = sunsetMin + (i + 1) * chunk
-    if (startMin >= 24 * 60) {
-      startMin -= 24 * 60
-      endMin -= 24 * 60
-    }
+    const bounds = divideSpanMinutes(sunriseMin, sunsetMin, SLOTS_PER_HALF)
+    return { startMin: bounds[slotIndex], endMin: bounds[slotIndex + 1] }
   }
-  return { startMin, endMin }
+  const i = slotIndex - SLOTS_PER_HALF
+  const bounds = divideSpanMinutes(sunsetMin, nextSunriseMin, SLOTS_PER_HALF)
+  return { startMin: bounds[i], endMin: bounds[i + 1] }
 }
 
 /**
@@ -248,18 +243,18 @@ export function buildHoraiDay({
   const sequence = expandPlanetSequence(weekdaySun0)
   const sunriseMin = sunriseIso ? minutesFromIsoOnDate(sunriseIso, displayYmd, timeZone) : null
   const sunsetMin = sunsetIso ? minutesFromIsoOnDate(sunsetIso, displayYmd, timeZone) : null
-  let nextSunriseMin = sunriseMin
+  let nextSunriseMin = sunriseMin != null ? sunriseMin + 24 * 60 : null
   if (mode === HORAI_MODES.SUNRISE && nextSunriseIso) {
-    nextSunriseMin = minutesFromIsoOnDate(nextSunriseIso, displayYmd, timeZone)
-    if (nextSunriseMin != null && nextSunriseMin < sunsetMin) {
-      nextSunriseMin += 24 * 60
+    const fetched = minutesFromIsoOnDate(nextSunriseIso, displayYmd, timeZone)
+    if (fetched != null) {
+      nextSunriseMin = fetched < (sunsetMin ?? 0) ? fetched + 24 * 60 : fetched
     }
   }
 
   const slots = sequence.map((planet, slotIndex) => {
     const bounds = mode === HORAI_MODES.SUNRISE && sunriseMin != null && sunsetMin != null
-      ? buildSunriseSlotBounds(slotIndex, displayYmd, sunriseMin, sunsetMin, nextSunriseMin ?? sunriseMin)
-      : buildFixedSlotBounds(slotIndex, displayYmd)
+      ? buildSunriseSlotBounds(slotIndex, sunriseMin, sunsetMin, nextSunriseMin ?? sunriseMin)
+      : buildFixedSlotBounds(slotIndex)
     const isDay = slotIndex < SLOTS_PER_HALF
     return {
       slotIndex,
@@ -267,8 +262,8 @@ export function buildHoraiDay({
       isDay,
       startMin: bounds.startMin,
       endMin: bounds.endMin,
-      labelStart: formatMinutesLabel(bounds.startMin, timeZone, displayYmd),
-      labelEnd: formatMinutesLabel(bounds.endMin, timeZone, displayYmd),
+      labelStart: formatMinutesLabel(bounds.startMin),
+      labelEnd: formatMinutesLabel(bounds.endMin),
       ...PLANET_INFO[planet],
     }
   })

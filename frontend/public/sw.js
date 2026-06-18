@@ -1,6 +1,6 @@
 /* Parashara Jyotish — service worker: offline shell + cosmic alert notifications */
 
-const CACHE_SHELL = 'jyotish-shell-v3'
+const CACHE_SHELL = 'jyotish-shell-v4'
 const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
 
 const ALLOWED_TABS = new Set([

@@ -4,6 +4,7 @@ import {
   resolveHoraiOwnerDate,
   slotIndexFromLocalMinutes,
   computeLiveHorai,
+  buildHoraiDay,
   HORAI_MODES,
   expandPlanetSequence,
 } from './horai.js'
@@ -55,5 +56,43 @@ describe('computeLiveHorai owner date', () => {
     })
     expect(live.ownerYmd).toBe('2026-06-17')
     expect(live.beforeAnchor).toBe(true)
+  })
+})
+
+describe('buildHoraiDay sunrise mode labels', () => {
+  it('does not produce Invalid Date for uneven day/night spans', () => {
+    const day = buildHoraiDay({
+      displayYmd: '2026-06-06',
+      weekdaySun0: 6,
+      mode: HORAI_MODES.SUNRISE,
+      timeZone: 'Asia/Kolkata',
+      sunriseIso: '2026-06-06T00:12:00.000Z',
+      sunsetIso: '2026-06-06T13:07:00.000Z',
+      nextSunriseIso: '2026-06-07T00:12:00.000Z',
+    })
+    for (const slot of day.slots) {
+      expect(slot.labelStart).not.toMatch(/invalid/i)
+      expect(slot.labelEnd).not.toMatch(/invalid/i)
+      expect(slot.labelStart).toMatch(/\d{1,2}:\d{2} (am|pm)/)
+      expect(slot.labelEnd).toMatch(/\d{1,2}:\d{2} (am|pm)/)
+    }
+    expect(day.daySlots[0].labelStart).toBe('05:42 am')
+    expect(day.daySlots[11].labelEnd).toBe('06:37 pm')
+    expect(day.nightSlots[0].labelStart).toBe('06:37 pm')
+    expect(day.nightSlots[11].labelEnd).toBe('05:42 am')
+  })
+
+  it('uses +24h sunrise estimate before next-day fetch completes', () => {
+    const day = buildHoraiDay({
+      displayYmd: '2026-06-06',
+      weekdaySun0: 6,
+      mode: HORAI_MODES.SUNRISE,
+      timeZone: 'Asia/Kolkata',
+      sunriseIso: '2026-06-06T00:12:00.000Z',
+      sunsetIso: '2026-06-06T13:07:00.000Z',
+      nextSunriseIso: null,
+    })
+    expect(day.nightSlots[11].endMin).toBeGreaterThan(day.nightSlots[0].startMin)
+    expect(day.nightSlots[11].labelEnd).toBe('05:42 am')
   })
 })
