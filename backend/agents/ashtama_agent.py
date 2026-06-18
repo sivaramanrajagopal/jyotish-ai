@@ -145,7 +145,9 @@ def _store_result(user_id: str, result: dict, target_date: datetime.date) -> Non
             "today_moon_sign":     result["today_moon_rasi"],
             "today_moon_nak":      result["today_moon_nak"],
         }
-        sb.table("user_daily_panchangam").upsert(row).execute()
+        sb.table("user_daily_panchangam").upsert(
+            row, on_conflict="user_id,date"
+        ).execute()
     except Exception as e:
         print(f"[ashtama_agent] store error: {e}")
 
