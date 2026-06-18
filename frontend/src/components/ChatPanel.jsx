@@ -71,6 +71,14 @@ const TOPICS = [
     question: "Explain my Indu Lagna fortune periods — when do Dasa/Bhukti and transits through my Indu sign favour wealth and prosperity?",
   },
   {
+    key: 'career',
+    label: '💼 Career',
+    color: '#6366f1',
+    bg: 'rgba(99,102,241,0.15)',
+    border: 'rgba(99,102,241,0.35)',
+    question: "Explain my D1 and D10 career chart — which professions suit me and when do Dasa periods favour career growth?",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',

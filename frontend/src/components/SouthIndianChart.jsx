@@ -11,7 +11,8 @@ import { formatNakshatraLine } from '../lib/chartFormat'
  *   title, subtitle       — centre cell text
  *   planetPositions       — { Planet: { sign_index, degree_in_sign, pada, retrograde, vargottama } }
  *   lagnaSignIndex        — 0-11, which sign has the ascendant marker
- *   navamsa               — boolean, use navamsa positions
+ *   navamsa               — boolean, D9 centre label
+ *   dasamsa               — boolean, D10 centre label
  *   showDetails           — boolean (default false), show degree + pada in each badge
  *   variant               — 'default' | 'classic' (classic = traditional Tamil house labels)
  *   chartKind             — 'natal' | 'transit' | 'prashna' (legend + centre label)
@@ -252,6 +253,7 @@ export default function SouthIndianChart({
   planetPositions,
   lagnaSignIndex,
   navamsa = false,
+  dasamsa = false,
   showDetails = false,
   variant = 'default',
   chartKind = 'natal',
@@ -311,10 +313,13 @@ export default function SouthIndianChart({
               {isClassic && chartKind === 'transit' && (
                 <div className="si-chart__centre-tamil">கோசாரம்</div>
               )}
-              {isClassic && chartKind === 'natal' && navamsa && (
+              {isClassic && chartKind === 'natal' && dasamsa && (
+                <div className="si-chart__centre-tamil">தசாம்சம்</div>
+              )}
+              {isClassic && chartKind === 'natal' && navamsa && !dasamsa && (
                 <div className="si-chart__centre-tamil">நவாம்சம்</div>
               )}
-              {isClassic && chartKind === 'natal' && !navamsa && (
+              {isClassic && chartKind === 'natal' && !navamsa && !dasamsa && (
                 <div className="si-chart__centre-tamil">ராசி சக்கரம்</div>
               )}
               {isClassic && chartKind === 'prashna' && (

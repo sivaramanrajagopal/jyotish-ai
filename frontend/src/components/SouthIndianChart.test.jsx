@@ -55,4 +55,19 @@ describe('SouthIndianChart classic variant', () => {
     expect(screen.getByText('பிரஷ்னா')).toBeInTheDocument()
     expect(container.querySelector('.si-chart__lagna-badge')).toHaveTextContent('Lagna ↑')
   })
+
+  it('shows Dasamsa centre label for D10', () => {
+    render(
+      <SouthIndianChart
+        title="D10"
+        planetPositions={SAMPLE_POSITIONS}
+        lagnaSignIndex={4}
+        variant="classic"
+        showDetails
+        chartKind="natal"
+        dasamsa
+      />,
+    )
+    expect(screen.getByText('தசாம்சம்')).toBeInTheDocument()
+  })
 })
