@@ -4861,3 +4861,224 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .cr-table { font-size: 0.72rem; }
 }
 
+/* Health panel (D3 body map) */
+.hl-panel { scroll-margin-top: 5rem; }
+
+.hl-disclaimer {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.hl-disclaimer__ta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.hl-hero {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--table-header);
+  border: 1px solid var(--card-border);
+}
+
+.hl-hero__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.hl-hero__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.hl-hero__headline {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.hl-hero__meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+}
+
+.hl-hero__dates { color: var(--text-muted); }
+
+.hl-bi__en { display: block; }
+.hl-bi__ta {
+  display: block;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.hl-risk-badge {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hl-risk--low { background: rgba(34,197,94,0.15); color: #16a34a; }
+.hl-risk--moderate { background: rgba(245,158,11,0.15); color: #d97706; }
+.hl-risk--high { background: rgba(239,68,68,0.15); color: #dc2626; }
+
+.hl-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.hl-chart-card {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  min-width: 0;
+}
+
+.hl-chart-card__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 0.5rem;
+  color: var(--text-secondary);
+}
+
+.hl-body-map {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  display: block;
+}
+
+.hl-body-map__silhouette {
+  fill: var(--chart-cell-bg);
+  stroke: var(--card-border);
+  stroke-width: 1;
+}
+
+.hl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+}
+
+.hl-legend__item {
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.hl-zone-detail {
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+}
+
+.hl-layer-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin: 1.25rem 0 0.75rem;
+}
+
+.hl-layer-title__count {
+  font-weight: 400;
+  margin-left: 0.35rem;
+}
+
+.hl-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hl-warning {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.hl-warning__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.hl-warning__planet {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0 0 0.25rem;
+}
+
+.hl-warning__reasons {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.hl-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  min-width: 320px;
+}
+
+.hl-table th,
+.hl-table td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.hl-table__sensitive {
+  background: rgba(245, 158, 11, 0.06);
+}
+
+@media (max-width: 768px) {
+  .hl-charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .hl-body-map { max-width: 160px; }
+}
+
+@media (max-width: 639px) {
+  .hl-hero { padding: 0.75rem; }
+  .hl-hero__headline { font-size: 0.85rem; }
+  .hl-chart-card { padding: 0.5rem; }
+  .hl-table { font-size: 0.72rem; }
+  .hl-disclaimer { font-size: 0.72rem; }
+}
+

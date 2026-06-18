@@ -13,6 +13,7 @@ import { formatNakshatraLine } from '../lib/chartFormat'
  *   lagnaSignIndex        — 0-11, which sign has the ascendant marker
  *   navamsa               — boolean, D9 centre label
  *   dasamsa               — boolean, D10 centre label
+ *   drekkana              — boolean, D3 centre label
  *   showDetails           — boolean (default false), show degree + pada in each badge
  *   variant               — 'default' | 'classic' (classic = traditional Tamil house labels)
  *   chartKind             — 'natal' | 'transit' | 'prashna' (legend + centre label)
@@ -254,6 +255,7 @@ export default function SouthIndianChart({
   lagnaSignIndex,
   navamsa = false,
   dasamsa = false,
+  drekkana = false,
   showDetails = false,
   variant = 'default',
   chartKind = 'natal',
@@ -313,13 +315,16 @@ export default function SouthIndianChart({
               {isClassic && chartKind === 'transit' && (
                 <div className="si-chart__centre-tamil">கோசாரம்</div>
               )}
-              {isClassic && chartKind === 'natal' && dasamsa && (
+              {isClassic && chartKind === 'natal' && drekkana && (
+                <div className="si-chart__centre-tamil">திரேக்கானம்</div>
+              )}
+              {isClassic && chartKind === 'natal' && dasamsa && !drekkana && (
                 <div className="si-chart__centre-tamil">தசாம்சம்</div>
               )}
-              {isClassic && chartKind === 'natal' && navamsa && !dasamsa && (
+              {isClassic && chartKind === 'natal' && navamsa && !dasamsa && !drekkana && (
                 <div className="si-chart__centre-tamil">நவாம்சம்</div>
               )}
-              {isClassic && chartKind === 'natal' && !navamsa && !dasamsa && (
+              {isClassic && chartKind === 'natal' && !navamsa && !dasamsa && !drekkana && (
                 <div className="si-chart__centre-tamil">ராசி சக்கரம்</div>
               )}
               {isClassic && chartKind === 'prashna' && (

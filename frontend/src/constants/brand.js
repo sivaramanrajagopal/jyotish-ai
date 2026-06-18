@@ -49,6 +49,7 @@ export const APP_FEATURE_LINKS = [
   { label: 'Tamil Doshas', tab: 'chart', section: 'tamil-doshas' },
   { label: 'Indu Lagna', tab: 'chart', section: 'indu-lagna' },
   { label: 'Career', tab: 'career' },
+  { label: 'Health', tab: 'health' },
   { label: 'Gochara', tab: 'gochar' },
   { label: 'Panchangam', tab: 'panchangam' },
   { label: 'AI Chat', tab: 'chat' },

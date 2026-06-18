@@ -79,6 +79,14 @@ const TOPICS = [
     question: "Explain my D1 and D10 career chart — which professions suit me and when do Dasa periods favour career growth?",
   },
   {
+    key: 'health',
+    label: '🏥 Health',
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.15)',
+    border: 'rgba(16,185,129,0.35)',
+    question: "Explain my D3 health body map — which body areas need awareness now based on Dasa, Bhukti, and transits? (Information only, not medical advice.)",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',
