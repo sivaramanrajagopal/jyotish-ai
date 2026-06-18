@@ -63,8 +63,13 @@ def test_health_analysis_structure():
     assert out["planet_rows"]
     assert out["body_regions"]
     assert out["warnings"] is not None
+    assert out["factor_groups"]["d3_natal"] is not None
+    assert out["transit_today"]
     assert out["summary"]["maha_dasa"]
     assert out["summary"]["bhukti"]
+    assert out["summary"]["transit_date"]
+    assert all("house_d1" in t for t in out["transit_today"])
+    assert all("house_d3" in t for t in out["transit_today"])
 
 
 def test_health_narrator_context():

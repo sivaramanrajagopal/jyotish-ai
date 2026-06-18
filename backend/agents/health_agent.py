@@ -6,14 +6,16 @@ from __future__ import annotations
 
 import datetime
 
-from agents.health.body_map import body_part_for_d3_house, drekkana_section_label
+from agents.health.body_map import body_part_for_d3_house
 from agents.health.d3 import build_drekkana_from_natal
 from agents.health.warnings import (
     apply_dasa_scores,
     apply_transit_scores,
     build_body_regions,
+    build_factor_groups,
     build_planet_rows,
-    build_warnings,
+    build_transit_today,
+    flatten_warnings_for_chat,
 )
 from agents.natal_agent import calculate_natal_chart
 from dasha_core import find_current_dasha_bhukti
@@ -65,7 +67,6 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         d3_positions=d3_pos,
     )
 
-    zone_scores = {}
     from agents.health.warnings import _zone_scores_from_rows
     zone_scores = _zone_scores_from_rows(rows)
 
@@ -74,7 +75,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     maha = cur_d["planet"]
     bhukti = cur_b["planet"]
 
-    dasa_notes = apply_dasa_scores(
+    dasa_items = apply_dasa_scores(
         zone_scores, rows,
         maha=maha, bhukti=bhukti,
         d1_asc_idx=d1_asc_idx,
@@ -82,34 +83,32 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     )
 
     transit_pp = _transit_positions_for_today(natal_chart)
-    # Map transit sky positions to D3 houses using natal D3 ascendant
-    transit_d3: dict = {}
-    for planet, tdata in transit_pp.items():
-        if tdata.get("sign_index") is None:
-            continue
-        transit_d3[planet] = {
-            "sign": tdata.get("sign"),
-            "sign_index": tdata.get("sign_index"),
-            "house_d3": (int(tdata["sign_index"]) - int(d3_asc_idx)) % 12 + 1,
-        }
-
-    transit_notes = apply_transit_scores(
+    transit_items = apply_transit_scores(
         zone_scores, rows,
         transit_positions=transit_pp,
         d3_positions=d3_pos,
         d3_asc_idx=d3_asc_idx,
+        d1_asc_idx=d1_asc_idx,
     )
 
     body_regions = build_body_regions(zone_scores)
-    warnings = build_warnings(
+    factor_groups = build_factor_groups(
         rows,
-        dasa_notes=dasa_notes,
-        transit_notes=transit_notes,
+        dasa_items=dasa_items,
+        transit_items=transit_items,
         maha=maha,
         bhukti=bhukti,
     )
+    warnings = flatten_warnings_for_chat(factor_groups)
+    transit_today = build_transit_today(
+        transit_pp,
+        d1_asc_idx=d1_asc_idx,
+        d3_asc_idx=d3_asc_idx,
+    )
 
-    overall = body_regions[0]["risk"] if body_regions else "low"
+    top_factor = (factor_groups.get("d3_natal") or [None])[0]
+    overall = top_factor["risk"] if top_factor else (body_regions[0]["risk"] if body_regions else "low")
+    transit_date = datetime.date.today().isoformat()
 
     return {
         "disclaimer": {"en": DISCLAIMER_EN, "ta": DISCLAIMER_TA},
@@ -122,7 +121,12 @@ def compute_health_analysis(natal_chart: dict) -> dict:
             "maha_dasa": maha,
             "bhukti": bhukti,
             "dasa_period": f"{cur_b['start'].strftime('%Y-%m-%d')} → {cur_b['end'].strftime('%Y-%m-%d')}",
-            "warning_count": len(warnings),
+            "warning_count": len(factor_groups.get("d3_natal", []))
+                + len(factor_groups.get("dasa", []))
+                + len(factor_groups.get("transit", [])),
+            "transit_date": transit_date,
+            "top_zone_en": top_factor["body_part_en"] if top_factor else "",
+            "top_zone_ta": top_factor["body_part_ta"] if top_factor else "",
         },
         "current_dasa": {
             "maha_dasa": maha,
@@ -134,13 +138,13 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         "drekkana_positions": d3_pos,
         "planet_rows": rows,
         "body_regions": body_regions,
+        "factor_groups": factor_groups,
         "warnings": warnings,
-        "transit_snapshot": list(transit_d3.values())[:9],
-        "dasa_notes": dasa_notes,
-        "transit_notes": transit_notes,
+        "transit_today": transit_today,
+        "transit_snapshot": transit_today,
         "hero": {
-            "headline_en": _hero_en(maha, bhukti, overall),
-            "headline_ta": _hero_ta(maha, bhukti, overall),
+            "headline_en": _hero_en(maha, bhukti, overall, top_factor),
+            "headline_ta": _hero_ta(maha, bhukti, overall, top_factor),
         },
     }
 
@@ -155,13 +159,15 @@ def _sign_ta(sign: str) -> str:
     return m.get(sign, sign)
 
 
-def _hero_en(maha: str, bhukti: str, risk: str) -> str:
-    return f"Active {maha}–{bhukti} · D3 awareness level: {risk}"
+def _hero_en(maha: str, bhukti: str, risk: str, top_factor: dict | None) -> str:
+    zone = f" · focus: {top_factor['body_part_en']}" if top_factor else ""
+    return f"Active {maha}–{bhukti} · D3 awareness: {risk}{zone}"
 
 
-def _hero_ta(maha: str, bhukti: str, risk: str) -> str:
+def _hero_ta(maha: str, bhukti: str, risk: str, top_factor: dict | None) -> str:
     risk_ta = {"low": "குறைவு", "moderate": "மிதமான", "high": "அதிக விழிப்பு"}.get(risk, risk)
-    return f"நடப்பு {maha}–{bhukti} · D3 விழிப்பு: {risk_ta}"
+    zone = f" · {top_factor['body_part_ta']}" if top_factor else ""
+    return f"நடப்பு {maha}–{bhukti} · D3 விழிப்பு: {risk_ta}{zone}"
 
 
 def health_context_for_narrator(natal_chart: dict) -> str:
@@ -171,18 +177,20 @@ def health_context_for_narrator(natal_chart: dict) -> str:
         return ""
 
     s = data["summary"]
+    fg = data.get("factor_groups") or {}
     lines = [
         "=== Health awareness (D3 Drekkana) ===",
         f"DISCLAIMER: {DISCLAIMER_EN}",
         f"D3 Lagna: {s['d3_lagna']} · Overall: {s['overall_risk']}",
         f"Dasa: {s['maha_dasa']}–{s['bhukti']} ({s['dasa_period']})",
         f"Lagna body part: {s['lagna_body_en']}",
+        f"Transits as of: {s.get('transit_date', 'today')}",
     ]
-    for w in data["warnings"][:5]:
-        part = w.get("body_part_en", "")
-        reasons = "; ".join(w.get("reasons_en") or [])
-        if part and reasons:
-            lines.append(f"• {part}: {reasons}")
-    if data.get("transit_notes"):
-        lines.append("Transits: " + "; ".join(data["transit_notes"][:3]))
+    for f in (fg.get("d3_natal") or [])[:4]:
+        reasons = "; ".join(f.get("reasons_en") or [])
+        lines.append(f"• D3 {f['body_part_en']}: {reasons}")
+    for d in (fg.get("dasa") or [])[:2]:
+        lines.append(f"• Dasa: {d['text_en']}")
+    for t in (fg.get("transit") or [])[:3]:
+        lines.append(f"• Transit: {t['text_en']}")
     return "\n".join(lines)

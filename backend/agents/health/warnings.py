@@ -13,11 +13,25 @@ PLANETS = [
 MALEFICS = frozenset({"Sun", "Mars", "Saturn", "Rahu", "Ketu"})
 HEALTH_HOUSES = frozenset({6, 8, 12})
 SLOW_TRANSITS = frozenset({"Saturn", "Mars", "Rahu", "Ketu"})
+TRANSIT_PLANETS = [
+    "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
+]
+
+SIGN_TA = {
+    "Aries": "மேஷம்", "Taurus": "ரிஷபம்", "Gemini": "மிதுனம்",
+    "Cancer": "கடகம்", "Leo": "சிம்மம்", "Virgo": "கன்னி",
+    "Libra": "துலாம்", "Scorpio": "விருச்சிகம்", "Sagittarius": "தனுசு",
+    "Capricorn": "மகரம்", "Aquarius": "கும்பம்", "Pisces": "மீனம்",
+}
 
 
 def _lord_of_house(asc_sign_index: int, house: int) -> str:
     sign_idx = (int(asc_sign_index) + int(house) - 1) % 12
     return SIGN_LORDS[SIGNS[sign_idx]]
+
+
+def _whole_sign_house(planet_sign_index: int, asc_sign_index: int) -> int:
+    return (int(planet_sign_index) - int(asc_sign_index)) % 12 + 1
 
 
 def _risk_label(score: float) -> str:
@@ -88,28 +102,26 @@ def apply_dasa_scores(
     bhukti: str,
     d1_asc_idx: int,
     d3_asc_idx: int,
-) -> list[str]:
-    """Boost zones linked to current MD/AD lords."""
-    notes: list[str] = []
+) -> list[dict]:
+    """Dasa factors as structured items (no duplicate body-part lines)."""
+    items: list[dict] = []
     lords = {maha, bhukti} - {""}
-    sixth_d1 = _lord_of_house(d1_asc_idx, 6)
-    eighth_d1 = _lord_of_house(d1_asc_idx, 8)
-    twelfth_d1 = _lord_of_house(d1_asc_idx, 12)
-    sixth_d3 = _lord_of_house(d3_asc_idx, 6)
-    eighth_d3 = _lord_of_house(d3_asc_idx, 8)
-    twelfth_d3 = _lord_of_house(d3_asc_idx, 12)
-    health_lords = {sixth_d1, eighth_d1, twelfth_d1, sixth_d3, eighth_d3, twelfth_d3}
+    health_lords = {
+        _lord_of_house(d1_asc_idx, h) for h in (6, 8, 12)
+    } | {
+        _lord_of_house(d3_asc_idx, h) for h in (6, 8, 12)
+    }
 
-    for lord in lords:
+    for lord in sorted(lords):
+        row = next((r for r in rows if r["planet"] == lord), None)
+        if row:
+            zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + 2.0
         if lord in health_lords:
-            notes.append(f"Dasa/Bhukti lord {lord} links health houses (6/8/12)")
-        for row in rows:
-            if row["planet"] == lord:
-                zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + 2.0
-                notes.append(
-                    f"{lord} MD/AD maps to {row['body_part_en']} (D3 H{row['d3_house']})"
-                )
-    return notes
+            items.append({
+                "text_en": f"{lord} (Mahadasha or Bhukti) rules a health house (6/8/12) in D1 or D3",
+                "text_ta": f"{lord} (மகாதசை/புத்தி) D1/D3-ல் ஆரோக்கிய வீடு (6/8/12) அதிபதி",
+            })
+    return items
 
 
 def apply_transit_scores(
@@ -119,11 +131,12 @@ def apply_transit_scores(
     transit_positions: dict,
     d3_positions: dict,
     d3_asc_idx: int,
-) -> list[str]:
-    """Slow transits through D3 health houses and over natal malefics."""
-    notes: list[str] = []
+    d1_asc_idx: int,
+) -> list[dict]:
+    """Transit factors with D1 + D3 house context and Tamil labels."""
+    items: list[dict] = []
     if not transit_positions:
-        return notes
+        return items
 
     row_by_planet = {r["planet"]: r for r in rows}
 
@@ -131,24 +144,176 @@ def apply_transit_scores(
         tdata = transit_positions.get(tplanet)
         if not tdata or tdata.get("sign_index") is None:
             continue
-        t_house_d3 = (int(tdata["sign_index"]) - int(d3_asc_idx)) % 12 + 1
-        if t_house_d3 in HEALTH_HOUSES:
-            boost = 2.5 if tplanet == "Saturn" else 2.0
-            notes.append(f"Transit {tplanet} in D3 house {t_house_d3}")
-            for row in rows:
-                if row["d3_house"] == t_house_d3:
-                    zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + boost
+        sign = tdata.get("sign", "")
+        sign_ta = SIGN_TA.get(sign, sign)
+        sign_idx = int(tdata["sign_index"])
+        deg = float(tdata.get("degree_in_sign", 0))
+        house_d1 = _whole_sign_house(sign_idx, d1_asc_idx)
+        house_d3 = _whole_sign_house(sign_idx, d3_asc_idx)
+        body = body_part_for_d3_house(house_d3, deg)
 
-        t_sign = tdata.get("sign")
+        if house_d3 in HEALTH_HOUSES:
+            boost = 2.5 if tplanet == "Saturn" else 2.0
+            for row in rows:
+                if row["d3_house"] == house_d3:
+                    zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + boost
+            items.append({
+                "planet": tplanet,
+                "sign": sign,
+                "sign_ta": sign_ta,
+                "house_d1": house_d1,
+                "house_d3": house_d3,
+                "body_part_en": body["en"],
+                "body_part_ta": body["ta"],
+                "health_sensitive": True,
+                "text_en": (
+                    f"Transit {tplanet} in {sign} — D1 H{house_d1}, D3 H{house_d3} "
+                    f"({body['en']})"
+                ),
+                "text_ta": (
+                    f"கோசார {tplanet} {sign_ta}-ல் — D1 {house_d1}, D3 {house_d3} "
+                    f"({body['ta']})"
+                ),
+            })
+        elif house_d1 in HEALTH_HOUSES:
+            items.append({
+                "planet": tplanet,
+                "sign": sign,
+                "sign_ta": sign_ta,
+                "house_d1": house_d1,
+                "house_d3": house_d3,
+                "body_part_en": "",
+                "body_part_ta": "",
+                "health_sensitive": True,
+                "text_en": f"Transit {tplanet} in {sign} — D1 health house H{house_d1}",
+                "text_ta": f"கோசார {tplanet} {sign_ta}-ல் — D1 ஆரோக்கிய வீடு {house_d1}",
+            })
+
+        t_sign = sign
         for planet, row in row_by_planet.items():
             if not row["malefic"]:
                 continue
             natal_d3_sign = (d3_positions.get(planet) or {}).get("sign")
             if natal_d3_sign and natal_d3_sign == t_sign and planet != tplanet:
                 zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + 1.0
-                notes.append(f"Transit {tplanet} with natal {planet} in {t_sign}")
+                items.append({
+                    "planet": tplanet,
+                    "sign": sign,
+                    "sign_ta": sign_ta,
+                    "house_d1": house_d1,
+                    "house_d3": house_d3,
+                    "natal_planet": planet,
+                    "body_part_en": row["body_part_en"],
+                    "body_part_ta": row["body_part_ta"],
+                    "health_sensitive": True,
+                    "text_en": (
+                        f"Transit {tplanet} conjunct natal {planet} in {sign} "
+                        f"→ {row['body_part_en']}"
+                    ),
+                    "text_ta": (
+                        f"கோசார {tplanet} ஜாதக {planet}-உடன் {sign_ta}-ல் — {row['body_part_ta']}"
+                    ),
+                })
 
-    return notes
+    return items
+
+
+def build_transit_today(
+    transit_positions: dict,
+    *,
+    d1_asc_idx: int,
+    d3_asc_idx: int,
+) -> list[dict]:
+    """Full sky snapshot for today with D1/D3 houses."""
+    out: list[dict] = []
+    for planet in TRANSIT_PLANETS:
+        tdata = transit_positions.get(planet)
+        if not tdata or tdata.get("sign_index") is None:
+            continue
+        sign = tdata.get("sign", "")
+        sign_idx = int(tdata["sign_index"])
+        deg = float(tdata.get("degree_in_sign", 0))
+        house_d1 = _whole_sign_house(sign_idx, d1_asc_idx)
+        house_d3 = _whole_sign_house(sign_idx, d3_asc_idx)
+        body = body_part_for_d3_house(house_d3, deg)
+        sensitive = house_d1 in HEALTH_HOUSES or house_d3 in HEALTH_HOUSES
+        out.append({
+            "planet": planet,
+            "sign": sign,
+            "sign_ta": SIGN_TA.get(sign, sign),
+            "degree_in_sign": round(deg, 2),
+            "house_d1": house_d1,
+            "house_d3": house_d3,
+            "body_part_en": body["en"] if house_d3 in HEALTH_HOUSES else "",
+            "body_part_ta": body["ta"] if house_d3 in HEALTH_HOUSES else "",
+            "health_sensitive": sensitive,
+            "slow": planet in SLOW_TRANSITS,
+        })
+    return out
+
+
+def build_d3_natal_factors(
+    rows: list[dict],
+    *,
+    maha: str,
+    bhukti: str,
+) -> list[dict]:
+    """Natal D3 body-part factors (malefics in 6/8/12 + active dasa lords)."""
+    factors: list[dict] = []
+    for row in rows:
+        score = 0.0
+        tags: list[str] = ["D3"]
+        reasons_en: list[str] = []
+        reasons_ta: list[str] = []
+
+        if row["health_house_d3"]:
+            score += 2
+            reasons_en.append(f"D3 house {row['d3_house']} (health house)")
+            reasons_ta.append(f"D3 {row['d3_house']}ம் வீடு")
+        if row["malefic"] and row["health_house_d3"]:
+            score += 2
+            reasons_en.append(f"Malefic {row['planet']}")
+            reasons_ta.append(f"பாப கிரகம் {row['planet']}")
+        if row["planet"] in (maha, bhukti):
+            score += 2
+            tags.append("Dasa")
+            reasons_en.append("Active Dasa/Bhukti lord")
+            reasons_ta.append("நடப்பு தசை/புத்தி அதிபதி")
+
+        if score < 2:
+            continue
+
+        factors.append({
+            "planet": row["planet"],
+            "body_part_en": row["body_part_en"],
+            "body_part_ta": row["body_part_ta"],
+            "body_zone": row["body_zone"],
+            "d3_house": row["d3_house"],
+            "d1_house": row["d1_house"],
+            "score": score,
+            "risk": _risk_label(score),
+            "tags": tags,
+            "reasons_en": reasons_en,
+            "reasons_ta": reasons_ta,
+        })
+
+    factors.sort(key=lambda f: -f["score"])
+    return factors
+
+
+def build_factor_groups(
+    rows: list[dict],
+    *,
+    dasa_items: list[dict],
+    transit_items: list[dict],
+    maha: str,
+    bhukti: str,
+) -> dict:
+    return {
+        "d3_natal": build_d3_natal_factors(rows, maha=maha, bhukti=bhukti),
+        "dasa": dasa_items,
+        "transit": transit_items,
+    }
 
 
 def build_body_regions(zone_scores: dict[str, float]) -> list[dict]:
@@ -175,75 +340,16 @@ def build_body_regions(zone_scores: dict[str, float]) -> list[dict]:
     return regions
 
 
-def build_warnings(
-    rows: list[dict],
-    *,
-    dasa_notes: list[str],
-    transit_notes: list[str],
-    maha: str,
-    bhukti: str,
-) -> list[dict]:
-    warnings: list[dict] = []
-    for row in rows:
-        score = 0.0
-        reasons_en: list[str] = []
-        reasons_ta: list[str] = []
-
-        if row["health_house_d3"]:
-            score += 2
-            reasons_en.append(f"In D3 house {row['d3_house']} (health house)")
-            reasons_ta.append(f"D3 {row['d3_house']}ம் வீடு (ஆரோக்கிய வீடு)")
-        if row["malefic"] and row["health_house_d3"]:
-            score += 2
-            reasons_en.append(f"Malefic {row['planet']} in sensitive D3 house")
-            reasons_ta.append(f"பாப கிரகம் {row['planet']} D3-ல்")
-        if row["planet"] in (maha, bhukti):
-            score += 2
-            reasons_en.append(f"Active Dasa/Bhukti lord ({row['planet']})")
-            reasons_ta.append(f"நடப்பு தசை/புத்தி அதிபதி ({row['planet']})")
-
-        if score < 2:
-            continue
-
-        risk = _risk_label(score)
-        warnings.append({
-            "planet": row["planet"],
-            "body_part_en": row["body_part_en"],
-            "body_part_ta": row["body_part_ta"],
-            "body_zone": row["body_zone"],
-            "d3_house": row["d3_house"],
-            "score": score,
-            "risk": risk,
-            "reasons_en": reasons_en,
-            "reasons_ta": reasons_ta,
+def flatten_warnings_for_chat(factor_groups: dict) -> list[dict]:
+    """Compact list for narrator / legacy consumers."""
+    flat: list[dict] = []
+    for f in factor_groups.get("d3_natal", []):
+        flat.append({
+            "body_part_en": f["body_part_en"],
+            "reasons_en": f.get("reasons_en", []),
         })
-
-    warnings.sort(key=lambda w: -w["score"])
-
-    for note in dasa_notes[:3]:
-        warnings.append({
-            "planet": "",
-            "body_part_en": "General",
-            "body_part_ta": "பொது",
-            "body_zone": "torso",
-            "d3_house": 0,
-            "score": 2.5,
-            "risk": "moderate",
-            "reasons_en": [note],
-            "reasons_ta": [note],
-        })
-
-    for note in transit_notes[:3]:
-        warnings.append({
-            "planet": "",
-            "body_part_en": "Transit",
-            "body_part_ta": "கோசாரம்",
-            "body_zone": "torso",
-            "d3_house": 0,
-            "score": 2.5,
-            "risk": "moderate",
-            "reasons_en": [note],
-            "reasons_ta": [note],
-        })
-
-    return warnings[:12]
+    for d in factor_groups.get("dasa", []):
+        flat.append({"body_part_en": "Dasa", "reasons_en": [d["text_en"]]})
+    for t in factor_groups.get("transit", []):
+        flat.append({"body_part_en": "Transit", "reasons_en": [t["text_en"]]})
+    return flat[:12]
