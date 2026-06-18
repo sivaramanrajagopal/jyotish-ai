@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime
 
+from agents.bhavat_bhavam.slices import compute_career_bhavat_bhavam
 from agents.career.atmakaraka import classical_karakas, evaluate_atmakaraka_d10
 from agents.career.d10 import build_dasamsa_from_natal
 from agents.career.profession import predict_professions
@@ -82,6 +83,8 @@ def compute_career_prediction(natal_chart: dict, *, timing_years: int = 90) -> d
     upcoming_timing = [p for p in timing if p["start"] > today][:10]
 
     _, cur_d, _, cur_b = find_current_dasha_bhukti(moon_lon, birth_date)
+    maha = cur_d["planet"]
+    bhukti = cur_b["planet"]
 
     headline = "No active career Dasa link today."
     if current_timing:
@@ -124,6 +127,9 @@ def compute_career_prediction(natal_chart: dict, *, timing_years: int = 90) -> d
                 "significators, and Vimshottari periods linked to 10th lord / AK / AmK."
             ),
         },
+        "bhavat_bhavam": compute_career_bhavat_bhavam(
+            natal_chart, maha=maha, bhukti=bhukti,
+        ),
     }
 
 

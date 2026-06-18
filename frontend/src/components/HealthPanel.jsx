@@ -6,6 +6,7 @@ import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
 import BodyMapSvg from './BodyMapSvg'
+import BhavatBhavamLayer from './BhavatBhavamLayer'
 
 const RISK_CLASS = {
   low: 'hl-risk--low',
@@ -425,6 +426,8 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
           </FactorSection>
         </div>
       )}
+
+      <BhavatBhavamLayer data={data.bhavat_bhavam} variant="health" />
 
       <details className="hl-table-collapse" ref={tableRef}>
         <summary className="hl-layer-title hl-table-collapse__summary">

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
+import BhavatBhavamLayer from './BhavatBhavamLayer'
 
 function StrengthBadge({ strength }) {
   const cls = {
@@ -210,6 +211,8 @@ export default function CareerPanel({ chart, userId, enabled = true }) {
       </div>
 
       <RulesChecklist rules={data.rules} />
+
+      <BhavatBhavamLayer data={data.bhavat_bhavam} variant="career" />
 
       <h3 className="cr-layer-title">Career timing (Dasa / Bhukti)</h3>
       <p className="td-card__hint cr-timing-note">

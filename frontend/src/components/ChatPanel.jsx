@@ -87,6 +87,14 @@ const TOPICS = [
     question: "Explain my D3 health body map — which body areas need awareness now based on Dasa, Bhukti, and transits? (Information only, not medical advice.)",
   },
   {
+    key: 'bhavam',
+    label: '🏠 Bhavam',
+    color: '#0ea5e9',
+    bg: 'rgba(14,165,233,0.15)',
+    border: 'rgba(14,165,233,0.35)',
+    question: "Explain my Bhavat Bhavam links — for stressed houses, what is the recovery or support path (e.g. 6th→11th, 10th→7th)? Secondary layer only, not medical or career advice alone.",
+  },
+  {
     key: 'yoga',
     label: '✨ Yogas',
     color: '#34d399',
@@ -122,6 +130,7 @@ function detectTopics(text) {
   if (/\|.*\|.*\|/.test(text) && /bhukti|antardasha/i.test(t) && !/mahadasha cycle/i.test(t)) found.push('dasha_table')
   if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
   if (/dagdha|soonya|mudakku|vadhai|vainasikam|avayogi|yogi graha|tamil dosha|parihara/.test(t)) found.push('tamil_doshas')
+  if (/bhavat bhavam|bhavam|house.from.house|6th→11th|6→11|10→7/.test(t)) found.push('bhavam')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')
   if (/saturn|jupiter|mars|venus|mercury|sun|moon|rahu|ketu|graha|planet/.test(t))    found.push('planets')

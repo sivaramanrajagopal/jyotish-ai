@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime
 
+from agents.bhavat_bhavam.slices import compute_health_bhavat_bhavam
 from agents.health.body_map import body_part_for_d3_house
 from agents.health.d3 import build_drekkana_from_natal
 from agents.health.warnings import (
@@ -117,6 +118,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     top_factor = (factor_groups.get("d3_natal") or [None])[0]
     overall = top_factor["risk"] if top_factor else (body_regions[0]["risk"] if body_regions else "low")
     transit_date = datetime.date.today().isoformat()
+    bhavat_bhavam = compute_health_bhavat_bhavam(natal_chart, maha=maha, bhukti=bhukti)
 
     return {
         "disclaimer": {"en": DISCLAIMER_EN, "ta": DISCLAIMER_TA},
@@ -158,6 +160,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
             "headline_en": _hero_en(maha, bhukti, overall, top_factor),
             "headline_ta": _hero_ta(maha, bhukti, overall, top_factor),
         },
+        "bhavat_bhavam": bhavat_bhavam,
     }
 
 

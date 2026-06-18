@@ -5280,3 +5280,106 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .hl-disclaimer { font-size: 0.72rem; }
 }
 
+/* ── Bhavat Bhavam layer (Health + Career) ─────────────────────────────── */
+.bb-layer {
+  margin: 1rem 0;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.bb-layer__summary {
+  cursor: pointer;
+  padding: 0.65rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(14, 165, 233, 0.06);
+}
+
+.bb-layer__summary::-webkit-details-marker { display: none; }
+
+.bb-layer__count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.bb-layer__body {
+  padding: 0.65rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.06));
+}
+
+.bb-disclaimer {
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.bb-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bb-link {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+  background: rgba(255,255,255,0.02);
+}
+
+.bb-link__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.bb-link__houses {
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+}
+
+.bb-signal {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.bb-signal--support { background: rgba(34,197,94,0.15); color: #16a34a; }
+.bb-signal--watch { background: rgba(245,158,11,0.15); color: #d97706; }
+.bb-signal--neutral { background: rgba(148,163,184,0.15); color: #64748b; }
+
+.bb-link__theme,
+.bb-link__lords,
+.bb-link__insight,
+.bb-link__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.bb-link__meta { color: var(--text-muted); font-size: 0.75rem; }
+
+.bb-bi__en { display: inline; }
+.bb-bi__ta {
+  display: inline;
+  color: var(--text-muted);
+  font-size: 0.92em;
+}
+
+@media (max-width: 639px) {
+  .bb-link__top { flex-direction: column; align-items: flex-start; }
+  .bb-link__insight { font-size: 0.75rem; }
+}
+
