@@ -5644,3 +5644,151 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .dr-table { font-size: 0.72rem; }
 }
 
+/* ── Horai panel (Panchangam tab) ─────────────────────────────────────────── */
+.hr-panel {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--card-border);
+  scroll-margin-top: 5rem;
+}
+
+.hr-panel--muted { opacity: 0.65; font-size: 0.85rem; padding: 1rem 0; }
+
+.hr-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.hr-title { margin: 0; font-size: 1rem; font-weight: 700; }
+.hr-subtitle { margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--text-muted); }
+
+.hr-mode-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--chip-bg, rgba(0,0,0,0.04));
+  border-radius: 0.4rem;
+  padding: 0.15rem;
+}
+
+.hr-mode-btn {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.hr-mode-btn--on {
+  background: var(--orange);
+  color: var(--accent-dark);
+}
+
+.hr-banner {
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.45rem;
+  font-size: 0.78rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.hr-banner__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--orange);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hr-now {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--highlight-bg);
+  border: 1px solid var(--highlight-border);
+}
+
+.hr-now__label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); }
+.hr-now__main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem; margin-top: 0.25rem; }
+.hr-now__planet { font-size: 1.1rem; font-weight: 700; }
+.hr-now__en { font-size: 0.85rem; color: var(--text-muted); }
+.hr-now__range { font-size: 0.8rem; margin-left: auto; }
+.hr-now__uba { font-size: 0.8rem; margin-top: 0.35rem; color: var(--text-secondary); }
+.hr-now__count { font-size: 0.78rem; margin-top: 0.35rem; color: var(--orange); }
+
+.hr-section {
+  margin-bottom: 0.65rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.5rem;
+  background: var(--card-bg);
+}
+
+.hr-section__summary {
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  list-style: none;
+}
+
+.hr-section__summary::-webkit-details-marker { display: none; }
+.hr-section__hint { margin-left: 0.5rem; font-weight: 400; font-size: 0.72rem; color: var(--text-muted); }
+
+.hr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  padding: 0 0.5rem 0.55rem;
+}
+
+@media (min-width: 640px) {
+  .hr-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+.hr-cell {
+  padding: 0.45rem 0.35rem;
+  border-radius: 0.35rem;
+  text-align: center;
+  border: 1px solid var(--card-border);
+  font-size: 0.72rem;
+}
+
+.hr-cell--benefic { background: rgba(34, 197, 94, 0.08); }
+.hr-cell--malefic { background: rgba(239, 68, 68, 0.08); }
+.hr-cell--active {
+  outline: 2px solid var(--orange);
+  outline-offset: 1px;
+}
+
+.hr-cell__planet { font-weight: 700; font-size: 0.78rem; }
+.hr-cell__en { color: var(--text-muted); font-size: 0.65rem; }
+.hr-cell__time { margin-top: 0.2rem; font-size: 0.62rem; color: var(--text-muted); }
+.hr-cell__uba { margin-top: 0.2rem; font-size: 0.62rem; color: var(--orange); font-weight: 600; }
+
+.hr-primer {
+  margin-top: 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 0.45rem;
+  font-size: 0.78rem;
+}
+
+.hr-primer__summary {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.hr-primer__summary::-webkit-details-marker { display: none; }
+.hr-primer__list { margin: 0; padding: 0 0.75rem 0.65rem 1.5rem; line-height: 1.45; }
+

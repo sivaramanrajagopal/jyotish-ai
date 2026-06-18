@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
+import HoraiPanel from './HoraiPanel'
 import { isPlanetRetrograde } from '../lib/planetRetrograde'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -369,6 +370,16 @@ export default function PanchangamTab() {
             </div>
           )}
           {panch && !loadingP && <PanchangamLimbs data={panch} />}
+
+          {panch && !loadingP && (
+            <HoraiPanel
+              displayDate={date}
+              location={location}
+              panch={panch}
+              enabled
+              onSelectDate={setDate}
+            />
+          )}
         </div>
 
         {/* ── Right: Transit chart ── */}
