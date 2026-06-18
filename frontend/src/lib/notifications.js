@@ -63,7 +63,7 @@ function alreadySent(tag) {
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null
   try {
-    return await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    return await navigator.serviceWorker.register('/sw.js?v=2', { scope: '/' })
   } catch (e) {
     console.warn('[notifications] SW registration failed', e)
     return null

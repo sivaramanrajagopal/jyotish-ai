@@ -1,9 +1,25 @@
 /* Parashara Jyotish — service worker: offline shell + cosmic alert notifications */
 
-const CACHE_SHELL = 'jyotish-shell-v1'
+const CACHE_SHELL = 'jyotish-shell-v2'
 const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
 
-const ALLOWED_TABS = new Set(['home', 'chart', 'panchangam', 'chat', 'forecast', 'prashna'])
+const ALLOWED_TABS = new Set([
+  'home', 'chart', 'career', 'health', 'gochar',
+  'panchangam', 'chat', 'forecast', 'prashna', 'admin',
+])
+
+function offlineHtmlResponse() {
+  return new Response(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline</title></head>'
+    + '<body><p>Parashara Jyotish is offline. Check your connection and reload.</p></body></html>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+  )
+}
+
+async function cachedShellResponse() {
+  const cached = await caches.match('/index.html') || await caches.match('/')
+  return cached || offlineHtmlResponse()
+}
 
 function safeInternalPath(raw) {
   try {
@@ -56,11 +72,13 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone()
-          caches.open(CACHE_SHELL).then((cache) => cache.put('/index.html', copy))
+          if (response && response.ok) {
+            const copy = response.clone()
+            caches.open(CACHE_SHELL).then((cache) => cache.put('/index.html', copy))
+          }
           return response
         })
-        .catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
+        .catch(() => cachedShellResponse()),
     )
     return
   }
@@ -68,7 +86,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => response)
-      .catch(() => caches.match(request))
+      .catch(() => caches.match(request).then((r) => r || offlineHtmlResponse())),
   )
 })
 
