@@ -1,10 +1,10 @@
 /* Parashara Jyotish — service worker: offline shell + cosmic alert notifications */
 
-const CACHE_SHELL = 'jyotish-shell-v2'
+const CACHE_SHELL = 'jyotish-shell-v3'
 const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
 
 const ALLOWED_TABS = new Set([
-  'home', 'chart', 'career', 'health', 'gochar',
+  'home', 'chart', 'career', 'health', 'dosha-radar', 'gochar',
   'panchangam', 'chat', 'forecast', 'prashna', 'admin',
 ])
 

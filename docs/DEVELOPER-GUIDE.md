@@ -599,6 +599,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `SouthIndianChart` | — (renders chart JSON; props: `drekkana`, `dasamsa`) |
 | `CareerPanel` | `POST /career/predict` |
 | `HealthPanel` | `POST /health/analyze` |
+| `DoshaRadarPanel` | `POST /dosha-radar/analyze` |
 | `BhavatBhavamLayer` | bundled in career/health responses |
 | `GocharamTab` | `POST /forecast/scores` |
 | `ForecastPanel` | `/forecast/scores`, `/forecast/daily-reading`, `/forecast/house` |
@@ -641,6 +642,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Indu Lagna | `POST /indu-lagna` | indu_lagna_agent | No |
 | Career | `POST /career/predict` | career_agent | No* |
 | Health | `POST /health/analyze` | health_agent | No* |
+| Dosha Radar | `POST /dosha-radar/analyze` | dosha_radar_agent | No* |
 | Bhavat Bhavam | bundled in career/health | bhavat_bhavam_agent | No |
 | Tara/Ashtama | `GET /personal-panchangam/*` | tara_engine | No |
 
@@ -749,6 +751,7 @@ Auth: optional `Authorization: Bearer <supabase_jwt>`.
 |--------|------|-------|
 | POST | `/career/predict` | D1+D10 rules, profession tags, timing, `bhavat_bhavam` |
 | POST | `/health/analyze` | D3 body map, factor_groups, transit_today, `bhavat_bhavam` |
+| POST | `/dosha-radar/analyze` | Tamil blueprint, Pushkara, live transit scan, 90d forecast |
 
 ### Other
 

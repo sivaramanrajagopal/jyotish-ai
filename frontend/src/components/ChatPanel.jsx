@@ -87,6 +87,14 @@ const TOPICS = [
     question: "Explain my D3 health body map — which body areas need awareness now based on Dasa, Bhukti, and transits? (Information only, not medical advice.)",
   },
   {
+    key: 'dosha_radar',
+    label: '🔥 Dosha Radar',
+    color: '#ef4444',
+    bg: 'rgba(239,68,68,0.15)',
+    border: 'rgba(239,68,68,0.35)',
+    question: "Scan my Dosha Radar — active obstruction doshas, Pushkara Navamsa protection, Chandrashtama, red zones, and the 90-day forecast.",
+  },
+  {
     key: 'bhavam',
     label: '🏠 Bhavam',
     color: '#0ea5e9',
@@ -130,6 +138,8 @@ function detectTopics(text) {
   if (/\|.*\|.*\|/.test(text) && /bhukti|antardasha/i.test(t) && !/mahadasha cycle/i.test(t)) found.push('dasha_table')
   if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
   if (/dagdha|soonya|mudakku|vadhai|vainasikam|avayogi|yogi graha|tamil dosha|parihara/.test(t)) found.push('tamil_doshas')
+  if (/dosha radar|pushkara|visha gati|divine protection|chandrashtama|obstruction dosha|red zone transit/.test(t)) found.push('dosha_radar')
+  if (/d3|body map|health house|drekkana.*health/.test(t)) found.push('health')
   if (/bhavat bhavam|bhavam|house.from.house|6th→11th|6→11|10→7/.test(t)) found.push('bhavam')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')

@@ -31,6 +31,7 @@ import TamilDoshasPanel from '../components/TamilDoshasPanel'
 import InduLagnaPanel from '../components/InduLagnaPanel'
 import CareerPanel from '../components/CareerPanel'
 import HealthPanel from '../components/HealthPanel'
+import DoshaRadarPanel from '../components/DoshaRadarPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
@@ -94,6 +95,7 @@ const BASE_TABS = [
   { key: 'chart',      label: 'My Chart',   icon: '⭐' },
   { key: 'career',     label: 'Career',     icon: '💼', mobileLabel: 'Career' },
   { key: 'health',     label: 'Health',     icon: '🏥', mobileLabel: 'Health' },
+  { key: 'dosha-radar', label: 'Dosha Radar', icon: '🔥', mobileLabel: 'Dosha' },
   { key: 'gochar',     label: 'Gochar',     icon: '🪐', mobileLabel: 'Gochar' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓', mobileLabel: 'Panch' },
   { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
@@ -466,7 +468,7 @@ function ApproximateTimeBanner({ chart }) {
 }
 
 // ── MY CHART TAB ──────────────────────────────────────────────────────────────
-function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
+function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive, onGoToDoshaRadar }) {
   if (!chart) return <NeedChart onGoHome={onGoHome} />
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
@@ -591,7 +593,12 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive }) {
             Tamil Predictive Doshas
           </h3>
           <p className="text-xs mt-0.5" style={{ color:'var(--text-muted)' }}>
-            Thithi Soonyam · Vadhai/Vainasikam · Yogi · Mudakku
+            Thithi Soonyam · Vadhai/Vainasikam · Yogi · Mudakku —{' '}
+            {onGoToDoshaRadar && (
+              <button type="button" className="td-link-dosha-radar" onClick={onGoToDoshaRadar}>
+                Live Dosha Radar (Pushkara + transits) →
+              </button>
+            )}
           </p>
         </div>
         <div className="px-4 sm:px-5 py-4">
@@ -921,7 +928,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -968,7 +975,7 @@ function HomeApp() {
 
         {mountedTabs.has('chart') && (
         <div style={tabPane('chart')} role="tabpanel" id="panel-chart" aria-labelledby="tab-chart">
-          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} chartTabActive={chartTabActive} />
+          <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} userId={userId} chartTabActive={chartTabActive} onGoToDoshaRadar={() => setTab('dosha-radar')} />
         </div>
         )}
 
@@ -990,6 +997,18 @@ function HomeApp() {
             ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <HealthPanel chart={chart} userId={userId} enabled={activeTab === 'health'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
+        </div>
+        )}
+
+        {mountedTabs.has('dosha-radar') && (
+        <div style={tabPane('dosha-radar')} role="tabpanel" id="panel-dosha-radar" aria-labelledby="tab-dosha-radar">
+          {chart
+            ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <DoshaRadarPanel chart={chart} userId={userId} enabled={activeTab === 'dosha-radar'} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
@@ -1096,7 +1115,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}

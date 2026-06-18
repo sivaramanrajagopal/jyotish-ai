@@ -32,6 +32,7 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Forecast AI | Forecast tab | `/forecast/*` | scores + OpenAI | Yes | — |
 | Career | Career tab | `POST /career/predict` | `career_agent`, `career/*` | No* | 💼 |
 | Health | Health tab | `POST /health/analyze` | `health_agent`, `health/*` | No* | 🏥 |
+| Dosha Radar | Dosha Radar tab | `POST /dosha-radar/analyze` | `dosha_radar_agent`, `dosha_radar/*` | No* | 🔥 |
 | Bhavat Bhavam | Career + Health layers | bundled in above | `bhavat_bhavam/*` | No | 🏠 |
 | Tamil Doshas | My Chart section | `POST /tamil-doshas` | `tamil_dosha/*` | No | 🔯 |
 | Indu Lagna | My Chart section | `POST /indu-lagna` | `indu_lagna_agent` | No | 💰 |
@@ -212,6 +213,42 @@ Rate: 30/min
 | Empty transits | Missing lat/lon in `birth_data` |
 | Red head vs “Right knee” lagna | Lagna body = D3 sign mapping; red zone = scored region — see `rationale_en` |
 | `duplicate key` in Render logs | `ashtama_agent` upsert — fixed with `on_conflict=user_id,date` |
+
+---
+
+## Dosha Radar (obstruction + Pushkara)
+
+### Purpose
+
+Live obstruction dosha scan: Thithi Soonya blueprint (from Tamil doshas), natal afflictions (combust/gandanta), Pushkara Navamsa, live transit flags, 90-day forecast, Pushkara transit windows. My Chart Tamil Doshas section links here for transit layer.
+
+### Files
+
+```
+backend/agents/dosha_radar_agent.py
+backend/agents/dosha_radar/pushkara.py
+backend/agents/dosha_radar/afflictions.py
+backend/agents/dosha_radar/obstruction.py
+frontend/src/components/DoshaRadarPanel.jsx
+backend/tests/test_dosha_radar.py
+backend/tests/test_chat_dosha_radar_context.py
+```
+
+### API
+
+```
+POST /dosha-radar/analyze
+Body: { natal_chart?: object }
+Rate: 30/min
+```
+
+### Response shape (key fields)
+
+`tamil_blueprint`, `obstruction_profile`, `natal_afflictions`, `pushkara_natal`, `transit_status.planets`, `active_alerts`, `forecast` (90d), `pushkara_transits` (180d).
+
+### Service worker
+
+Add `dosha-radar` to `ALLOWED_TABS` in `frontend/public/sw.js` and bump cache version when shipping new tabs.
 
 ---
 

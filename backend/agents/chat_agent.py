@@ -30,6 +30,7 @@ from agents.tamil_dosha_agent import dosha_context_for_narrator
 from agents.indu_lagna_agent import indu_context_for_narrator
 from agents.career_agent import career_context_for_narrator
 from agents.health_agent import health_context_for_narrator
+from agents.dosha_radar_agent import dosha_radar_context_for_narrator
 from agents.bhavat_bhavam_agent import bhavat_bhavam_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
@@ -69,6 +70,10 @@ Add a brief 2–3 sentence interpretation before or after any other table.
 When the user asks about **Tamil doshas**, **dagdha**, **Mudakku**, **Vadhai**, **Vainasikam**, **Yogi/Avayogi**, or **parihara/remedies** for doshas, \
 use ONLY the TAMIL PREDICTIVE DOSHAS block appended below. Give house-specific upaya (2–4 steps per affected house). \
 Prefer Mudakku Method B; note Method A as unverified. Never invent mantras.
+
+When the user asks about **Dosha Radar**, **Pushkara Navamsa**, **obstruction doshas**, **Visha Gati**, **Divine Protection**, \
+**Chandrashtama**, **live transit doshas**, or **90-day dosha forecast**, use the DOSHA RADAR block below. \
+Mention Pushkara as divine protection when present; distinguish natal blueprint from live transits.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -409,7 +414,15 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
     except Exception:
         bhavam_ctx = ""
 
-    return ("\n\n" + gochara if gochara else "") + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx
+    try:
+        radar_ctx = "\n\n" + dosha_radar_context_for_narrator(natal_chart)
+    except Exception:
+        radar_ctx = ""
+
+    return (
+        ("\n\n" + gochara if gochara else "")
+        + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx + radar_ctx
+    )
 
 
 _TAMIL_CHAT_SUFFIX = """
