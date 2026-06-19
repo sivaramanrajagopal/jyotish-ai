@@ -1000,7 +1000,14 @@ def chat_endpoint(
         reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)
         track_event("chat_sent", user_id=auth_user.id if auth_user else None, properties={"language": req.language})
         return {"reply": reply, "model": "gpt-4o-mini"}
-    except RuntimeError:
+    except RuntimeError as exc:
+        msg = str(exc)
+        if "rate limit" in msg.lower():
+            raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again in a minute.")
+        if "api key" in msg.lower():
+            raise HTTPException(status_code=503, detail=msg)
+        import logging
+        logging.getLogger(__name__).error("Chat RuntimeError: %s", msg)
         raise HTTPException(status_code=503, detail="Chat service temporarily unavailable.")
     except Exception as exc:
         import logging, traceback

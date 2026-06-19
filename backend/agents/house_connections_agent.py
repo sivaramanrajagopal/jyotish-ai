@@ -7,7 +7,8 @@ from agents.house_connections.core import analyze_all_houses
 from agents.house_connections.dasa_activation import compute_dasa_life_areas
 from agents.house_connections.edges import build_edges
 from agents.house_connections.inference import build_prediction_card
-from agents.house_connections.themes import DISCLAIMER_EN, DISCLAIMER_TA, HOUSE_THEMES
+from agents.house_connections.narrator import house_connections_context_for_narrator
+from agents.house_connections.themes import DISCLAIMER_EN, DISCLAIMER_TA
 from agents.house_connections.yogas import detect_yogas
 from dasha_core import find_current_dasha_bhukti
 
@@ -93,6 +94,3 @@ def _graph_payload(houses_map: dict[int, dict], edges: list[dict]) -> dict:
             for e in edges
         ],
     }
-
-
-from agents.house_connections.narrator import house_connections_context_for_narrator

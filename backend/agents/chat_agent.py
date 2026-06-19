@@ -171,7 +171,7 @@ def _build_tara_calendar(natal_nak_index: int, year: int, month: int,
     return month_name, "\n".join(lines)
 
 
-def _build_system(natal_chart, location: str = "Chennai") -> str:
+def _build_system(natal_chart, location: str = "Chennai", user_message: str = "") -> str:
     """Build the system prompt from the natal chart response + today's panchangam."""
     chart: dict = natal_chart if isinstance(natal_chart, dict) else {}
     planets = chart.get("planet_positions", {})
@@ -374,10 +374,10 @@ def _build_system(natal_chart, location: str = "Chennai") -> str:
         week_panch     = _week_panch or "  (not available)",
         tara_month     = _tara_month_label,
         tara_calendar  = _tara_cal_block,
-    ) + _build_gochara_block(natal_chart, dasha)
+    ) + _build_gochara_block(natal_chart, dasha, user_message=user_message)
 
 
-def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
+def _build_gochara_block(natal_chart: dict, dasha: dict, user_message: str = "") -> str:
     """
     Silently compute Gochara scores + Dasha-Transit correlation + Ashtakavarga,
     then return a compact text block to append to the system prompt.
@@ -426,7 +426,7 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
         radar_ctx = ""
 
     try:
-        house_ctx = "\n\n" + house_connections_context_for_narrator(natal_chart)
+        house_ctx = "\n\n" + house_connections_context_for_narrator(natal_chart, user_message)
     except Exception:
         house_ctx = ""
 
@@ -470,8 +470,13 @@ def chat(
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not configured on the server.")
 
+    last_user = next(
+        (m["content"] for m in reversed(messages) if m.get("role") == "user"),
+        "",
+    )
+
     try:
-        system_prompt = _build_system(natal_chart, location)
+        system_prompt = _build_system(natal_chart, location, user_message=last_user)
     except Exception as e:
         import logging
         logging.getLogger(__name__).error("_build_system failed: %s", e, exc_info=True)
