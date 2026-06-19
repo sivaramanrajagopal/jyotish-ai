@@ -434,7 +434,7 @@ Covers midnight rule, owner date, sunrise label regression (no Invalid Date).
 
 ### Purpose
 
-Astrologer **prediction map** for all 12 houses: lord placement from own house, lord↔lord links (conjunction/aspect/mutual), pada lord & sign lord edges, dusthana chains, Bhavat Bhavam recovery, blesser ranking, Raja/Dharma–Karma yogas, and **Dasa life-area activation** (7-step Maha/Bhukti house sequence). Ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections).
+Astrologer **prediction map** for all 12 houses: lord placement from own house, lord↔lord links (conjunction/aspect/mutual), pada lord & sign lord edges, dusthana chains, blesser ranking, Raja/Dharma–Karma yogas, and **Dasa life-area activation** (7-step Maha/Bhukti house sequence). **Bhavat Bhavam** appears only as a **recovery note** on dusthana prediction cards (H6/H8/H12) — not in channel graph or blesser edges. Ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections).
 
 ### Files
 
@@ -468,7 +468,7 @@ Rate: 30/min
 | Field | Description |
 |-------|-------------|
 | `houses[]` | Per-house lord, seat, from-own type, strength, RAG |
-| `edges[]` | Lord placement, same-lord, mutual aspect, pada/sign lord, BB, dusthana chain |
+| `edges[]` | Lord placement, same-lord, mutual aspect, pada/sign lord, dusthana chain (no Bhavat Bhavam) |
 | `yogas[]` | Kendra–Trikona Raja Yoga, Dharma–Karma Adhipati |
 | `predictions[]` | Per-house inference, channels in/out, blessers |
 | `graph` | SVG node positions + edge list |

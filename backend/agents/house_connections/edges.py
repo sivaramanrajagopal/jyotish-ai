@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agents.bhavat_bhavam.core import bhavat_bhavam_house, lord_of_house, whole_sign_house, _lords_linked
+from agents.bhavat_bhavam.core import lord_of_house, whole_sign_house, _lords_linked
 from agents.house_connections.core import houses_owned_by, nakshatra_lord_for
 from agents.house_connections.themes import DUSTHANA
 from agents.natal_agent import SIGN_LORDS
@@ -128,21 +128,7 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                     "supportive": True,
                 })
 
-    # 5. Bhavat Bhavam recovery paths for dusthana
-    for h in DUSTHANA:
-        bb = bhavat_bhavam_house(h)
-        add({
-            "kind": "bhavat_bhavam",
-            "from_house": h,
-            "to_house": bb,
-            "label_en": f"Bhavat Bhavam H{h}→H{bb} recovery path",
-            "label_ta": f"Bhavat Bhavam H{h}→H{bb} குணமடைதல் வழி",
-            "planets": [houses[h]["lord"], houses[bb]["lord"]],
-            "weight": 3,
-            "supportive": True,
-        })
-
-    # 6. Dusthana lord cross-links
+    # 5. Dusthana lord cross-links
     for h in DUSTHANA:
         lh = houses[h]["lord_house"]
         if lh in DUSTHANA and lh != h:
@@ -157,7 +143,7 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                 "supportive": False,
             })
 
-    # 7. Aspecting a house (planet drishti on house)
+    # 6. Aspecting a house (planet drishti on house)
     for h, ha in houses.items():
         for planet in ha["planets_aspecting"]:
             ph = whole_sign_house(pp[planet]["sign_index"], asc_idx)

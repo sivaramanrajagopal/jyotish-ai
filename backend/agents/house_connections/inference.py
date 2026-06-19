@@ -2,6 +2,27 @@
 
 from __future__ import annotations
 
+from agents.bhavat_bhavam.core import bhavat_bhavam_house
+from agents.house_connections.themes import DUSTHANA
+
+
+def dusthana_recovery_edges(house_num: int, houses: dict[int, dict]) -> list[dict]:
+    """Bhavat Bhavam recovery note for dusthana houses only — not used in channel graph."""
+    if house_num not in DUSTHANA:
+        return []
+    bb = bhavat_bhavam_house(house_num)
+    ha = houses[house_num]
+    return [{
+        "id": f"bhavat_bhavam:{house_num}:{bb}",
+        "kind": "bhavat_bhavam",
+        "from_house": house_num,
+        "to_house": bb,
+        "label_en": f"Bhavat Bhavam H{house_num}→H{bb} recovery path",
+        "label_ta": f"Bhavat Bhavam H{house_num}→H{bb} குணமடைதல் வழி",
+        "planets": [ha["lord"], houses[bb]["lord"]],
+        "supportive": True,
+    }]
+
 
 def build_prediction_card(
     house_num: int,
@@ -15,7 +36,7 @@ def build_prediction_card(
     incoming = [e for e in edges if e["to_house"] == house_num and e.get("supportive", True)]
     outgoing = [e for e in edges if e["from_house"] == house_num]
     stress = [e for e in edges if e["to_house"] == house_num and not e.get("supportive", True)]
-    recovery = [e for e in edges if e["from_house"] == house_num and e["kind"] == "bhavat_bhavam"]
+    recovery = dusthana_recovery_edges(house_num, houses)
 
     channels_in = sorted({e["from_house"] for e in incoming})[:6]
     channels_out = sorted({e["to_house"] for e in outgoing if e["to_house"] != house_num})[:6]
