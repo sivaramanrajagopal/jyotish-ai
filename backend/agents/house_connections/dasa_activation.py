@@ -14,8 +14,8 @@ STEP_LABELS = {
     },
     2: {
         "key": "dasa_nakshatra",
-        "en": "Birth nakshatra of Dasa planet",
-        "ta": "தசா கிரகத்தின் ஜன்ம நட்சத்திரம்",
+        "en": "Natal nakshatra of running Dasa lord",
+        "ta": "இயங்கும் தசா அதிபதியின் ஜாதக நட்சத்திரம்",
     },
     3: {
         "key": "nak_lord_seat",
@@ -101,6 +101,9 @@ def build_activation_chain(
 
     period: 'mahadasha' | 'antardasha'
     """
+    period_en = "Mahadasha" if period == "mahadasha" else "Antardasha (Bhukti)"
+    period_ta = "மகா தசை" if period == "mahadasha" else "அந்தர் தசை (புக்தி)"
+
     asc_idx = (natal_chart.get("ascendant") or {}).get("sign_index", 0)
     pp = natal_chart.get("planet_positions") or {}
     pdata = pp.get(dasa_planet) or {}
@@ -126,7 +129,7 @@ def build_activation_chain(
             detail_ta=f"{dasa_planet} H{seat} இல் ({HOUSE_THEMES[seat]['ta']}).",
         )
 
-    # 2 — Birth nakshatra (link step, no houses)
+    # 2 — Natal nakshatra of the running dasa/bhukti lord (link step, no houses)
     _append_step(
         steps, activated, 2,
         houses=[],
@@ -134,11 +137,12 @@ def build_activation_chain(
         nakshatra=nak,
         nakshatra_lord=nak_lord,
         detail_en=(
-            f"{dasa_planet} travels in {nak} at birth; nakshatra lord is {nak_lord}."
+            f"{dasa_planet} (running {period_en.lower()} lord) natal nakshatra is {nak}; "
+            f"nakshatra lord is {nak_lord}."
             if nak and nak_lord else f"{dasa_planet} nakshatra data unavailable."
         ),
         detail_ta=(
-            f"{dasa_planet} ஜன்மத்தில் {nak} நட்சத்திரம்; அதிபதி {nak_lord}."
+            f"இயங்கும் {period_ta} {dasa_planet} ஜாதக நட்சத்திரம் {nak}; அதிபதி {nak_lord}."
             if nak and nak_lord else ""
         ),
     )
@@ -225,9 +229,6 @@ def build_activation_chain(
 
     focus = sorted(activated)
     background = [h for h in range(1, 13) if h not in activated]
-
-    period_en = "Mahadasha" if period == "mahadasha" else "Antardasha (Bhukti)"
-    period_ta = "மகா தசை" if period == "mahadasha" else "அந்தர் தசை (புக்தி)"
 
     return {
         "planet": dasa_planet,
