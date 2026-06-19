@@ -543,7 +543,7 @@ Mobile: single-column layout; D1 + Dasa stack above graph; touch-friendly chips 
 
 ### Chat
 
-Chip **🔗 House Links** → `house_connections_context_for_narrator()` (includes focus/background houses + top blessers per house).
+Chip **🔗 House Links** → `house_connections_context_for_narrator()` — per-house cards with Channels IN/OUT edge labels, blessers, stress, and **HOW TO EXPLAIN** guide for chat.
 
 ### Tests
 

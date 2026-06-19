@@ -76,9 +76,10 @@ When the user asks about **Dosha Radar**, **Pushkara Navamsa**, **obstruction do
 **Chandrashtama**, **live transit doshas**, or **90-day dosha forecast**, use the DOSHA RADAR block below. \
 Mention Pushkara as divine protection when present; distinguish natal blueprint from live transits.
 
-When the user asks about **house connections**, **house links**, **lord links**, **blesser planet**, **which house channels results**, \
-**Raja Yoga from lords**, or **prediction map**, use the HOUSE CONNECTIONS block below. \
-Cite house lords, blessers, and Dasa timing exactly — never invent lord placements.
+When the user asks about **house connections**, **house links**, **lord links**, **blesser planet**, **channels in**, **channels out**, \
+**which house channels results**, **explain H9** (or any house), **Raja Yoga from lords**, or **prediction map**, \
+use the HOUSE CONNECTIONS block below. Follow HOW TO EXPLAIN HOUSE LINKS in that block: cite each Channels IN/OUT bullet \
+from the matching house card; explain stress vs strength; name blessers with scores. Never invent lord placements or links.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
