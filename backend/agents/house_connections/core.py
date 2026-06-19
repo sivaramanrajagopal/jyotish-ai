@@ -26,7 +26,10 @@ from agents.transit_score_agent import _planet_aspects
 
 
 def houses_from_own(house_num: int, lord_house: int) -> int:
-    return ((lord_house - house_num) % 12) or 12
+    """Inclusive count from owned house (owned = 1st; same house → 12 in scoring tables)."""
+    if lord_house == house_num:
+        return 12
+    return ((lord_house - house_num) % 12) + 1
 
 
 def position_type_from_own(hfo: int) -> str:

@@ -4,7 +4,7 @@ from agents.house_connections_agent import (
     compute_house_connections,
     house_connections_context_for_narrator,
 )
-from agents.house_connections.core import analyze_all_houses, houses_from_own
+from agents.house_connections.core import analyze_all_houses, houses_from_own, position_type_from_own
 from agents.house_connections.yogas import detect_yogas
 from agents.natal_agent import calculate_natal_chart
 
@@ -33,6 +33,12 @@ def _chart():
 
 def test_houses_from_own_same_house():
     assert houses_from_own(5, 5) == 12
+
+
+def test_houses_from_own_11th_lord_in_6th_is_8th_dusthana():
+    """H11 lord in H6 = 8th from own (not 7th kendra)."""
+    assert houses_from_own(11, 6) == 8
+    assert position_type_from_own(8) == "dusthana_from_own"
 
 
 def test_analyze_all_houses_shape():

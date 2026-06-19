@@ -69,9 +69,9 @@ function PredictionCard({ pred, houseRow }) {
         <div className="hl-pred__blesser">
           <span className="hl-pred__label">Primary blesser</span>
           <strong>{top.planet}</strong>
-          <span className="hl-pred__score">score {top.score}</span>
+          <span className="hl-pred__score"> score {top.score}</span>
           {(top.active_maha || top.active_bhukti) && (
-            <span className="hl-pred__active">● Active in Dasa</span>
+            <span className="hl-pred__active"> ● Active in Dasa</span>
           )}
         </div>
       )}
