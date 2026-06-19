@@ -32,7 +32,8 @@ def _chart():
 
 
 def test_houses_from_own_same_house():
-    assert houses_from_own(5, 5) == 12
+    assert houses_from_own(5, 5) == 1
+    assert position_type_from_own(1) == "own_house"
 
 
 def test_houses_from_own_11th_lord_in_6th_is_8th_dusthana():

@@ -26,14 +26,12 @@ from agents.transit_score_agent import _planet_aspects
 
 
 def houses_from_own(house_num: int, lord_house: int) -> int:
-    """Inclusive count from owned house (owned = 1st; same house → 12 in scoring tables)."""
-    if lord_house == house_num:
-        return 12
+    """Inclusive count from owned house (owned = 1st; lord in owned sign = 1)."""
     return ((lord_house - house_num) % 12) + 1
 
 
 def position_type_from_own(hfo: int) -> str:
-    if hfo == 12:
+    if hfo == 1:
         return "own_house"
     if hfo in (4, 7, 10):
         return "kendra_from_own"
@@ -80,7 +78,11 @@ def _house_strength(
     asc_sign_index: int,
     planet_positions: dict,
 ) -> float:
-    pos_s = {12: 100, 4: 90, 7: 90, 10: 90, 5: 95, 9: 95, 3: 75, 11: 75, 2: 50, 6: 40, 8: 30}
+    pos_s = {
+        1: 100, 4: 90, 7: 90, 10: 90,
+        5: 95, 9: 95, 3: 75, 11: 75,
+        2: 50, 6: 40, 8: 30, 12: 35,
+    }
     lp = pos_s.get(hfo, 50)
     ld = _dignity_score(_dignity(lord, lord_data.get("sign", "")))
 
@@ -156,7 +158,7 @@ def analyze_house(
     lord = lord_of_house(asc_sign_index, house_num)
     lord_data = planet_positions.get(lord) or {}
     lord_house = whole_sign_house(lord_data.get("sign_index", 0), asc_sign_index) if lord_data.get("sign_index") is not None else 0
-    hfo = houses_from_own(house_num, lord_house) if lord_house else 12
+    hfo = houses_from_own(house_num, lord_house) if lord_house else 1
     pos_type = position_type_from_own(hfo)
     pos_info = POSITION_TYPE[pos_type]
     theme = HOUSE_THEMES[house_num]
