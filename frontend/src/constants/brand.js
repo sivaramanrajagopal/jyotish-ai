@@ -51,6 +51,7 @@ export const APP_FEATURE_LINKS = [
   { label: 'Career', tab: 'career' },
   { label: 'Health', tab: 'health' },
   { label: 'Dosha Radar', tab: 'dosha-radar' },
+  { label: 'House Links', tab: 'house-links' },
   { label: 'Gochara', tab: 'gochar' },
   { label: 'Panchangam', tab: 'panchangam' },
   { label: 'AI Chat', tab: 'chat' },

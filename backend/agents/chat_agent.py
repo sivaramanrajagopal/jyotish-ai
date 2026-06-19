@@ -31,6 +31,7 @@ from agents.indu_lagna_agent import indu_context_for_narrator
 from agents.career_agent import career_context_for_narrator
 from agents.health_agent import health_context_for_narrator
 from agents.dosha_radar_agent import dosha_radar_context_for_narrator
+from agents.house_connections_agent import house_connections_context_for_narrator
 from agents.bhavat_bhavam_agent import bhavat_bhavam_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
@@ -74,6 +75,10 @@ Prefer Mudakku Method B; note Method A as unverified. Never invent mantras.
 When the user asks about **Dosha Radar**, **Pushkara Navamsa**, **obstruction doshas**, **Visha Gati**, **Divine Protection**, \
 **Chandrashtama**, **live transit doshas**, or **90-day dosha forecast**, use the DOSHA RADAR block below. \
 Mention Pushkara as divine protection when present; distinguish natal blueprint from live transits.
+
+When the user asks about **house connections**, **house links**, **lord links**, **blesser planet**, **which house channels results**, \
+**Raja Yoga from lords**, or **prediction map**, use the HOUSE CONNECTIONS block below. \
+Cite house lords, blessers, and Dasa timing exactly — never invent lord placements.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -419,9 +424,14 @@ def _build_gochara_block(natal_chart: dict, dasha: dict) -> str:
     except Exception:
         radar_ctx = ""
 
+    try:
+        house_ctx = "\n\n" + house_connections_context_for_narrator(natal_chart)
+    except Exception:
+        house_ctx = ""
+
     return (
         ("\n\n" + gochara if gochara else "")
-        + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx + radar_ctx
+        + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx + radar_ctx + house_ctx
     )
 
 

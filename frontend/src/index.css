@@ -5809,3 +5809,70 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .hr-primer__summary::-webkit-details-marker { display: none; }
 .hr-primer__list { margin: 0; padding: 0 0.75rem 0.65rem 1.5rem; line-height: 1.45; }
 
+/* ── House Links (prediction map) ── */
+.hl-panel { scroll-margin-top: 5rem; }
+.hl-panel--muted, .hl-loading { padding: 1.5rem; text-align: center; color: var(--text-muted); }
+.hl-error { padding: 0.75rem; border-radius: 0.5rem; background: var(--error-bg); color: var(--error-text); border: 1px solid var(--error-border); }
+.hl-disclaimer { margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 0.45rem; font-size: 0.78rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); }
+.hl-hero { margin-bottom: 1rem; }
+.hl-hero__title { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.25rem; }
+.hl-hero__meta { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 0.5rem; }
+.hl-hero__chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.hl-chip { border: 1px solid var(--card-border); border-radius: 999px; padding: 0.25rem 0.55rem; font-size: 0.72rem; cursor: pointer; background: var(--card-bg); }
+.hl-chip--strong { border-color: rgba(34, 197, 94, 0.4); }
+.hl-chip--weak { border-color: rgba(239, 68, 68, 0.4); }
+.hl-layout { display: grid; gap: 1rem; margin-bottom: 1rem; }
+@media (min-width: 768px) { .hl-layout { grid-template-columns: 1fr 1fr; align-items: start; } }
+.hl-graph-wrap { border: 1px solid var(--card-border); border-radius: 0.5rem; padding: 0.75rem; background: var(--card-bg); }
+.hl-graph-toolbar { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.hl-graph-toolbar__label { font-size: 0.75rem; color: var(--text-muted); }
+.hl-focus-select { flex: 1; min-width: 10rem; min-height: 44px; padding: 0.35rem 0.5rem; border-radius: 0.35rem; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); font-size: 0.85rem; }
+.hl-graph { width: 100%; max-width: 420px; margin: 0 auto; display: block; aspect-ratio: 1; }
+.hl-graph__edge { stroke: var(--text-muted); }
+.hl-graph__edge--support { stroke: #22c55e; }
+.hl-graph__edge--stress { stroke: #ef4444; stroke-dasharray: 2 2; }
+.hl-graph__node circle { fill: var(--card-bg); stroke: var(--card-border); stroke-width: 0.4; }
+.hl-graph__node--strong circle { stroke: #22c55e; stroke-width: 0.6; }
+.hl-graph__node--weak circle { stroke: #ef4444; }
+.hl-graph__node--active circle { fill: rgba(249, 115, 22, 0.2); stroke: var(--orange); stroke-width: 0.9; }
+.hl-graph__label { font-size: 3px; fill: var(--text-primary); pointer-events: none; font-weight: 700; }
+.hl-graph-hint { font-size: 0.7rem; color: var(--text-muted); text-align: center; margin: 0.35rem 0 0; }
+.hl-pred-wrap { min-width: 0; }
+.hl-pred { border: 1px solid var(--card-border); border-radius: 0.5rem; padding: 0.85rem; background: var(--highlight-bg); }
+.hl-pred__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.35rem; align-items: flex-start; margin-bottom: 0.65rem; }
+.hl-pred__title { font-size: 1rem; font-weight: 700; margin: 0; }
+.hl-rag { font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.hl-rag--strong { color: #16a34a; }
+.hl-rag--moderate { color: #d97706; }
+.hl-rag--weak { color: #dc2626; }
+.hl-pred__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem 0.75rem; font-size: 0.8rem; margin-bottom: 0.65rem; }
+.hl-pred__label { display: block; font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.03em; }
+.hl-pred__blesser { margin-bottom: 0.5rem; font-size: 0.85rem; }
+.hl-pred__score { margin-left: 0.35rem; color: var(--text-muted); font-size: 0.75rem; }
+.hl-pred__active { margin-left: 0.5rem; color: var(--orange); font-size: 0.75rem; font-weight: 600; }
+.hl-blesser-list { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; margin: 0 0 0.5rem; padding: 0; font-size: 0.75rem; }
+.hl-blesser-list li { padding: 0.15rem 0.45rem; border-radius: 999px; background: var(--card-bg); border: 1px solid var(--card-border); }
+.hl-blesser-list__on { border-color: var(--orange); color: var(--orange); font-weight: 600; }
+.hl-pred__inference { font-size: 0.82rem; line-height: 1.45; margin: 0; color: var(--text-secondary); }
+.hl-pred__inference--ta { margin-top: 0.35rem; font-size: 0.78rem; opacity: 0.9; }
+.hl-edges { margin-top: 0.65rem; font-size: 0.75rem; }
+.hl-edges ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+.hl-edges__stress { color: #dc2626; }
+.hl-section { margin-top: 0.75rem; border: 1px solid var(--card-border); border-radius: 0.5rem; background: var(--card-bg); }
+.hl-section__summary { cursor: pointer; padding: 0.55rem 0.75rem; font-weight: 600; font-size: 0.85rem; list-style: none; }
+.hl-section__summary::-webkit-details-marker { display: none; }
+.hl-section__count { margin-left: 0.35rem; color: var(--text-muted); font-weight: 400; }
+.hl-house-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; padding: 0 0.5rem 0.65rem; }
+@media (min-width: 640px) { .hl-house-grid { grid-template-columns: repeat(4, 1fr); } }
+.hl-house-card { text-align: left; padding: 0.5rem; border-radius: 0.35rem; border: 1px solid var(--card-border); background: var(--card-bg); cursor: pointer; font-size: 0.72rem; }
+.hl-house-card--focus { outline: 2px solid var(--orange); }
+.hl-house-card__num { font-weight: 700; display: block; }
+.hl-house-card__theme { color: var(--text-muted); display: block; font-size: 0.65rem; }
+.hl-house-card__lord { display: block; margin-top: 0.15rem; }
+.hl-house-card__score { display: block; margin-top: 0.15rem; font-weight: 600; }
+.hl-yoga-list { list-style: none; margin: 0; padding: 0 0.65rem 0.65rem; }
+.hl-yoga-list__item { padding: 0.5rem 0; border-bottom: 1px solid var(--card-border); font-size: 0.8rem; }
+.hl-yoga-list__ta { margin-left: 0.35rem; color: var(--text-muted); font-size: 0.72rem; }
+.hl-yoga-list__meta { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+.hl-muted { font-size: 0.8rem; color: var(--text-muted); padding: 0 0.65rem 0.65rem; margin: 0; }
+.hl-bi__ta { color: var(--text-muted); font-size: 0.85em; }

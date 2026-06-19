@@ -66,6 +66,7 @@ from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
+from agents.house_connections_agent import compute_house_connections
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
@@ -1556,6 +1557,31 @@ def dosha_radar_analyze_endpoint(
             "Dosha radar error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Dosha radar analysis failed.")
+
+
+class HouseConnectionsAnalyzeRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/house-connections/analyze")
+@limiter.limit("30/minute")
+def house_connections_analyze_endpoint(
+    request: Request,
+    req: HouseConnectionsAnalyzeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """12-house prediction map: lord links, pada lords, blessers, yogas."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    try:
+        return compute_house_connections(chart)
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "House connections error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="House connections analysis failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -14,14 +14,15 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 3. [Health (D3 Drekkana)](#3-health-d3-drekkana)
 4. [Dosha Radar (obstruction + Pushkara)](#4-dosha-radar-obstruction--pushkara)
 5. [Horai & Uba Horai](#5-horai--uba-horai)
-6. [Bhavat Bhavam](#6-bhavat-bhavam)
-7. [Tamil Doshas](#7-tamil-doshas)
-8. [Indu Lagna](#8-indu-lagna)
-9. [Gochara / Forecast](#9-gochara--forecast)
-10. [Chat AI grounding](#10-chat-ai-grounding)
-11. [My Chart sub-panels](#11-my-chart-sub-panels)
-12. [Service worker & PWA](#12-service-worker--pwa)
-13. [Production troubleshooting matrix](#13-production-troubleshooting-matrix)
+6. [House Links (prediction map)](#6-house-links-prediction-map)
+7. [Bhavat Bhavam](#7-bhavat-bhavam)
+8. [Tamil Doshas](#8-tamil-doshas)
+9. [Indu Lagna](#9-indu-lagna)
+10. [Gochara / Forecast](#10-gochara--forecast)
+11. [Chat AI grounding](#11-chat-ai-grounding)
+12. [My Chart sub-panels](#12-my-chart-sub-panels)
+13. [Service worker & PWA](#13-service-worker--pwa)
+14. [Production troubleshooting matrix](#14-production-troubleshooting-matrix)
 
 ---
 
@@ -36,6 +37,7 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Health | Health tab | `POST /health/analyze` | `health_agent`, `health/*` | No* | 🏥 |
 | Dosha Radar | Dosha Radar tab (`?tab=dosha-radar`) | `POST /dosha-radar/analyze` | `dosha_radar_agent`, `dosha_radar/*` | No* | 🔥 |
 | Horai & Uba Horai | Panchangam tab (below limbs) | — (client-side) | `frontend/src/lib/horai.js` | No | — |
+| House Links | House Links tab | `POST /house-connections/analyze` | `house_connections_agent`, `house_connections/*` | No* | 🔗 |
 | Bhavat Bhavam | Career + Health layers | bundled in above | `bhavat_bhavam/*` | No | 🏠 |
 | Tamil Doshas | My Chart section | `POST /tamil-doshas` | `tamil_dosha/*` | No | 🔯 |
 | Indu Lagna | My Chart section | `POST /indu-lagna` | `indu_lagna_agent` | No | 💰 |
@@ -428,7 +430,50 @@ Covers midnight rule, owner date, sunrise label regression (no Invalid Date).
 
 ---
 
-## 6. Bhavat Bhavam
+## 6. House Links (prediction map)
+
+### Purpose
+
+Astrologer **prediction map** for all 12 houses: lord placement from own house, lord↔lord links (conjunction/aspect/mutual), pada lord & sign lord edges, dusthana chains, Bhavat Bhavam recovery, blesser ranking, Dasa activation, Raja/Dharma–Karma yogas. Ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections).
+
+### Files
+
+```
+backend/agents/house_connections_agent.py
+backend/agents/house_connections/core.py
+backend/agents/house_connections/edges.py
+backend/agents/house_connections/blessers.py
+backend/agents/house_connections/yogas.py
+backend/agents/house_connections/inference.py
+frontend/src/components/HouseLinksPanel.jsx
+frontend/src/components/HouseLinksGraph.jsx
+backend/tests/test_house_connections.py
+backend/tests/test_chat_house_connections_context.py
+```
+
+### API
+
+```
+POST /house-connections/analyze
+Body: { natal_chart?: object }
+Rate: 30/min
+```
+
+### Response shape (key fields)
+
+`houses[]`, `edges[]`, `yogas[]`, `predictions[]` (per-house inference + blessers), `graph` (SVG node positions), `summary.maha_dasa/bhukti`.
+
+### UI
+
+Tab **🔗 House Links** — circular graph, focus house selector, prediction card, 12-house grid, yoga list.
+
+### Chat
+
+Chip **🔗 House Links** → `house_connections_context_for_narrator()`.
+
+---
+
+## 7. Bhavat Bhavam
 
 ### Purpose
 
@@ -484,7 +529,7 @@ Shown when `primary_active`:
 
 ---
 
-## 7. Tamil Doshas
+## 8. Tamil Doshas
 
 ### Purpose
 
@@ -522,7 +567,7 @@ Rendered inside **My Chart** tab (`Home.jsx` → `TamilDoshasPanel`), not a sepa
 
 ---
 
-## 8. Indu Lagna
+## 9. Indu Lagna
 
 ### Purpose
 
@@ -558,7 +603,7 @@ Body: { natal_chart?: object }
 
 ---
 
-## 9. Gochara / Forecast
+## 10. Gochara / Forecast
 
 Unchanged core — see DEVELOPER-GUIDE §8 `transit_score_agent.py`.
 
@@ -569,7 +614,7 @@ Unchanged core — see DEVELOPER-GUIDE §8 `transit_score_agent.py`.
 
 ---
 
-## 10. Chat AI grounding
+## 11. Chat AI grounding
 
 ### System prompt assembly (`chat_agent.py`)
 
@@ -582,7 +627,8 @@ Order appended to base prompt:
 5. Career (`career_context_for_narrator`)
 6. Health (`health_context_for_narrator`)
 7. Bhavat Bhavam (`bhavat_bhavam_context_for_narrator`)
-8. Dosha Radar (`dosha_radar_context_for_narrator`) — Pushkara, obstruction alerts, 90d summary
+8. Dosha Radar (`dosha_radar_context_for_narrator`)
+9. House Links (`house_connections_context_for_narrator`)
 
 Each block wrapped in try/except — failure is non-fatal.
 
@@ -600,6 +646,7 @@ Each block wrapped in try/except — failure is non-fatal.
 | 💼 Career | career | D1+D10 career |
 | 🏥 Health | health | D3 awareness |
 | 🔥 Dosha Radar | dosha_radar | Obstruction + Pushkara scan |
+| 🔗 House Links | house_links | 12-house prediction map |
 | 🏠 Bhavam | bhavam | BB recovery paths |
 | ✨ Yogas | yoga | Natal yogas |
 | 🕐 Muhurta | muhurta | Auspicious timing |
@@ -620,7 +667,7 @@ Each block wrapped in try/except — failure is non-fatal.
 
 ---
 
-## 11. My Chart sub-panels
+## 12. My Chart sub-panels
 
 All on **My Chart** tab (`chart`), lazy-enabled when tab active:
 
@@ -636,7 +683,7 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ---
 
-## 12. Service worker & PWA
+## 13. Service worker & PWA
 
 ### File
 
@@ -644,13 +691,13 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ### Cache
 
-- Shell: `jyotish-shell-v4`
+- Shell: `jyotish-shell-v5`
 - Precache: `/`, `/index.html`, `/manifest.json`, icons
 
 ### Allowed deep-link tabs
 
 ```javascript
-ALLOWED_TABS = home, chart, career, health, dosha-radar, gochar,
+ALLOWED_TABS = home, chart, career, health, dosha-radar, house-links, gochar,
   panchangam, chat, forecast, prashna, admin
 ```
 
@@ -671,7 +718,7 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 
 ---
 
-## 13. Production troubleshooting matrix
+## 14. Production troubleshooting matrix
 
 | Symptom | Feature | Likely cause | Resolution |
 |---------|---------|--------------|------------|

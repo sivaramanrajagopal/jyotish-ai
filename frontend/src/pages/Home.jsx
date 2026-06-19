@@ -32,6 +32,7 @@ import InduLagnaPanel from '../components/InduLagnaPanel'
 import CareerPanel from '../components/CareerPanel'
 import HealthPanel from '../components/HealthPanel'
 import DoshaRadarPanel from '../components/DoshaRadarPanel'
+import HouseLinksPanel from '../components/HouseLinksPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
@@ -96,6 +97,7 @@ const BASE_TABS = [
   { key: 'career',     label: 'Career',     icon: '💼', mobileLabel: 'Career' },
   { key: 'health',     label: 'Health',     icon: '🏥', mobileLabel: 'Health' },
   { key: 'dosha-radar', label: 'Dosha Radar', icon: '🔥', mobileLabel: 'Dosha' },
+  { key: 'house-links', label: 'House Links', icon: '🔗', mobileLabel: 'Links' },
   { key: 'gochar',     label: 'Gochar',     icon: '🪐', mobileLabel: 'Gochar' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓', mobileLabel: 'Panch' },
   { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
@@ -928,7 +930,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','dosha-radar','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -1009,6 +1011,18 @@ function HomeApp() {
             ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <DoshaRadarPanel chart={chart} userId={userId} enabled={activeTab === 'dosha-radar'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
+        </div>
+        )}
+
+        {mountedTabs.has('house-links') && (
+        <div style={tabPane('house-links')} role="tabpanel" id="panel-house-links" aria-labelledby="tab-house-links">
+          {chart
+            ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <HouseLinksPanel chart={chart} userId={userId} enabled={activeTab === 'house-links'} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
@@ -1115,7 +1129,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','dosha-radar','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}

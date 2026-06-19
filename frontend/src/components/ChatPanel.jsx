@@ -95,6 +95,14 @@ const TOPICS = [
     question: "Scan my Dosha Radar — active obstruction doshas, Pushkara Navamsa protection, Chandrashtama, red zones, and the 90-day forecast.",
   },
   {
+    key: 'house_links',
+    label: '🔗 House Links',
+    color: '#8b5cf6',
+    bg: 'rgba(139,92,246,0.15)',
+    border: 'rgba(139,92,246,0.35)',
+    question: "Map my House Links prediction chart — for career and marriage houses, which lords connect, who is the blesser planet, and when does Dasa activate those channels?",
+  },
+  {
     key: 'bhavam',
     label: '🏠 Bhavam',
     color: '#0ea5e9',
@@ -139,6 +147,7 @@ function detectTopics(text) {
   if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
   if (/dagdha|soonya|mudakku|vadhai|vainasikam|avayogi|yogi graha|tamil dosha|parihara/.test(t)) found.push('tamil_doshas')
   if (/dosha radar|pushkara|visha gati|divine protection|chandrashtama|obstruction dosha|red zone transit/.test(t)) found.push('dosha_radar')
+  if (/house link|house connection|lord link|blesser planet|prediction map|raja yoga.*lord|dharma-karma/.test(t)) found.push('house_links')
   if (/d3|body map|health house|drekkana.*health/.test(t)) found.push('health')
   if (/bhavat bhavam|bhavam|house.from.house|6th→11th|6→11|10→7/.test(t)) found.push('bhavam')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
