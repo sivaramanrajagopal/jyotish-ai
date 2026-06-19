@@ -28,7 +28,7 @@ Audience: engineers who may never have seen this codebase before.
 17. [How to extend the app](#17-how-to-extend-the-app)
 18. [Astrological conventions](#18-astrological-conventions)
 19. [Vimshottari Dasha engine & Chat AI grounding](#19-vimshottari-dasha-engine--chat-ai-grounding)
-20. [Feature modules (Career, Health, Dosha Radar, Horai, Bhavam)](#20-feature-modules-career-health-dosha-radar-horai-bhavam)
+20. [Feature modules (Career, Health, Dosha Radar, Horai, House Links, Bhavam)](#20-feature-modules-career-health-dosha-radar-horai-house-links-bhavam)
 
 ---
 
@@ -48,6 +48,7 @@ Audience: engineers who may never have seen this codebase before.
 - **Health** — D3 Drekkana body map, Dasa/Bhukti + transit awareness (bilingual EN/TA).
 - **Dosha Radar** — live obstruction doshas, Pushkara Navamsa, 90-day forecast (dedicated tab).
 - **Horai & Uba Horai** — planetary hours inside Panchangam (fixed 6 AM or sunrise slots).
+- **House Links** — 12-house prediction map, Dasa life-area activation, D1 reference chart (dedicated tab).
 - **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers).
 - **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi (My Chart; links to Dosha Radar).
 - **Indu Lagna** — fortune lagna + wealth-favourable Dasa/transit windows.
@@ -652,6 +653,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Career | `POST /career/predict` | career_agent | No* |
 | Health | `POST /health/analyze` | health_agent | No* |
 | Dosha Radar | `POST /dosha-radar/analyze` | dosha_radar_agent | No* |
+| House Links | `POST /house-connections/analyze` | house_connections_agent | No* |
 | Bhavat Bhavam | bundled in career/health | bhavat_bhavam_agent | No |
 | Tara/Ashtama | `GET /personal-panchangam/*` | tara_engine | No |
 
@@ -877,6 +879,8 @@ pytest tests/ -q
 | `test_tamil_doshas.py` | Tamil dosha engines |
 | `test_indu_lagna.py` | Indu Lagna periods |
 | `test_dosha_radar.py` | Pushkara, obstruction, radar API shape |
+| `test_house_connections*.py` | House Links lord links, from-own logic |
+| `test_dasa_activation.py` | 7-step Maha/Bhukti life-area chain |
 | `test_chat_*_context.py` | Chat prompt grounding per feature |
 
 Tests run **without network or OpenAI** (~95 tests total).
@@ -1056,8 +1060,9 @@ ensure_dasha(natal_chart)               # forecast/scores — backfill if missin
 | 📊 Bhukti Table | `dasha_table` | Exact `bhukti_table_markdown` (9 bhuktis in current MD) |
 | 🗓 Dasa Cycle | `dasha_cycle` | Exact `full_dasha_cycle_markdown` (MD roadmap + bhuktis) |
 | 🔥 Dosha Radar | `dosha_radar` | Obstruction doshas, Pushkara, Chandrashtama, 90d outlook |
+| 🔗 House Links | `house_links` | 12-house map, Dasa focus houses, blessers |
 
-Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §10](./FEATURES-TECHNICAL-REFERENCE.md#10-chat-ai-grounding) (includes `dosha_radar_context_for_narrator` after Bhavam).
+Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §11](./FEATURES-TECHNICAL-REFERENCE.md#11-chat-ai-grounding) (includes `house_connections_context_for_narrator` after Dosha Radar).
 
 **Anti-hallucination rules** in `chat_agent.py` system prompt:
 
@@ -1095,7 +1100,7 @@ CSS in `index.css`:
 
 ---
 
-## 20. Feature modules (Career, Health, Dosha Radar, Horai, Bhavam)
+## 20. Feature modules (Career, Health, Dosha Radar, Horai, House Links, Bhavam)
 
 Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md)** — file maps, API shapes, scoring rules, chat chips, and production troubleshooting.
 
@@ -1129,6 +1134,15 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 - **Tests:** `frontend/src/lib/horai.test.js` (vitest)
 - **See:** FEATURES doc §5 for midnight rule and Invalid Date fix notes
 
+### House Links (`POST /house-connections/analyze`)
+
+- **Engines:** `house_connections/core.py` (lord strength, from-own), `edges.py`, `blessers.py`, `yogas.py`, `dasa_activation.py` (7-step Maha/Bhukti life areas)
+- **Frontend:** `HouseLinksPanel.jsx`, `HouseLinksGraph.jsx` — D1 reference chart with focus-house highlight, activation sequence, graph + predictions
+- **Tab:** `?tab=house-links` (🔗) after Dosha Radar; Home hero pill in `brand.js`
+- **Chat:** 🔗 chip → `house_connections_context_for_narrator()` (focus/background houses, blessers, yogas)
+- **Source:** ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections)
+- **See:** FEATURES doc §6 for from-own counting rules and Dasa activation steps
+
 ### Bhavat Bhavam (bundled)
 
 - **Engines:** `bhavat_bhavam/core.py`, `bhavat_bhavam/slices.py`
@@ -1138,7 +1152,7 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 
 ### Service worker
 
-After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosha-radar`) and bump `CACHE_SHELL` (currently **v4**). See FEATURES doc §12.
+After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosha-radar`, `house-links`) and bump `CACHE_SHELL` (currently **v6**). See FEATURES doc §13.
 
 ---
 
@@ -1162,4 +1176,4 @@ Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
 
 ---
 
-*Last updated: 2026-06-06 — Dosha Radar, Pushkara, Horai, Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*
+*Last updated: 2026-06-06 — House Links, Dasa life areas, Dosha Radar, Pushkara, Horai, Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*

@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-06-06 (Dosha Radar, Pushkara, Horai)
+**Last updated:** 2026-06-06 (House Links, Dasa life areas, Dosha Radar, Pushkara, Horai)
 
 ---
 
@@ -434,20 +434,24 @@ Covers midnight rule, owner date, sunrise label regression (no Invalid Date).
 
 ### Purpose
 
-Astrologer **prediction map** for all 12 houses: lord placement from own house, lord↔lord links (conjunction/aspect/mutual), pada lord & sign lord edges, dusthana chains, Bhavat Bhavam recovery, blesser ranking, Dasa activation, Raja/Dharma–Karma yogas. Ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections).
+Astrologer **prediction map** for all 12 houses: lord placement from own house, lord↔lord links (conjunction/aspect/mutual), pada lord & sign lord edges, dusthana chains, Bhavat Bhavam recovery, blesser ranking, Raja/Dharma–Karma yogas, and **Dasa life-area activation** (7-step Maha/Bhukti house sequence). Ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections).
 
 ### Files
 
 ```
 backend/agents/house_connections_agent.py
-backend/agents/house_connections/core.py
+backend/agents/house_connections/core.py      # lords, strength, houses_from_own (owned=1st)
 backend/agents/house_connections/edges.py
 backend/agents/house_connections/blessers.py
 backend/agents/house_connections/yogas.py
 backend/agents/house_connections/inference.py
+backend/agents/house_connections/dasa_activation.py   # 7-step Maha/Bhukti chain
 frontend/src/components/HouseLinksPanel.jsx
 frontend/src/components/HouseLinksGraph.jsx
+frontend/src/components/SouthIndianChart.jsx          # highlightBhavaHouses prop
 backend/tests/test_house_connections.py
+backend/tests/test_house_connections_logic.py
+backend/tests/test_dasa_activation.py
 backend/tests/test_chat_house_connections_context.py
 ```
 
@@ -461,15 +465,67 @@ Rate: 30/min
 
 ### Response shape (key fields)
 
-`houses[]`, `edges[]`, `yogas[]`, `predictions[]` (per-house inference + blessers), `graph` (SVG node positions), `summary.maha_dasa/bhukti`.
+| Field | Description |
+|-------|-------------|
+| `houses[]` | Per-house lord, seat, from-own type, strength, RAG |
+| `edges[]` | Lord placement, same-lord, mutual aspect, pada/sign lord, BB, dusthana chain |
+| `yogas[]` | Kendra–Trikona Raja Yoga, Dharma–Karma Adhipati |
+| `predictions[]` | Per-house inference, channels in/out, blessers |
+| `graph` | SVG node positions + edge list |
+| `summary.maha_dasa/bhukti` | Current Vimshottari lords |
+| `dasa_life_areas` | Maha + Bhukti activation chains + combined focus/background |
+
+### Lord placement from own (core logic)
+
+Inclusive count from **owned house as 1st** (not 12th):
+
+```python
+houses_from_own(house_num, lord_house) = ((lord_house - house_num) % 12) + 1
+```
+
+- Lord in owned sign → `hfo=1` → `own_house`
+- 12th from own (e.g. H5 lord in H4) → `hfo=12` → `dusthana_from_own` (not own house)
+
+Canonical test chart: **1978-09-18 17:35 Chennai** — H11 Jupiter in H6 = 8th from own (dusthana).
+
+### Dasa life-area activation (7-step chain)
+
+Separate chain for **Mahadasha lord** and **Antardasha (Bhukti) lord**. Combined focus = union of both house sets.
+
+| Step | Key | What activates |
+|------|-----|----------------|
+| 1 | `dasa_seat` | Dasa planet's D1 house seat |
+| 2 | `dasa_nakshatra` | **Natal nakshatra of the running Dasa lord** (Maha or Bhukti planet — not always Moon; not transit nakshatra) → nakshatra lord link |
+| 3 | `nak_lord_seat` | Nakshatra lord's D1 seat |
+| 4 | `nak_lord_ownership` | Nakshatra lord's owned houses |
+| 5 | `occupant_spread` | Planets in houses **ruled by** the Dasa lord → those occupants' owned houses |
+| 6 | `dasa_ownership` | Dasa lord's owned houses |
+| 7 | `dasa_seat_anchor` | Dasa planet seat again (final anchor) |
+
+**Interpretation:** emphasize **focus** house themes during the period; de-emphasize **background** houses (transits/divisionals still apply).
+
+**Example (Kumbha lagna, Moon MD):** Moon H2, Revati → Mercury H5/H8/H7, Moon rules H6, Jupiter in H6 → H2/H11 → focus **H2, H5, H6, H7, H8, H11**.
 
 ### UI
 
-Tab **🔗 House Links** — circular graph, focus house selector, prediction card, 12-house grid, yoga list.
+Tab **🔗 House Links** (`?tab=house-links`):
+
+1. **D1 Rasi reference** — compact `SouthIndianChart`; orange tint on combined Dasa focus bhavas (`highlightBhavaHouses`)
+2. **Dasa life areas** — focus/background chips, expandable 7-step sequences (Maha + Bhukti)
+3. Circular **HouseLinksGraph**, focus house selector, prediction card
+4. Collapsible 12-house grid, lord-link yoga list
+
+Mobile: single-column layout; D1 + Dasa stack above graph; touch-friendly chips (44px targets where applicable).
 
 ### Chat
 
-Chip **🔗 House Links** → `house_connections_context_for_narrator()`.
+Chip **🔗 House Links** → `house_connections_context_for_narrator()` (includes focus/background houses + top blessers per house).
+
+### Tests
+
+```bash
+cd backend && python3 -m pytest tests/test_house_connections*.py tests/test_dasa_activation.py tests/test_chat_house_connections_context.py -q
+```
 
 ---
 
@@ -691,7 +747,7 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ### Cache
 
-- Shell: `jyotish-shell-v5`
+- Shell: `jyotish-shell-v6`
 - Precache: `/`, `/index.html`, `/manifest.json`, icons
 
 ### Allowed deep-link tabs
@@ -736,6 +792,9 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | Horai Invalid Date | Horai / Sunrise mode | Old JS bundle | Deploy ≥ `185740d`; bump SW cache; hard refresh |
 | Horai wrong “current” before 6 AM | Horai fixed mode | Owner date rule | Expected — banner links to previous calendar day |
 | Dosha Radar tab blank offline | Dosha Radar | SW missing tab | `dosha-radar` in `ALLOWED_TABS` |
+| House Links tab blank offline | House Links | SW missing tab | `house-links` in `ALLOWED_TABS`; cache v6+ |
+| H11 lord “Kendra from own” wrong | House Links | Old from-own count | Deploy ≥ `03b1689`; owned=1st not 12th |
+| Dasa focus houses empty | House Links | Missing planet nakshatra | Recalculate chart; verify `planet_positions.*.nakshatra` |
 | Pushkara missing in chat | Chat | Old backend | `dosha_radar_context_for_narrator` in `chat_agent` |
 | Admin 403 | Admin | Email mismatch | `ADMIN_EMAILS` = `VITE_ADMIN_EMAILS` |
 | Analytics 404 | Analytics | Table missing | Run `supabase/analytics_events.sql` |
