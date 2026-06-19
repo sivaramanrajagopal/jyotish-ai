@@ -35,7 +35,8 @@ All in [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md):
 - Health (D3, body map, transits)
 - **Dosha Radar** (obstruction doshas, Pushkara Navamsa, 90-day forecast)
 - **Horai & Uba Horai** (Panchangam tab — fixed 6 AM or sunrise modes)
-- Bhavat Bhavam
+- **House Links** (lord-link channels, Dasa life areas, D1 reference; BB recovery note on dusthana only)
+- Bhavat Bhavam (Career + Health layers)
 - Tamil Doshas, Indu Lagna
 - Chat AI context blocks
 - Service worker / PWA

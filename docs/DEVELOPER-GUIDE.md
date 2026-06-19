@@ -48,8 +48,8 @@ Audience: engineers who may never have seen this codebase before.
 - **Health** — D3 Drekkana body map, Dasa/Bhukti + transit awareness (bilingual EN/TA).
 - **Dosha Radar** — live obstruction doshas, Pushkara Navamsa, 90-day forecast (dedicated tab).
 - **Horai & Uba Horai** — planetary hours inside Panchangam (fixed 6 AM or sunrise slots).
-- **House Links** — 12-house prediction map, Dasa life-area activation, D1 reference chart (dedicated tab).
-- **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers).
+- **House Links** — 12-house prediction map, lord-link channels, Dasa life-area activation, D1 reference (dedicated tab; BB recovery note on dusthana only).
+- **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers; separate from House Links channels).
 - **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi (My Chart; links to Dosha Radar).
 - **Indu Lagna** — fortune lagna + wealth-favourable Dasa/transit windows.
 
@@ -879,7 +879,7 @@ pytest tests/ -q
 | `test_tamil_doshas.py` | Tamil dosha engines |
 | `test_indu_lagna.py` | Indu Lagna periods |
 | `test_dosha_radar.py` | Pushkara, obstruction, radar API shape |
-| `test_house_connections*.py` | House Links lord links, from-own logic |
+| `test_house_connections*.py` | House Links lord links, from-own logic, BB excluded from edges |
 | `test_dasa_activation.py` | 7-step Maha/Bhukti life-area chain |
 | `test_chat_*_context.py` | Chat prompt grounding per feature |
 
@@ -1060,7 +1060,7 @@ ensure_dasha(natal_chart)               # forecast/scores — backfill if missin
 | 📊 Bhukti Table | `dasha_table` | Exact `bhukti_table_markdown` (9 bhuktis in current MD) |
 | 🗓 Dasa Cycle | `dasha_cycle` | Exact `full_dasha_cycle_markdown` (MD roadmap + bhuktis) |
 | 🔥 Dosha Radar | `dosha_radar` | Obstruction doshas, Pushkara, Chandrashtama, 90d outlook |
-| 🔗 House Links | `house_links` | 12-house map, Dasa focus houses, blessers |
+| 🔗 House Links | `house_links` | 12-house map, channels in/out, Dasa focus, blessers |
 
 Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §11](./FEATURES-TECHNICAL-REFERENCE.md#11-chat-ai-grounding) (includes `house_connections_context_for_narrator` after Dosha Radar).
 
@@ -1136,12 +1136,14 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 
 ### House Links (`POST /house-connections/analyze`)
 
-- **Engines:** `house_connections/core.py` (lord strength, from-own), `edges.py`, `blessers.py`, `yogas.py`, `dasa_activation.py` (7-step Maha/Bhukti life areas)
-- **Frontend:** `HouseLinksPanel.jsx`, `HouseLinksGraph.jsx` — D1 reference chart with focus-house highlight, activation sequence, graph + predictions
+- **Engines:** `house_connections/core.py` (lord strength, from-own), `edges.py` (structural links only — **no BB**), `blessers.py`, `yogas.py`, `inference.py` (channels + dusthana BB recovery note), `dasa_activation.py` (7-step Maha/Bhukti life areas)
+- **Frontend:** `HouseLinksPanel.jsx`, `HouseLinksGraph.jsx` — D1 reference chart with focus-house highlight, Dasa activation, graph + predictions
+- **Channels:** **Channels in** = supportive edges flowing into focus house; **Channels out** = edges from focus house to others (lord placement, aspects, pada/sign lords)
+- **Bhavat Bhavam:** recovery path text on H6/H8/H12 prediction cards only — not in graph, channels, or blesser scoring (see Career/Health for full BB layer)
 - **Tab:** `?tab=house-links` (🔗) after Dosha Radar; Home hero pill in `brand.js`
 - **Chat:** 🔗 chip → `house_connections_context_for_narrator()` (focus/background houses, blessers, yogas)
 - **Source:** ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections)
-- **See:** FEATURES doc §6 for from-own counting rules and Dasa activation steps
+- **See:** FEATURES doc §6 for from-own counting, channels, Dasa activation, BB split
 
 ### Bhavat Bhavam (bundled)
 
@@ -1176,4 +1178,4 @@ Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
 
 ---
 
-*Last updated: 2026-06-06 — House Links, Dasa life areas, Dosha Radar, Pushkara, Horai, Career, Health, Bhavat Bhavam, Tamil Doshas, Indu Lagna, FEATURES-TECHNICAL-REFERENCE, README.*
+*Last updated: 2026-06-06 — House Links channels/BB split, Dasa life areas, Dosha Radar, Horai, Career, Health, Bhavat Bhavam, FEATURES-TECHNICAL-REFERENCE.*

@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-06-06 (House Links, Dasa life areas, Dosha Radar, Pushkara, Horai)
+**Last updated:** 2026-06-06 (House Links channels/BB split, Dasa life areas)
 
 ---
 
@@ -38,7 +38,7 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Dosha Radar | Dosha Radar tab (`?tab=dosha-radar`) | `POST /dosha-radar/analyze` | `dosha_radar_agent`, `dosha_radar/*` | No* | 🔥 |
 | Horai & Uba Horai | Panchangam tab (below limbs) | — (client-side) | `frontend/src/lib/horai.js` | No | — |
 | House Links | House Links tab | `POST /house-connections/analyze` | `house_connections_agent`, `house_connections/*` | No* | 🔗 |
-| Bhavat Bhavam | Career + Health layers | bundled in above | `bhavat_bhavam/*` | No | 🏠 |
+| Bhavat Bhavam | Career + Health layers | bundled in career/health | `bhavat_bhavam/*` | No | 🏠 |
 | Tamil Doshas | My Chart section | `POST /tamil-doshas` | `tamil_dosha/*` | No | 🔯 |
 | Indu Lagna | My Chart section | `POST /indu-lagna` | `indu_lagna_agent` | No | 💰 |
 | Ashtakavarga | My Chart section | `POST /ashtakavarga` | `ashtakavarga_agent` | No | (in prompt) |
@@ -444,13 +444,14 @@ backend/agents/house_connections/core.py      # lords, strength, houses_from_own
 backend/agents/house_connections/edges.py
 backend/agents/house_connections/blessers.py
 backend/agents/house_connections/yogas.py
-backend/agents/house_connections/inference.py
+backend/agents/house_connections/inference.py   # channels + dusthana BB recovery note
 backend/agents/house_connections/dasa_activation.py   # 7-step Maha/Bhukti chain
 frontend/src/components/HouseLinksPanel.jsx
 frontend/src/components/HouseLinksGraph.jsx
 frontend/src/components/SouthIndianChart.jsx          # highlightBhavaHouses prop
 backend/tests/test_house_connections.py
 backend/tests/test_house_connections_logic.py
+backend/tests/test_house_connections_edges.py         # BB excluded from graph
 backend/tests/test_dasa_activation.py
 backend/tests/test_chat_house_connections_context.py
 ```
@@ -470,7 +471,7 @@ Rate: 30/min
 | `houses[]` | Per-house lord, seat, from-own type, strength, RAG |
 | `edges[]` | Lord placement, same-lord, mutual aspect, pada/sign lord, dusthana chain (no Bhavat Bhavam) |
 | `yogas[]` | Kendra–Trikona Raja Yoga, Dharma–Karma Adhipati |
-| `predictions[]` | Per-house inference, channels in/out, blessers |
+| `predictions[]` | Per-house inference, channels in/out, blessers, `recovery_edges` (dusthana BB only) |
 | `graph` | SVG node positions + edge list |
 | `summary.maha_dasa/bhukti` | Current Vimshottari lords |
 | `dasa_life_areas` | Maha + Bhukti activation chains + combined focus/background |
@@ -505,6 +506,29 @@ Separate chain for **Mahadasha lord** and **Antardasha (Bhukti) lord**. Combined
 **Interpretation:** emphasize **focus** house themes during the period; de-emphasize **background** houses (transits/divisionals still apply).
 
 **Example (Kumbha lagna, Moon MD):** Moon H2, Revati → Mercury H5/H8/H7, Moon rules H6, Jupiter in H6 → H2/H11 → focus **H2, H5, H6, H7, H8, H11**.
+
+### Channels in / Channels out
+
+Computed from **structural natal edges only** (`edges.py` → `inference.py`). Not transits, not Dasa focus houses, **not Bhavat Bhavam**.
+
+| UI label | Code | Meaning |
+|----------|------|---------|
+| **Channels in** | Supportive edges with `to_house` = focus house | Life areas that **feed into** this house (lord placement, lord links, pada/sign lord, benefic aspect) |
+| **Channels out** | Edges with `from_house` = focus house (excluding self) | Life areas this house **channels outward to** |
+
+Edge kinds in the graph: `lord_placement`, `same_lord`, `lord_link`, `mutual_aspect`, `pada_lord`, `pada_lord_placement`, `sign_lord`, `dusthana_chain` (stress), `aspect_on_house`.
+
+**Blesser scores** use the same edge list — BB edges do not add blesser points.
+
+### Bhavat Bhavam vs House Links
+
+| | House Links graph | House Links dusthana card | Career / Health |
+|--|-------------------|---------------------------|-----------------|
+| BB edges in channels | ❌ | — | — |
+| BB recovery note | — | ✅ H6→11, H8→3, H12→11 via `dusthana_recovery_edges()` | Full evaluated links when primary active |
+| Chat chip | 🔗 House Links | — | 🏠 Bhavam |
+
+Deploy **`eda3262`** or later for BB exclusion from channels/blessers.
 
 ### UI
 
@@ -795,6 +819,7 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | House Links tab blank offline | House Links | SW missing tab | `house-links` in `ALLOWED_TABS`; cache v6+ |
 | H11 lord “Kendra from own” wrong | House Links | Old from-own count | Deploy ≥ `03b1689`; owned=1st not 12th |
 | Dasa focus houses empty | House Links | Missing planet nakshatra | Recalculate chart; verify `planet_positions.*.nakshatra` |
+| BB inflating channels in/out | House Links | Old backend | Deploy ≥ `eda3262`; BB is recovery note on H6/H8/H12 only |
 | Pushkara missing in chat | Chat | Old backend | `dosha_radar_context_for_narrator` in `chat_agent` |
 | Admin 403 | Admin | Email mismatch | `ADMIN_EMAILS` = `VITE_ADMIN_EMAILS` |
 | Analytics 404 | Analytics | Table missing | Run `supabase/analytics_events.sql` |
