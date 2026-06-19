@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import HouseLinksGraph from './HouseLinksGraph'
+import SouthIndianChart from './SouthIndianChart'
 
 const RAG_CLASS = {
   strong: 'hl-rag--strong',
@@ -123,6 +124,123 @@ function YogaList({ yogas }) {
   )
 }
 
+function ActivationChain({ chain, defaultOpen = false, onSelectHouse }) {
+  if (!chain?.steps?.length) return null
+  return (
+    <details className="hl-dasa-chain" open={defaultOpen}>
+      <summary className="hl-dasa-chain__summary">
+        {chain.period_en}: <strong>{chain.planet}</strong>
+        {' · '}
+        focus {chain.focus_houses?.map(h => `H${h}`).join(', ')}
+      </summary>
+      <ol className="hl-dasa-steps">
+        {chain.steps.map(step => (
+          <li key={step.key} className="hl-dasa-step">
+            <span className="hl-dasa-step__num">{step.step}</span>
+            <span className="hl-dasa-step__label">
+              <Bilingual en={step.label_en} ta={step.label_ta} inline />
+            </span>
+            <p className="hl-dasa-step__detail">{step.detail_en}</p>
+            {step.detail_ta && (
+              <p className="hl-dasa-step__detail hl-pred__inference--ta">{step.detail_ta}</p>
+            )}
+            <div className="hl-dasa-step__houses">
+              {(step.houses_added?.length ? step.houses_added : step.houses_all)?.length ? (
+                (step.houses_added?.length ? step.houses_added : step.houses_all).map(h => (
+                  <button
+                    key={`${step.key}-${h}`}
+                    type="button"
+                    className="hl-dasa-step__house"
+                    onClick={() => onSelectHouse?.(h)}
+                  >
+                    H{h}
+                  </button>
+                ))
+              ) : (
+                <span className="hl-dasa-step__house hl-dasa-step__house--none">link only</span>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </details>
+  )
+}
+
+function DasaLifeAreas({ dasa, focusHouse, onSelectHouse }) {
+  if (!dasa?.combined) return null
+  const combined = dasa.combined
+
+  return (
+    <div className="hl-dasa-focus">
+      <header className="hl-dasa-section__head" style={{ margin: '0 0 0.65rem', borderRadius: '0.35rem' }}>
+        <h3 className="hl-dasa-section__title">
+          <Bilingual en="Dasa life areas" ta="தசை வாழ்க்கை துறைகள்" inline />
+        </h3>
+        <p className="hl-dasa-section__sub">
+          {dasa.maha_dasa} Mahadasha · {dasa.bhukti} Bhukti — emphasize focus houses; de-emphasize background
+        </p>
+      </header>
+
+      <p className="hl-dasa-guidance">{combined.guidance_en}</p>
+      {combined.guidance_ta && (
+        <p className="hl-dasa-guidance hl-pred__inference--ta">{combined.guidance_ta}</p>
+      )}
+
+      <div className="hl-dasa-chip-row" role="list" aria-label="Focus houses">
+        {(combined.focus_themes || []).map(t => (
+          <button
+            key={`f-${t.house}`}
+            type="button"
+            role="listitem"
+            className={`hl-dasa-chip hl-dasa-chip--focus${focusHouse === t.house ? ' hl-house-card--focus' : ''}`}
+            onClick={() => onSelectHouse(t.house)}
+          >
+            H{t.house} {t.theme_en}
+          </button>
+        ))}
+      </div>
+
+      <div className="hl-dasa-chip-row" role="list" aria-label="Background houses">
+        {(combined.background_themes || []).map(t => (
+          <span key={`b-${t.house}`} role="listitem" className="hl-dasa-chip hl-dasa-chip--bg">
+            H{t.house}
+          </span>
+        ))}
+      </div>
+
+      <ActivationChain chain={dasa.mahadasha} defaultOpen onSelectHouse={onSelectHouse} />
+      <ActivationChain chain={dasa.antardasha} onSelectHouse={onSelectHouse} />
+    </div>
+  )
+}
+
+function D1ReferenceChart({ chart, focusHouses }) {
+  if (!chart?.planet_positions) return null
+  const bd = chart.birth_data || {}
+  return (
+    <div className="hl-dasa-chart-wrap">
+      <SouthIndianChart
+        title="D1"
+        subtitle={`${bd.dob || ''} · ${bd.tob || ''}`}
+        planetPositions={chart.planet_positions}
+        lagnaSignIndex={chart.ascendant?.sign_index ?? 0}
+        variant="classic"
+        showDetails={false}
+        chartKind="natal"
+        highlightBhavaHouses={focusHouses}
+      />
+      <div className="hl-dasa-chart-legend">
+        <span>
+          <span className="hl-dasa-chart-legend__dot hl-dasa-chart-legend__dot--active" />
+          Active Dasa houses
+        </span>
+        <span>Lagna ↑ highlighted separately</span>
+      </div>
+    </div>
+  )
+}
+
 export default function HouseLinksPanel({ chart, userId, enabled = true }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -152,6 +270,11 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
   const focusPred = useMemo(
     () => (data?.predictions || []).find(p => p.house === focusHouse),
     [data, focusHouse],
+  )
+
+  const dasaFocusHouses = useMemo(
+    () => data?.dasa_life_areas?.combined?.focus_houses || [],
+    [data],
   )
 
   if (!chart) {
@@ -202,6 +325,23 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
           ))}
         </div>
       </header>
+
+      <section className="hl-dasa-section" aria-label="D1 reference chart">
+        <header className="hl-dasa-section__head">
+          <h3 className="hl-dasa-section__title">
+            <Bilingual en="D1 Rasi — quick reference" ta="D1 ராசி — விரைவு குறிப்பு" inline />
+          </h3>
+          <p className="hl-dasa-section__sub">Orange tint = active life areas in current Dasa</p>
+        </header>
+        <div className="hl-dasa-grid">
+          <D1ReferenceChart chart={chart} focusHouses={dasaFocusHouses} />
+          <DasaLifeAreas
+            dasa={data.dasa_life_areas}
+            focusHouse={focusHouse}
+            onSelectHouse={setFocusHouse}
+          />
+        </div>
+      </section>
 
       <div className="hl-layout">
         <section className="hl-graph-wrap">

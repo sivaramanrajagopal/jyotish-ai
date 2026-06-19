@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from agents.house_connections.blessers import rank_blessers
 from agents.house_connections.core import analyze_all_houses
+from agents.house_connections.dasa_activation import compute_dasa_life_areas
 from agents.house_connections.edges import build_edges
 from agents.house_connections.inference import build_prediction_card
 from agents.house_connections.themes import DISCLAIMER_EN, DISCLAIMER_TA, HOUSE_THEMES
@@ -37,6 +38,7 @@ def compute_house_connections(natal_chart: dict) -> dict:
 
     strong = sorted(houses, key=lambda x: x["strength"], reverse=True)[:3]
     weak = sorted(houses, key=lambda x: x["strength"])[:3]
+    dasa_life_areas = compute_dasa_life_areas(natal_chart, maha, bhukti)
 
     return {
         "disclaimer": {"en": DISCLAIMER_EN, "ta": DISCLAIMER_TA},
@@ -53,6 +55,7 @@ def compute_house_connections(natal_chart: dict) -> dict:
         "yogas": yogas,
         "predictions": [predictions[h] for h in range(1, 13)],
         "blessers_by_house": blessers_by_house,
+        "dasa_life_areas": dasa_life_areas,
         "graph": _graph_payload(houses_map, edges),
     }
 
@@ -118,6 +121,17 @@ def house_connections_context_for_narrator(natal_chart: dict) -> str:
         lines.append("KEY YOGAS (lord links):")
         for y in data["yogas"][:6]:
             lines.append(f"  • {y['name']}: {y['detail_en']} (strength {y['strength']})")
+
+    dasa = data.get("dasa_life_areas") or {}
+    combined = dasa.get("combined") or {}
+    if combined.get("focus_houses"):
+        lines.append("")
+        lines.append("DASA LIFE AREAS (focus vs background):")
+        lines.append(f"  Focus: {', '.join(f'H{h}' for h in combined['focus_houses'])}")
+        lines.append(f"  Background: {', '.join(f'H{h}' for h in combined.get('background_houses', []))}")
+        maha = dasa.get("mahadasha") or {}
+        if maha.get("guidance_en"):
+            lines.append(f"  MD ({dasa.get('maha_dasa')}): {maha['guidance_en'][:160]}")
 
     lines.append("")
     lines.append("PREDICTION SNAPSHOT (top blesser per house):")

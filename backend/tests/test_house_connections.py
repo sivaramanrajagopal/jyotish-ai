@@ -58,6 +58,15 @@ def test_house_connections_full_structure():
     assert len(out["predictions"]) == 12
     assert out["graph"]["nodes"]
     assert out["summary"]["maha_dasa"]
+    assert out["dasa_life_areas"]["combined"]["focus_houses"]
+
+
+def test_dasa_life_areas_in_response():
+    out = compute_house_connections(_chart())
+    dasa = out["dasa_life_areas"]
+    assert len(dasa["mahadasha"]["steps"]) == 7
+    assert dasa["combined"]["focus_houses"]
+    assert dasa["combined"]["background_houses"]
 
 
 def test_predictions_have_blessers():

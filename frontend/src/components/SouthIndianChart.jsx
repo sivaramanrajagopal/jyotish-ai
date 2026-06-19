@@ -132,12 +132,14 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
 // ── Chart cell ───────────────────────────────────────────────────────────────
 function Cell({
   signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, planetData,
-  showDetails, variant, chartKind = 'natal',
+  showDetails, variant, chartKind = 'natal', highlightBhavaHouses,
 }) {
   const planets = planetSignMap[signIdx] || []
   const isLagna = signIdx === lagnaSignIdx
   const isClassic = variant === 'classic'
   const houseNum = signIdx + 1
+  const bhavaHouse = ((signIdx - lagnaSignIdx + 12) % 12) + 1
+  const isDasaActive = highlightBhavaHouses?.includes(bhavaHouse)
   const hasCrisis = planets.some(p => CRISIS_SET.has(p))
   const hasGrowth = planets.some(p => GROWTH_SET.has(p))
 
@@ -157,6 +159,7 @@ function Cell({
       isClassic && 'si-chart__cell--classic',
       showLagna && 'si-chart__cell--lagna',
       showLagna && isClassic && 'si-chart__cell--lagna-classic',
+      isDasaActive && 'si-chart__cell--dasa-active',
       tone,
     ].filter(Boolean).join(' ')}>
       {isClassic ? (
@@ -259,6 +262,7 @@ export default function SouthIndianChart({
   showDetails = false,
   variant = 'default',
   chartKind = 'natal',
+  highlightBhavaHouses,
 }) {
   const isClassic = variant === 'classic'
   const planetSignMap = {}
@@ -285,6 +289,7 @@ export default function SouthIndianChart({
     showDetails,
     variant,
     chartKind,
+    highlightBhavaHouses,
   })
 
   const centreStyle = {
