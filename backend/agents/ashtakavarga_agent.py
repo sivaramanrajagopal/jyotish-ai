@@ -20,9 +20,12 @@ from __future__ import annotations
 import datetime
 from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
+from agents.bhavat_bhavam.core import lord_of_house
+from agents.tara_engine import NAKSHATRAS, _dt_to_jd, _moon_longitude, _nak_index
 from chart_utils import chart_fingerprint
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -465,3 +468,197 @@ def bav_context_for_narrator(natal_chart: dict) -> str:
         return "\n".join(lines)
     except Exception as e:
         return f"[Ashtakavarga unavailable: {e}]"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shodhya Pinda trigger nakshatra (Moon transit timing)
+# ─────────────────────────────────────────────────────────────────────────────
+
+BAV_PLANETS = ["SUN", "MOON", "MARS", "MERCURY", "JUPITER", "VENUS", "SATURN"]
+
+BAV_TO_NATAL = {
+    "SUN": "Sun",
+    "MOON": "Moon",
+    "MARS": "Mars",
+    "MERCURY": "Mercury",
+    "JUPITER": "Jupiter",
+    "VENUS": "Venus",
+    "SATURN": "Saturn",
+}
+
+PLANET_THEMES: dict[str, str] = {
+    "SUN": "authority, vitality, recognition",
+    "MOON": "mind, emotions, public mood",
+    "MARS": "action, courage, initiative",
+    "MERCURY": "communication, analysis, trade",
+    "JUPITER": "growth, wisdom, opportunity",
+    "VENUS": "comfort, relationships, creativity",
+    "SATURN": "discipline, duty, long-term results",
+}
+
+
+def _classify_pinda_strength(shodhya_pinda: int) -> str:
+    if shodhya_pinda > 160:
+        return "Exceptional"
+    if shodhya_pinda >= 126:
+        return "Strong"
+    if shodhya_pinda >= 90:
+        return "Moderate"
+    return "Developing"
+
+
+def _houses_ruled_by_planet(asc_sign_index: int, planet_key: str) -> list[int]:
+    natal_name = BAV_TO_NATAL.get(planet_key, "")
+    if not natal_name:
+        return []
+    return [h for h in range(1, 13) if lord_of_house(asc_sign_index, h) == natal_name]
+
+
+def _moon_nakshatra_on_date(target_date: datetime.date, timezone: str) -> str:
+    dt = datetime.datetime(
+        target_date.year, target_date.month, target_date.day,
+        12, 0, 0, tzinfo=ZoneInfo(timezone),
+    )
+    jd = _dt_to_jd(dt)
+    return NAKSHATRAS[_nak_index(_moon_longitude(jd))]
+
+
+def _build_trigger_entries(av: dict, asc_sign_index: int) -> list[dict]:
+    bav = av.get("bav", {})
+    entries: list[dict] = []
+    for planet in BAV_PLANETS:
+        pinda = bav.get(planet, {}).get("shodhya_pinda") or {}
+        total = pinda.get("shodhya_pinda")
+        trigger = pinda.get("trigger_nakshatra")
+        if not total or not trigger:
+            continue
+        entries.append({
+            "planet": planet,
+            "planet_label": BAV_TO_NATAL[planet],
+            "shodhya_pinda": total,
+            "pinda_category": _classify_pinda_strength(int(total)),
+            "trigger_nakshatra": trigger,
+            "houses_ruled": _houses_ruled_by_planet(asc_sign_index, planet),
+            "theme": PLANET_THEMES.get(planet, ""),
+        })
+    return entries
+
+
+def _find_hotspots(entries: list[dict]) -> list[dict]:
+    grouped: dict[str, list[dict]] = {}
+    for item in entries:
+        grouped.setdefault(item["trigger_nakshatra"], []).append(item)
+    hotspots = []
+    for nak, planets in grouped.items():
+        if len(planets) < 2:
+            continue
+        hotspots.append({
+            "nakshatra": nak,
+            "planets": [p["planet"] for p in planets],
+            "planet_labels": [p["planet_label"] for p in planets],
+            "planet_count": len(planets),
+            "is_triple_trigger": len(planets) >= 3,
+            "combined_shodhya_pinda": sum(p["shodhya_pinda"] for p in planets),
+        })
+    hotspots.sort(key=lambda x: (-x["planet_count"], -x["combined_shodhya_pinda"]))
+    return hotspots
+
+
+def _find_next_trigger(
+    trigger_nakshatras: set[str],
+    start_date: datetime.date,
+    timezone: str,
+    *,
+    skip_today: bool,
+) -> Optional[dict]:
+    if not trigger_nakshatras:
+        return None
+    offset_start = 1 if skip_today else 0
+    for offset in range(offset_start, 28):
+        day = start_date + datetime.timedelta(days=offset)
+        nak = _moon_nakshatra_on_date(day, timezone)
+        if nak not in trigger_nakshatras:
+            continue
+        return {
+            "nakshatra": nak,
+            "days_until": offset,
+            "date": day.isoformat(),
+        }
+    return None
+
+
+def compute_trigger_status(
+    natal_chart: dict,
+    *,
+    target_date: Optional[datetime.date] = None,
+    timezone: str = "Asia/Kolkata",
+) -> dict:
+    """
+    Match today's (or given date's) Moon nakshatra to each planet's Shodhya Pinda
+    trigger nakshatra. Used for lightweight daily activation hints.
+    """
+    av = calculate_ashtakavarga(natal_chart)
+    if not av:
+        return {"available": False, "reason": "ashtakavarga_unavailable"}
+
+    asc_idx = av.get("lagna_sign_idx")
+    if asc_idx is None:
+        asc = natal_chart.get("ascendant", {})
+        sign = asc.get("sign", "")
+        if sign in RASIS_EN:
+            asc_idx = RASIS_EN.index(sign)
+        else:
+            return {"available": False, "reason": "missing_lagna"}
+
+    day = target_date or datetime.date.today()
+    try:
+        ZoneInfo(timezone)
+    except Exception:
+        timezone = "Asia/Kolkata"
+
+    all_triggers = _build_trigger_entries(av, int(asc_idx))
+    if not all_triggers:
+        return {"available": False, "reason": "no_triggers"}
+
+    today_moon_nak = _moon_nakshatra_on_date(day, timezone)
+    trigger_map: dict[str, list[dict]] = {}
+    for item in all_triggers:
+        trigger_map.setdefault(item["trigger_nakshatra"], []).append(item)
+
+    active_planets = list(trigger_map.get(today_moon_nak, []))
+    is_trigger_day = len(active_planets) > 0
+    hotspots = _find_hotspots(all_triggers)
+    trigger_nakshatras = set(trigger_map.keys())
+
+    next_raw = _find_next_trigger(
+        trigger_nakshatras,
+        day,
+        timezone,
+        skip_today=is_trigger_day,
+    )
+    next_trigger = None
+    if next_raw:
+        next_planets = trigger_map.get(next_raw["nakshatra"], [])
+        next_trigger = {
+            **next_raw,
+            "planets": [p["planet"] for p in next_planets],
+            "planet_labels": [p["planet_label"] for p in next_planets],
+            "is_hotspot": len(next_planets) >= 2,
+        }
+
+    return {
+        "available": True,
+        "date": day.isoformat(),
+        "timezone": timezone,
+        "today_moon_nak": today_moon_nak,
+        "is_trigger_day": is_trigger_day,
+        "active_nakshatra": today_moon_nak if is_trigger_day else None,
+        "active_planets": active_planets,
+        "hotspots": hotspots,
+        "next_trigger": next_trigger,
+        "all_triggers": all_triggers,
+        "help": (
+            "When Moon transits a planet's trigger nakshatra, that planet's "
+            "Ashtakavarga significations tend to manifest more visibly."
+        ),
+    }

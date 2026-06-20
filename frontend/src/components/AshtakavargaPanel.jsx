@@ -6,6 +6,7 @@ import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import { BavSouthGrid, SavSouthGrid } from './AshtakavargaSouthGrid'
 import { BAV_CONTRIBUTOR_LABELS, RASHI_NAMES, houseWiseToRasiWise } from '../lib/ashtakavargaGrid'
+import AvTriggerCard from './AvTriggerCard'
 
 const PLANET_LABELS = {
   SUN: '☉ Sun', MOON: '☽ Moon', MARS: '♂ Mars', MERCURY: '☿ Mercury',
@@ -134,6 +135,10 @@ export default function AshtakavargaPanel({ chart, userId, enabled = true }) {
           </button>
         ))}
       </div>
+
+      {data.trigger_status?.available && (
+        <AvTriggerCard status={data.trigger_status} />
+      )}
 
       {view === 'sav' && (
         <div className="av-pro-section">

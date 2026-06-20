@@ -60,7 +60,11 @@ from agents.narrator import generate_forecast
 from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses, build_house_context
-from agents.ashtakavarga_agent import calculate_ashtakavarga, bav_context_for_narrator
+from agents.ashtakavarga_agent import (
+    calculate_ashtakavarga,
+    bav_context_for_narrator,
+    compute_trigger_status,
+)
 from agents.tamil_dosha_agent import compute_tamil_doshas
 from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
@@ -1374,6 +1378,14 @@ class AshtakavargaRequest(BaseModel):
     model_config = {"str_strip_whitespace": True}
 
 
+def _trigger_status_for_chart(chart: dict, timezone: str = "Asia/Kolkata") -> dict:
+    tz = timezone
+    bd = chart.get("birth_data") or {}
+    if bd.get("timezone"):
+        tz = bd["timezone"]
+    return compute_trigger_status(chart, timezone=tz)
+
+
 @app.post("/ashtakavarga")
 @limiter.limit("30/minute")
 def ashtakavarga_endpoint(
@@ -1392,6 +1404,7 @@ def ashtakavarga_endpoint(
         result = calculate_ashtakavarga(chart)
         if not result:
             raise HTTPException(status_code=422, detail="Could not extract planet positions from natal chart.")
+        result["trigger_status"] = _trigger_status_for_chart(chart)
         return result
     except HTTPException:
         raise
@@ -1401,6 +1414,37 @@ def ashtakavarga_endpoint(
             "Ashtakavarga error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Ashtakavarga calculation failed.")
+
+
+@app.post("/ashtakavarga/triggers")
+@limiter.limit("60/minute")
+def ashtakavarga_triggers_endpoint(
+    request: Request,
+    req: AshtakavargaRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+    target_date_str: Optional[str] = Query(None, alias="date", description="YYYY-MM-DD, defaults to today"),
+):
+    """
+    Lightweight Shodhya Pinda trigger status — active planets when Moon transits
+    trigger nakshatra, hotspots, and next trigger date.
+    """
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    target_date = None
+    if target_date_str:
+        try:
+            target_date = date.fromisoformat(target_date_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+    tz = (chart.get("birth_data") or {}).get("timezone", "Asia/Kolkata")
+    try:
+        return compute_trigger_status(chart, target_date=target_date, timezone=tz)
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Ashtakavarga triggers error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Trigger status calculation failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

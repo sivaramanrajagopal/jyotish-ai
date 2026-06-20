@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { chartPayload } from '../lib/chartPayload'
+import AvTriggerCard from './AvTriggerCard'
 
 const TARA_STYLES = {
   green:  { background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',  textColor: '#34d399', dotColor: '#34d399' },
@@ -27,6 +29,7 @@ function fmt(isoStr) {
 
 export default function PersonalPanchangamCard({ chart, userId, enabled = true }) {
   const [data, setData]       = useState(null)
+  const [triggers, setTriggers] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 
@@ -38,15 +41,22 @@ export default function PersonalPanchangamCard({ chart, userId, enabled = true }
     setLoading(true)
     setError('')
     const tz = chart?.birth_data?.timezone || 'Asia/Kolkata'
-    const req = userId
+    const panchReq = userId
       ? api.get(`/personal-panchangam/today/${userId}`)
       : (nakIdx == null || rasiIdx == null
         ? Promise.reject(new Error('missing indices'))
         : api.get('/personal-panchangam/anonymous', {
             params: { natal_nak_index: nakIdx, natal_rasi_index: rasiIdx, timezone: tz },
           }))
-    req
-      .then(r => setData(r.data))
+    const triggerReq = api.post('/ashtakavarga/triggers', chartPayload(chart, userId))
+      .then(r => r.data)
+      .catch(() => null)
+
+    Promise.all([panchReq, triggerReq])
+      .then(([panchRes, triggerData]) => {
+        setData(panchRes.data)
+        setTriggers(triggerData)
+      })
       .catch(e => setError(e.response?.data?.detail || e.message || 'Could not load personal Panchangam.'))
       .finally(() => setLoading(false))
   }, [userId, nakIdx, rasiIdx, enabled, chart])
@@ -87,6 +97,10 @@ export default function PersonalPanchangamCard({ chart, userId, enabled = true }
 
       {data && (
         <div className="space-y-3">
+
+          {triggers?.available && (
+            <AvTriggerCard status={triggers} compact />
+          )}
 
           {ashtama?.is_active ? (
             <div className="rounded-xl px-4 sm:px-5 py-4"

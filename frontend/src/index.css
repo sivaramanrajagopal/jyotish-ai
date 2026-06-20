@@ -3274,6 +3274,137 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   text-align: center;
 }
 
+/* Shodhya Pinda trigger nakshatra cards */
+.av-trigger-card {
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+}
+
+.av-trigger-card--active {
+  background: rgba(251, 146, 60, 0.08);
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.av-trigger-card--next {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.av-trigger-card--full {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.av-trigger-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+}
+
+.av-trigger-card__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.av-trigger-card__badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--orange-dark);
+}
+
+.av-trigger-card__badge--muted {
+  color: var(--text-muted);
+}
+
+.av-trigger-card__moon,
+.av-trigger-card__when {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.av-trigger-card__lead,
+.av-trigger-card__sub {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+  line-height: 1.45;
+}
+
+.av-trigger-card__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.av-trigger-card__help {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+.av-trigger-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.av-trigger-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8125rem;
+}
+
+.av-trigger-row__name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.av-trigger-row__pinda {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.av-trigger-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.av-trigger-row__theme {
+  color: var(--text-muted);
+}
+
+.av-trigger-details {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.av-trigger-details summary {
+  cursor: pointer;
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.av-trigger-list {
+  margin: 8px 0 0;
+  padding-left: 1.1rem;
+  line-height: 1.5;
+}
+
 .av-pro-matrix-toggle {
   font-size: 0.75rem;
   font-weight: 600;
@@ -3412,6 +3543,31 @@ html[data-theme="dark"] .si-chart__lagna-badge {
     min-height: 44px;
     padding: 8px 14px;
     font-size: 0.8125rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .av-trigger-card {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .av-trigger-card__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .av-trigger-card__lead,
+  .av-trigger-card__sub {
+    font-size: 0.8125rem;
+    word-break: break-word;
+  }
+
+  .av-trigger-details summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
     -webkit-tap-highlight-color: transparent;
   }
 
