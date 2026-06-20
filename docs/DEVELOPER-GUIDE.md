@@ -38,12 +38,12 @@ Audience: engineers who may never have seen this codebase before.
 
 - Users enter birth details → receive a **sidereal natal chart** (D1, D9, dasha, yogas).
 - **Panchangam** (daily almanac) for supported cities.
-- **Personal Panchangam** — Tara Balam, Chandra Ashtama, Chandrabalam from natal Moon.
+- **Personal Panchangam** — Tara Balam, Chandra Ashtama, Chandrabalam from natal Moon; **AV trigger banner** when Moon hits Shodhya Pinda trigger nakshatras.
 - **Gochara** — deterministic transit scores from natal Moon (Parasara rules + Vedha).
 - **Forecast** — rule-based scores + **AI narrative** (daily reading, per-house insight).
 - **Ask AI** — multi-turn chat grounded in the user's chart.
 - **Prashna** — horary astrology via a **12-engine rule pipeline**, optional AI narration.
-- **Ashtakavarga** — BAV/SAV grid.
+- **Ashtakavarga** — BAV/SAV grid; Shodhya Pinda + trigger nakshatra; daily Moon activation card.
 - **Career** — D1 + D10 Dasamsa, 10 PDF10 rules, profession tags, Dasa timing.
 - **Health** — D3 Drekkana body map, Dasa/Bhukti + transit awareness (bilingual EN/TA).
 - **Dosha Radar** — live obstruction doshas, Pushkara Navamsa, 90-day forecast (dedicated tab).
@@ -618,6 +618,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `PanchangamTab` | `GET /panchangam/today`, `/date`, `/locations` |
 | `PersonalPanchangamCard` | `GET /personal-panchangam/*` |
 | `AshtakavargaPanel` | `POST /ashtakavarga` |
+| `AvTriggerCard` | from `/ashtakavarga` or `/ashtakavarga/triggers` |
 | `TamilDoshasPanel` | `POST /tamil-doshas` |
 | `InduLagnaPanel` | `POST /indu-lagna` |
 | `AdminPanel` | `GET /admin/*` |
@@ -768,8 +769,9 @@ Auth: optional `Authorization: Bearer <supabase_jwt>`.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| POST | `/chat` | `{ messages: [{role, content}] }` |
-| POST | `/ashtakavarga` | BAV/SAV |
+| POST | `/chat` | `{ messages: [{role, content}] }` — lazy House Links context; see FEATURES §11 |
+| POST | `/ashtakavarga` | BAV/SAV + `trigger_status` |
+| POST | `/ashtakavarga/triggers` | Shodhya Pinda trigger status only (Personal Panchangam) |
 | POST | `/tamil-doshas` | Tamil predictive doshas |
 | POST | `/indu-lagna` | Indu Lagna fortune periods |
 | POST | `/prashna/analyze` | Horary |
@@ -881,9 +883,10 @@ pytest tests/ -q
 | `test_dosha_radar.py` | Pushkara, obstruction, radar API shape |
 | `test_house_connections*.py` | House Links lord links, from-own logic, BB excluded from edges |
 | `test_dasa_activation.py` | 7-step Maha/Bhukti life-area chain |
+| `test_ashtakavarga_triggers.py` | Shodhya Pinda trigger nakshatra status |
 | `test_chat_*_context.py` | Chat prompt grounding per feature |
 
-Tests run **without network or OpenAI** (~95 tests total).
+Tests run **without network or OpenAI** (~100 tests total).
 
 ### Frontend — Vitest
 
@@ -924,6 +927,9 @@ npm test
 | CORS error | Wrong ALLOWED_ORIGINS | Add exact Vercel URL to Render env |
 | 503 Authentication not configured | Missing JWT secret | Set `SUPABASE_JWT_SECRET` on Render |
 | AI quota exceeded | Daily limit hit | Check `ai_usage` table or raise env limits |
+| Chat 503 every turn | Oversized prompt or import error | Deploy ≥ `c1e399e`; check Render logs; ask specific house for House Links detail |
+| Chat 503 rate limit / API key | OpenAI | Error detail in response body; fix `OPENAI_API_KEY` on Render |
+| AV trigger banner missing | Old backend | Deploy ≥ `c6797ec`; verify `POST /ashtakavarga/triggers` |
 | Panchangam slow | Cache miss | Run preload SQL for your cities |
 | Render cold start (~50s) | Free tier sleep | Frontend pings `/ping`; wait or upgrade |
 | Magic link goes to localhost | Supabase Site URL wrong | Set to production Vercel URL |
@@ -936,7 +942,9 @@ npm test
 | Career/Health 500 | Missing dob | Recalculate chart; check `birth_data` in `natal_charts` |
 | Bhavam layer empty | No active primary | Expected if H6/H8/H12 quiet; see FEATURES doc |
 | Horai Invalid Date labels | Sunrise mode + old bundle | Deploy ≥ `185740d`; bump `sw.js` cache; hard refresh |
-| Dosha Radar offline blank | SW cache | `dosha-radar` in `ALLOWED_TABS`; cache v4+ |
+| Dosha Radar offline blank | SW cache | `dosha-radar` in `ALLOWED_TABS`; cache v6+ |
+| House Links wrong from-own | Old backend | Deploy ≥ `03b1689` (owned house = 1st) |
+| Post-deploy stale UI | Service worker | Hard refresh; bump `sw.js` `CACHE_SHELL` if new tab added |
 
 ### Debug commands
 
@@ -1062,7 +1070,9 @@ ensure_dasha(natal_chart)               # forecast/scores — backfill if missin
 | 🔥 Dosha Radar | `dosha_radar` | Obstruction doshas, Pushkara, Chandrashtama, 90d outlook |
 | 🔗 House Links | `house_links` | 12-house map, channels in/out, Dasa focus, blessers |
 
-Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §11](./FEATURES-TECHNICAL-REFERENCE.md#11-chat-ai-grounding) (includes `house_connections_context_for_narrator` after Dosha Radar).
+Full chip list and prompt assembly order: [FEATURES-TECHNICAL-REFERENCE.md §11](./FEATURES-TECHNICAL-REFERENCE.md#11-chat-ai-grounding).
+
+**House Links in chat** uses **lazy context** (`house_connections/narrator.py`): compact 12-line summary by default; full channel cards only when the user asks about House Links or a specific house. Reverting to unconditional full cards caused production **503** errors (prompt too large).
 
 **Anti-hallucination rules** in `chat_agent.py` system prompt:
 
@@ -1141,9 +1151,18 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 - **Channels:** **Channels in** = supportive edges flowing into focus house; **Channels out** = edges from focus house to others (lord placement, aspects, pada/sign lords)
 - **Bhavat Bhavam:** recovery path text on H6/H8/H12 prediction cards only — not in graph, channels, or blesser scoring (see Career/Health for full BB layer)
 - **Tab:** `?tab=house-links` (🔗) after Dosha Radar; Home hero pill in `brand.js`
-- **Chat:** 🔗 chip → `house_connections_context_for_narrator()` (focus/background houses, blessers, yogas)
+- **Chat:** 🔗 chip → lazy `house_connections_context_for_narrator(chart, user_message)` — compact default; detail when user asks about a house or channels
 - **Source:** ported from [Astrology House Connections](https://huggingface.co/spaces/sivaramrb901/Astrology-House-Connections)
 - **See:** FEATURES doc §6 for from-own counting, channels, Dasa activation, BB split
+
+### Ashtakavarga & AV triggers
+
+- **Engine:** `ashtakavarga_agent.py` — BAV/SAV (Tamil rules), Shodhya Pinda, `compute_trigger_status()`
+- **Frontend:** `AshtakavargaPanel.jsx`, `AvTriggerCard.jsx`; compact banner on `PersonalPanchangamCard.jsx`
+- **API:** `POST /ashtakavarga` (includes `trigger_status`); `POST /ashtakavarga/triggers` (lightweight, used by Home card)
+- **Logic:** when Moon nakshatra matches a planet's Shodhya Pinda trigger → list active planets + houses ruled; hotspots when 2+ planets share a trigger
+- **Not in chat:** `bav_context_for_narrator()` sends SAV house scores only (no trigger nakshatras)
+- **See:** FEATURES doc §12
 
 ### Bhavat Bhavam (bundled)
 
@@ -1154,7 +1173,17 @@ Detailed per-feature docs: **[FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNI
 
 ### Service worker
 
-After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosha-radar`, `house-links`) and bump `CACHE_SHELL` (currently **v6**). See FEATURES doc §13.
+After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosha-radar`, `house-links`) and bump `CACHE_SHELL` (currently **v6**). See FEATURES doc §14.
+
+### Recent production fixes (reference)
+
+| Commit | Issue | Fix |
+|--------|-------|-----|
+| `c1e399e` | `/chat` 503 on every message | Fix broken imports; lazy House Links context (compact default) |
+| `c6797ec` | No AV trigger visibility | `compute_trigger_status()` + Home/Ashtakavarga UI |
+| `eda3262` | BB inflating House Links channels | BB removed from edge graph; recovery note on dusthana only |
+| `03b1689` | Wrong from-own house count | Owned house = 1st (inclusive), not 12th |
+| `8692c0a` | Dasa activation used Moon nak always | Step 2 uses natal nakshatra of running Dasa lord |
 
 ---
 
@@ -1171,11 +1200,12 @@ Dasha:    dasha_core.py → chat tables (Bhukti / Dasa Cycle tags)
 Auth:     Supabase magic link + JWT on API
 Gochar:   POST /forecast/scores → GocharamTab (no AI)
 Forecast: Same scores + POST /forecast/daily-reading (AI)
-Tests:    pytest (~95) · vitest (frontend, incl. horai.test.js)
+Tests:    pytest (~100) · vitest (frontend, incl. horai.test.js)
 Features: docs/FEATURES-TECHNICAL-REFERENCE.md
 Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
+Incidents: FEATURES doc §15 production matrix
 ```
 
 ---
 
-*Last updated: 2026-06-06 — House Links channels/BB split, Dasa life areas, Dosha Radar, Horai, Career, Health, Bhavat Bhavam, FEATURES-TECHNICAL-REFERENCE.*
+*Last updated: 2026-06-06 — AV triggers, chat 503 fix, House Links lazy context, production matrix.*

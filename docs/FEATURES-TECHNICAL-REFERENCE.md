@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-06-06 (House Links channels/BB split, Dasa life areas)
+**Last updated:** 2026-06-06 (AV trigger nakshatras, chat 503 fix, House Links lazy context)
 
 ---
 
@@ -20,9 +20,10 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 9. [Indu Lagna](#9-indu-lagna)
 10. [Gochara / Forecast](#10-gochara--forecast)
 11. [Chat AI grounding](#11-chat-ai-grounding)
-12. [My Chart sub-panels](#12-my-chart-sub-panels)
-13. [Service worker & PWA](#13-service-worker--pwa)
-14. [Production troubleshooting matrix](#14-production-troubleshooting-matrix)
+12. [Ashtakavarga & AV triggers](#12-ashtakavarga--av-triggers)
+13. [My Chart sub-panels](#13-my-chart-sub-panels)
+14. [Service worker & PWA](#14-service-worker--pwa)
+15. [Production troubleshooting matrix](#15-production-troubleshooting-matrix)
 
 ---
 
@@ -41,10 +42,11 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Bhavat Bhavam | Career + Health layers | bundled in career/health | `bhavat_bhavam/*` | No | 🏠 |
 | Tamil Doshas | My Chart section | `POST /tamil-doshas` | `tamil_dosha/*` | No | 🔯 |
 | Indu Lagna | My Chart section | `POST /indu-lagna` | `indu_lagna_agent` | No | 💰 |
-| Ashtakavarga | My Chart section | `POST /ashtakavarga` | `ashtakavarga_agent` | No | (in prompt) |
+| Ashtakavarga | My Chart section | `POST /ashtakavarga` | `ashtakavarga_agent` | No | SAV only in prompt |
+| AV triggers | Home + Ashtakavarga | `POST /ashtakavarga/triggers` | `compute_trigger_status()` | No | — |
 | Prashna | Prashna tab | `POST /prashna/analyze` | `prashna/*` | Optional | — |
 | Panchangam | Panchangam tab | `GET /panchangam/*` | `panchangam_agent` | No | 📅 |
-| Personal Panchangam | Home / chart cards | `GET /personal-panchangam/*` | `tara_engine`, `ashtama_agent` | No | ⭐ |
+| Personal Panchangam | Home card | `GET /personal-panchangam/*` + triggers | `tara_engine`, `ashtama_agent`, `ashtakavarga_agent` | No | ⭐ |
 
 \*Narrator context is injected into chat; tab UI is rule-only.
 
@@ -543,7 +545,14 @@ Mobile: single-column layout; D1 + Dasa stack above graph; touch-friendly chips 
 
 ### Chat
 
-Chip **🔗 House Links** → `house_connections_context_for_narrator()` — per-house cards with Channels IN/OUT edge labels, blessers, stress, and **HOW TO EXPLAIN** guide for chat.
+Chip **🔗 House Links** → `house_connections_context_for_narrator(natal_chart, user_message)`:
+
+| Mode | When | Prompt size |
+|------|------|-------------|
+| **Compact** (default) | General chat | One line per house (strength + top channel) |
+| **Detail** | User asks about House Links, channels, or a specific house (e.g. "Explain H9") | Full per-house cards with Channels IN/OUT, blessers, HOW TO EXPLAIN guide |
+
+**Production note:** Before `c1e399e`, injecting full detail for all 12 houses on every chat request (~31k chars) contributed to `/chat` **503** failures alongside a broken import. Always keep House Links chat context **lazy** — do not revert to unconditional full cards.
 
 ### Tests
 
@@ -708,9 +717,36 @@ Order appended to base prompt:
 6. Health (`health_context_for_narrator`)
 7. Bhavat Bhavam (`bhavat_bhavam_context_for_narrator`)
 8. Dosha Radar (`dosha_radar_context_for_narrator`)
-9. House Links (`house_connections_context_for_narrator`)
+9. House Links (`house_connections_context_for_narrator(natal_chart, user_message)` — **lazy**: compact by default, detail on demand)
 
 Each block wrapped in try/except — failure is non-fatal.
+
+### House Links lazy context (`house_connections/narrator.py`)
+
+Detail mode triggers when `user_message` matches:
+
+- House Links / channels / prediction map keywords, or
+- Specific house references (`H9`, `house 9`, `9th house`, etc.)
+
+Default compact mode: 12 one-line summaries (~2k chars). Detail mode: full cards for requested houses only.
+
+**Do not** inject all 12 full house cards on every request — caused production 503s (oversized system prompt) before `c1e399e`.
+
+### Chat 503 errors (production)
+
+| HTTP detail | Cause | Fix |
+|-------------|-------|-----|
+| `OpenAI rate limit. Try again in a minute.` | OpenAI quota / RPM | Wait; check OpenAI dashboard |
+| `OpenAI API key is invalid...` | Missing/wrong `OPENAI_API_KEY` on Render | Set env var; redeploy |
+| `Chat service temporarily unavailable.` | `_build_system` failed (import/chart) or uncategorized RuntimeError | Render logs → `[chat_agent]` / `Chat RuntimeError` |
+| Generic 500 | Unhandled exception in OpenAI call | Render traceback |
+
+Probe:
+
+```bash
+curl -s -X POST "$API/chat" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...},"messages":[{"role":"user","content":"Hello"}]}' | jq .
+```
 
 ### Topic chips (`ChatPanel.jsx` → `TOPICS`)
 
@@ -747,7 +783,75 @@ Each block wrapped in try/except — failure is non-fatal.
 
 ---
 
-## 12. My Chart sub-panels
+## 12. Ashtakavarga & AV triggers
+
+### Purpose
+
+**BAV/SAV** — bindu scores per sign/house (Tamil rules, ported from [Ashtavargam](https://github.com/sivaramanrajagopal/Ashtavargam)). Used for Gochara transit scoring (SAV house-wise) and My Chart grids.
+
+**Shodhya Pinda triggers** — advanced reduction (Trikona + Ekadhipatya Shodhana) → one strength number per planet. `Shodhya Pinda % 27` maps to a **trigger nakshatra**. When **Moon transits** that nakshatra, that planet's significations tend to manifest more visibly (classical Ashtakavarga timing).
+
+### Files
+
+```
+backend/agents/ashtakavarga_agent.py     # BAV/SAV, Shodhya Pinda, compute_trigger_status()
+frontend/src/components/AshtakavargaPanel.jsx
+frontend/src/components/AvTriggerCard.jsx
+frontend/src/components/PersonalPanchangamCard.jsx   # compact trigger banner
+backend/tests/test_ashtakavarga_triggers.py
+```
+
+### APIs
+
+```
+POST /ashtakavarga
+  → bav, sav, matrix_8x8, trigger_status (today's Moon match + next trigger)
+
+POST /ashtakavarga/triggers
+  → lightweight trigger_status only (used by Personal Panchangam card)
+  Query: ?date=YYYY-MM-DD (optional)
+  Rate: 60/min
+```
+
+### `trigger_status` response (key fields)
+
+| Field | Description |
+|-------|-------------|
+| `today_moon_nak` | Moon nakshatra on evaluation date (noon local) |
+| `is_trigger_day` | Moon matches ≥1 planet trigger |
+| `active_planets[]` | `{planet, shodhya_pinda, pinda_category, houses_ruled, theme}` |
+| `hotspots[]` | Nakshatras shared by 2+ planets (`is_triple_trigger` when ≥3) |
+| `next_trigger` | `{nakshatra, days_until, date, planets, is_hotspot}` |
+| `all_triggers[]` | Full 7-planet trigger list (Ashtakavarga tab expandable) |
+
+### UI placement
+
+| Location | Mode | Content |
+|----------|------|---------|
+| **Home** — Personal Panchangam card | Compact | Active today **or** "Next AV trigger in X days" |
+| **My Chart** — Ashtakavarga tab | Full | Trigger card + collapsible all-planet list |
+
+**Not integrated into:** Gochara scoring (SAV only), House Links, chat prompt (by design — keeps chat lean).
+
+### Mobile
+
+- Stacked planet rows, flex-wrap headers
+- `@media (max-width: 639px)` — reduced padding, 44px tap target on `<details>` summary
+- Parallel fetch: Panchangam + triggers (`Promise.all`); trigger failure is non-fatal
+
+### Canonical test chart
+
+**1978-09-18 17:35 Chennai** — triple hotspot **Hasta** (Mars + Mercury + Jupiter).
+
+### Tests
+
+```bash
+cd backend && python3 -m pytest tests/test_ashtakavarga_triggers.py -q
+```
+
+---
+
+## 13. My Chart sub-panels
 
 All on **My Chart** tab (`chart`), lazy-enabled when tab active:
 
@@ -755,7 +859,7 @@ All on **My Chart** tab (`chart`), lazy-enabled when tab active:
 |---------|-----------|-----|
 | D1 + D9 charts | `SouthIndianChart` | from stored chart |
 | Dasha roadmap | `DashaRoadmap`, `DashaSummaryCard` | chart JSON |
-| Ashtakavarga | `AshtakavargaPanel` | `POST /ashtakavarga` |
+| Ashtakavarga | `AshtakavargaPanel` + `AvTriggerCard` | `POST /ashtakavarga` (includes `trigger_status`) |
 | Tamil Doshas | `TamilDoshasPanel` | `POST /tamil-doshas` → link to Dosha Radar |
 | Indu Lagna | `InduLagnaPanel` | `POST /indu-lagna` |
 
@@ -763,7 +867,7 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ---
 
-## 13. Service worker & PWA
+## 14. Service worker & PWA
 
 ### File
 
@@ -798,11 +902,16 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 
 ---
 
-## 14. Production troubleshooting matrix
+## 15. Production troubleshooting matrix
 
 | Symptom | Feature | Likely cause | Resolution |
 |---------|---------|--------------|------------|
-| Tab blank after deploy | Any | Old SW cache | Bump `sw.js` cache version; hard refresh |
+| Tab blank after deploy | Any | Old SW cache | Bump `sw.js` cache version (`jyotish-shell-v6`+); hard refresh |
+| Chat 503 every message | Chat | Broken import or oversized House Links prompt | Deploy ≥ `c1e399e`; verify lazy `house_connections_context_for_narrator` |
+| Chat 503 rate limit | Chat | OpenAI RPM/quota | Wait 1 min; check OpenAI dashboard |
+| Chat 503 API key | Chat | `OPENAI_API_KEY` missing/invalid on Render | Set env; redeploy backend |
+| AV trigger card missing | Home / Ashtakavarga | Old backend | Deploy ≥ `c6797ec`; `POST /ashtakavarga/triggers` |
+| AV trigger card missing (Home only) | Personal Panchangam | Trigger API failed silently | Check Render logs; Panchangam still shows; verify chart + auth |
 | Career/Health 500 | Career/Health | Stale chart schema | `StaleChartBanner` → recalculate chart |
 | Career/Health 500 | Career/Health | Missing dob | Ensure `birth_data.dob` in saved chart |
 | Health factors (0) | Health | Old API only | Deploy backend ≥ `7ecfd53` |
@@ -821,6 +930,7 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | Dasa focus houses empty | House Links | Missing planet nakshatra | Recalculate chart; verify `planet_positions.*.nakshatra` |
 | BB inflating channels in/out | House Links | Old backend | Deploy ≥ `eda3262`; BB is recovery note on H6/H8/H12 only |
 | Pushkara missing in chat | Chat | Old backend | `dosha_radar_context_for_narrator` in `chat_agent` |
+| Chat ignores House Links detail | Chat | Generic question | Ask "Explain H9" or use 🔗 House Links chip — lazy context |
 | Admin 403 | Admin | Email mismatch | `ADMIN_EMAILS` = `VITE_ADMIN_EMAILS` |
 | Analytics 404 | Analytics | Table missing | Run `supabase/analytics_events.sql` |
 
@@ -839,6 +949,10 @@ curl -s -X POST "$API/career/predict" -H 'Content-Type: application/json' \
 curl -s -X POST "$API/dosha-radar/analyze" -H 'Content-Type: application/json' \
   -d '{"natal_chart":{...}}' | jq '.summary, .pushkara_natal, .active_alerts'
 
+# AV triggers (today)
+curl -s -X POST "$API/ashtakavarga/triggers" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...}}' | jq '.is_trigger_day, .active_planets, .next_trigger'
+
 # Health check
 curl -s "$API/health" | jq .
 ```
@@ -852,7 +966,9 @@ pytest tests/test_health.py tests/test_chat_health_context.py -q
 pytest tests/test_bhavat_bhavam.py tests/test_chat_bhavam_context.py -q
 pytest tests/test_dosha_radar.py tests/test_chat_dosha_radar_context.py -q
 pytest tests/test_tamil_doshas.py tests/test_indu_lagna.py -q
-pytest tests/ -q   # full suite (~95 tests)
+pytest tests/test_ashtakavarga_triggers.py -q
+pytest tests/test_house_connections*.py tests/test_dasa_activation.py tests/test_chat_house_connections_context.py -q
+pytest tests/ -q   # full suite (~100 tests)
 
 cd ../frontend && npm test -- src/lib/horai.test.js
 ```

@@ -21,7 +21,7 @@ Start here when spinning up, debugging production, or extending features.
 
 | Doc | When to read |
 |-----|----------------|
-| [FEATURES-TECHNICAL-REFERENCE.md §11](./FEATURES-TECHNICAL-REFERENCE.md#11-production-troubleshooting-matrix) | Production incident matrix |
+| [FEATURES-TECHNICAL-REFERENCE.md §15](./FEATURES-TECHNICAL-REFERENCE.md#15-production-troubleshooting-matrix) | Production incident matrix (503 chat, SW cache, House Links, AV triggers) |
 | [DEVELOPER-GUIDE.md §16](./DEVELOPER-GUIDE.md#16-debugging-playbook) | Symptom → fix playbook |
 | [SUPABASE-ANALYTICS-DASHBOARD.md](./SUPABASE-ANALYTICS-DASHBOARD.md) | Analytics SQL + views |
 | [ADMIN-DASHBOARD.md](./ADMIN-DASHBOARD.md) | Owner admin tab |
@@ -36,6 +36,7 @@ All in [FEATURES-TECHNICAL-REFERENCE.md](./FEATURES-TECHNICAL-REFERENCE.md):
 - **Dosha Radar** (obstruction doshas, Pushkara Navamsa, 90-day forecast)
 - **Horai & Uba Horai** (Panchangam tab — fixed 6 AM or sunrise modes)
 - **House Links** (lord-link channels, Dasa life areas, D1 reference; BB recovery note on dusthana only)
+- **Shodhya Pinda AV triggers** (Moon transit activation — Personal Panchangam + Ashtakavarga)
 - Bhavat Bhavam (Career + Health layers)
 - Tamil Doshas, Indu Lagna
 - Chat AI context blocks
