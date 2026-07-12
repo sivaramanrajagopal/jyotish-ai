@@ -52,6 +52,7 @@ Audience: engineers who may never have seen this codebase before.
 - **Bhavat Bhavam** — D1 house-from-house support/recovery paths (Career + Health layers; separate from House Links channels).
 - **Tamil Doshas** — Thithi Soonyam, Mudakku, Vadhai/Vainasikam, Yogi/Avayogi (My Chart; links to Dosha Radar).
 - **Indu Lagna** — fortune lagna + wealth-favourable Dasa/transit windows.
+- **Life Cycle Simulator** — 10-year Parasara planner (Bhava → SAV → MD/AD/PD → Gochara); optional short AI narration.
 
 **Production layout:**
 
@@ -575,9 +576,10 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | `prashna` | `PrashnaTab` | Optional | Optional |
 | `chat` | `ChatPanel` | Yes | Yes |
 | `forecast` | `ForecastPanel` | Yes | Yes |
+| `life-cycle` | `LifeCycleSimulatorPanel` | Yes | Optional |
 | `admin` | `AdminPanel` | No | No |
 
-\*Career/Health tabs are rule-only; chat injects `career_context_for_narrator` / `health_context_for_narrator`.
+\*Career/Health tabs are rule-only; chat injects `career_context_for_narrator` / `health_context_for_narrator`. Life Cycle is rule-first; AI only when user taps Short AI reading.
 
 **My Chart sub-panels** (same tab, scroll sections): `AshtakavargaPanel`, `TamilDoshasPanel` (links to Dosha Radar), `InduLagnaPanel`, `DashaRoadmap`.
 
@@ -655,6 +657,7 @@ All features are **tabs**, not separate routes (except `?tab=forecast` query par
 | Health | `POST /health/analyze` | health_agent | No* |
 | Dosha Radar | `POST /dosha-radar/analyze` | dosha_radar_agent | No* |
 | House Links | `POST /house-connections/analyze` | house_connections_agent | No* |
+| Life Cycle | `POST /prediction/simulate` | prediction_simulator | Optional |
 | Bhavat Bhavam | bundled in career/health | bhavat_bhavam_agent | No |
 | Tara/Ashtama | `GET /personal-panchangam/*` | tara_engine | No |
 
@@ -774,6 +777,7 @@ Auth: optional `Authorization: Bearer <supabase_jwt>`.
 | POST | `/ashtakavarga/triggers` | Shodhya Pinda trigger status only (Personal Panchangam) |
 | POST | `/tamil-doshas` | Tamil predictive doshas |
 | POST | `/indu-lagna` | Indu Lagna fortune periods |
+| POST | `/prediction/simulate` | Life Cycle Simulator (MD/AD/PD + SAV themes; optional AI) |
 | POST | `/prashna/analyze` | Horary |
 | GET | `/prashna/categories` | Question catalog |
 | GET | `/panchangam/today` | Query: location |
@@ -936,6 +940,9 @@ npm test
 | Admin tab missing | Email not in list | Match `VITE_ADMIN_EMAILS` and `ADMIN_EMAILS` |
 | Prashna catalog mismatch | Frontend/backend drift | Run `test_prashna_catalog.py` |
 | Indigo broken chart borders | CSS cell rings | Use tint-only Lagna highlight (see `index.css`) |
+| SW error on `?tab=life-cycle` | Service worker | Add `life-cycle` to `ALLOWED_TABS`; cache ≥ `jyotish-shell-v7` |
+| Life Cycle 503 on AI | OpenAI env | Set `OPENAI_API_KEY` on Render |
+| Life Cycle transit spans 10y | Old agent | Redeploy per-sign transit scan fix |
 | SW error on `?tab=health` | Service worker | Bump `sw.js` cache version; add tab to `ALLOWED_TABS` |
 | Health Awareness (0) | Stale deploy | Backend needs `factor_groups` (≥7ecfd53) |
 | `[ashtama_agent] duplicate key` | Upsert conflict | `on_conflict=user_id,date` on daily panchangam row |
@@ -1184,6 +1191,17 @@ After adding tabs, update `frontend/public/sw.js` `ALLOWED_TABS` (includes `dosh
 | `eda3262` | BB inflating House Links channels | BB removed from edge graph; recovery note on dusthana only |
 | `03b1689` | Wrong from-own house count | Owned house = 1st (inclusive), not 12th |
 | `8692c0a` | Dasa activation used Moon nak always | Step 2 uses natal nakshatra of running Dasa lord |
+| `ba03c0c` | Life Cycle Simulator missing in prod docs/SW | `POST /prediction/simulate`; SW `life-cycle` + cache v7 |
+
+### Life Cycle Simulator (`POST /prediction/simulate`)
+
+- **Engines:** `prediction_simulator/` (agent, themes, narration, ai_narrator); `dasha_core.generate_pratyantars`
+- **Frontend:** `LifeCycleSimulatorPanel.jsx` — themes, SAV chips, Pratyantar list, D1/D9, mobile cards
+- **Tab:** `?tab=life-cycle`; chip in `brand.js`
+- **SW:** `life-cycle` in `ALLOWED_TABS`, cache `jyotish-shell-v7`
+- **AI:** optional `include_ai` — needs `OPENAI_API_KEY`; forecast quota; 3 sentences
+- **Incidents:** [FEATURES §14](./FEATURES-TECHNICAL-REFERENCE.md#14-life-cycle-simulator) + matrix rows
+- **Tests:** `pytest tests/test_prediction_simulator.py -q`
 
 ---
 
@@ -1194,18 +1212,19 @@ Repo:     github.com/sivaramanrajagopal/jyotish-ai
 Frontend: Vercel  → frontend/  → React tabs in Home.jsx
 Backend:  Render  → backend/   → FastAPI main.py
 DB:       Supabase → supabase/*.sql
-AI:       OpenAI gpt-4o-mini (forecast, chat, prashna narrate)
+AI:       OpenAI gpt-4o-mini (forecast, chat, prashna, life-cycle narrate)
 Rules:    Swiss Ephemeris + Parasara engines (no LLM)
-Dasha:    dasha_core.py → chat tables (Bhukti / Dasa Cycle tags)
+Dasha:    dasha_core.py → MD/AD/PD (PD used by Life Cycle)
 Auth:     Supabase magic link + JWT on API
 Gochar:   POST /forecast/scores → GocharamTab (no AI)
 Forecast: Same scores + POST /forecast/daily-reading (AI)
-Tests:    pytest (~100) · vitest (frontend, incl. horai.test.js)
+Life Cycle: POST /prediction/simulate (rule + optional AI)
+Tests:    pytest · vitest (frontend, incl. horai.test.js)
 Features: docs/FEATURES-TECHNICAL-REFERENCE.md
 Deploy:   docs/STEP-1-PRODUCTION-CONFIG.md
-Incidents: FEATURES doc §15 production matrix
+Incidents: FEATURES doc §16 production matrix
 ```
 
 ---
 
-*Last updated: 2026-06-06 — AV triggers, chat 503 fix, House Links lazy context, production matrix.*
+*Last updated: 2026-07-12 — Life Cycle Simulator Phase 1–3, SW life-cycle tab, production matrix.*

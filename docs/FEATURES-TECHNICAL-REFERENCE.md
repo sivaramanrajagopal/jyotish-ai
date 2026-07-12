@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-06-06 (AV trigger nakshatras, chat 503 fix, House Links lazy context)
+**Last updated:** 2026-07-12 (Life Cycle Simulator Phase 1–3, SW `life-cycle` tab)
 
 ---
 
@@ -22,8 +22,9 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 11. [Chat AI grounding](#11-chat-ai-grounding)
 12. [Ashtakavarga & AV triggers](#12-ashtakavarga--av-triggers)
 13. [My Chart sub-panels](#13-my-chart-sub-panels)
-14. [Service worker & PWA](#14-service-worker--pwa)
-15. [Production troubleshooting matrix](#15-production-troubleshooting-matrix)
+14. [Life Cycle Simulator](#14-life-cycle-simulator)
+15. [Service worker & PWA](#15-service-worker--pwa)
+16. [Production troubleshooting matrix](#16-production-troubleshooting-matrix)
 
 ---
 
@@ -45,6 +46,7 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Ashtakavarga | My Chart section | `POST /ashtakavarga` | `ashtakavarga_agent` | No | SAV only in prompt |
 | AV triggers | Home + Ashtakavarga | `POST /ashtakavarga/triggers` | `compute_trigger_status()` | No | — |
 | Prashna | Prashna tab | `POST /prashna/analyze` | `prashna/*` | Optional | — |
+| Life Cycle | Life Cycle tab (`?tab=life-cycle`) | `POST /prediction/simulate` | `prediction_simulator/*` | Optional | — |
 | Panchangam | Panchangam tab | `GET /panchangam/*` | `panchangam_agent` | No | 📅 |
 | Personal Panchangam | Home card | `GET /personal-panchangam/*` + triggers | `tara_engine`, `ashtama_agent`, `ashtakavarga_agent` | No | ⭐ |
 
@@ -867,7 +869,161 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ---
 
-## 14. Service worker & PWA
+## 14. Life Cycle Simulator
+
+### Purpose
+
+Forward **10-year Parasara planner**: natal Bhava strength + **SAV** + Drishti + D9 overlay → Vimshottari **MD / AD / PD** → slow-planet Gochara on house lords & karakas → theme-specific activation windows (marriage, career, health, property, foreign, education).
+
+**Method (exam-aligned):** Bhava → SAV → Dasa permission (MD→AD→PD) → Gochara trigger.  
+Windows are **indications**, not guaranteed events.
+
+### Files
+
+```
+backend/agents/prediction_simulator/
+  __init__.py
+  agent.py              # compute_life_cycle_simulation (orchestrator)
+  constants.py          # LIFE_THEMES, KARAKA_ROLES, PLANET_WEIGHT
+  themes.py             # SAV natal promise, PD peaks, verdict + has_caution
+  narration.py          # short rule-based headline / theme lines
+  ai_narrator.py        # optional 3-sentence OpenAI narration
+backend/dasha_core.py   # generate_pratyantars() — PD within each AD
+backend/main.py         # POST /prediction/simulate
+frontend/src/components/LifeCycleSimulatorPanel.jsx
+frontend/src/pages/Home.jsx          # tab key: life-cycle
+frontend/src/constants/brand.js      # Life Cycle feature chip
+frontend/src/index.css               # .lcs-* mobile styles
+backend/tests/test_prediction_simulator.py
+```
+
+### API
+
+```
+POST /prediction/simulate
+Rate limit: 30/minute
+Auth: optional JWT (resolve_natal_chart)
+
+Body:
+{
+  "natal_chart": { ... },   // omit when signed-in + saved chart
+  "horizon_years": 10,      // clamped 1–15
+  "start_date": null,       // optional ISO date; default = today
+  "include_ai": false,      // optional short AI narration
+  "language": "english"     // or "tamil" for AI
+}
+```
+
+**AI path:** If `include_ai=true`:
+1. Requires `OPENAI_API_KEY` on Render → else **503** `"OPENAI_API_KEY is not configured."`
+2. Then `check_ai_quota(..., "forecast", ...)` (same bucket as daily reading)
+3. If OpenAI fails after quota check → response still returns rule-based data; `meta.ai_error` set
+
+### Response shape (key fields)
+
+```json
+{
+  "meta": {
+    "phase": 3,
+    "lagna": "Aquarius",
+    "navamsa_lagna": "Aries",
+    "moon_sign": "Pisces",
+    "start_date": "2026-07-12",
+    "end_date": "2036-07-11",
+    "method": "Parasara: Bhava → SAV → …",
+    "ai_narration": false,
+    "ai_error": null
+  },
+  "current_period": {
+    "mahadasha": "Moon", "antardasha": "Ketu", "pratyantar": "Venus",
+    "pratyantar_start": "...", "pratyantar_end": "...",
+    "focus_houses": [2, 6], "life_themes": ["..."]
+  },
+  "dasha_timeline": [ /* AD segments */ ],
+  "pratyantar_timeline": [ /* PD segments over horizon */ ],
+  "transit_hits": [ /* Jupiter/Saturn/Mars/Rahu per-sign windows */ ],
+  "top_windows": [ /* AD × transit overlaps ranked */ ],
+  "caution_windows": [ /* Saturn/Rahu/Mars overlaps */ ],
+  "impact_areas": [ /* 12 houses + drishti + strength */ ],
+  "event_themes": [
+    {
+      "key": "health",
+      "verdict": "highly_active",
+      "has_caution": true,
+      "natal_promise_score": 39.2,
+      "activation_score": 100,
+      "sav": { "average": 24.7, "label": "Average", "by_house": [...] },
+      "peak_window": { "type": "overlap|pratyantar|...", "theme_houses": [6,8,12], ... },
+      "pratyantar_windows": [ /* top PD clusters for this theme */ ],
+      "d9_overlay": { "house_lords": [...], "d9_support": "neutral" }
+    }
+  ],
+  "narration": { "headline": "...", "current_period": "...", "theme_summaries": [...], "caution": "..." },
+  "ai_reading": null
+}
+```
+
+### Scoring notes (production-critical)
+
+| Piece | Rule |
+|-------|------|
+| Transit scan | **Per sign** — never pass all 12 signs as one target set (that bug spanned full horizon) |
+| Theme peak | Must hit **theme houses / lords / karakas** (`themes.py` relevance ≥ 45) |
+| Verdict | `highly_active` / `active` / `moderate` / `quiet` from natal + activation + SAV/D9 |
+| Caution | Separate flag `has_caution` — does **not** overwrite verdict |
+| SAV | Blended into natal promise; labels match Ashtakavarga (≥30 Strong, ≥25 Good, ≥20 Average) |
+| PD | `generate_pratyantars(bhukti)` in `dasha_core.py` — AD years × lord/120 |
+
+### UI (`LifeCycleSimulatorPanel.jsx`)
+
+| Section | Mobile behaviour |
+|---------|------------------|
+| Rule / AI reading | Short headline; AI = 3 sentences max |
+| Theme chips | Horizontal scroll |
+| Theme detail | SAV chips + Pratyantar list |
+| Dasa | Segment **list** on mobile; bar on desktop |
+| Charts | D1 / D9 toggle |
+| Transits | **Cards** on mobile; table on desktop |
+| Impact areas | Collapsed by default |
+
+Deep link: `?tab=life-cycle`
+
+### Golden test native
+
+| Field | Value |
+|-------|--------|
+| DOB | 1978-09-18, 17:35, Chennai |
+| Lagna | Aquarius |
+| Tests | `pytest tests/test_prediction_simulator.py -q` (11 tests) |
+
+### Debug checklist
+
+1. Confirm deploy ≥ commit with Life Cycle (`ba03c0c`+) and SW ≥ `jyotish-shell-v7` with `life-cycle` in `ALLOWED_TABS`
+2. `GET /openapi.json` includes `/prediction/simulate`
+3. Chart has `birth_data.dob`, `planet_positions.Moon.longitude`, `navamsa_positions`
+4. Guest: body must include full `natal_chart`; signed-in: JWT + saved chart
+5. AI 503 → check Render `OPENAI_API_KEY`
+6. AI button no text → check `meta.ai_error` / OpenAI quota
+7. All transit hits spanning ~10 years → old backend without per-sign scan fix
+8. Tab blank offline / SW error → bump SW cache; hard refresh
+
+### Useful curl
+
+```bash
+# Rule-only (no AI quota)
+curl -s -X POST "$API/prediction/simulate" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...},"horizon_years":10}' \
+  | jq '.meta.phase, .narration.headline, .event_themes[0].key, .event_themes[0].sav'
+
+# With AI (needs OPENAI_API_KEY + forecast quota)
+curl -s -X POST "$API/prediction/simulate" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...},"horizon_years":10,"include_ai":true}' \
+  | jq '.ai_reading, .meta.ai_error'
+```
+
+---
+
+## 15. Service worker & PWA
 
 ### File
 
@@ -875,14 +1031,14 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ### Cache
 
-- Shell: `jyotish-shell-v6`
+- Shell: `jyotish-shell-v7`
 - Precache: `/`, `/index.html`, `/manifest.json`, icons
 
 ### Allowed deep-link tabs
 
 ```javascript
 ALLOWED_TABS = home, chart, career, health, dosha-radar, house-links, gochar,
-  panchangam, chat, forecast, prashna, admin
+  panchangam, chat, forecast, prashna, life-cycle, admin
 ```
 
 Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
@@ -896,17 +1052,27 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 ### After adding a new tab
 
 1. Add key to `ALLOWED_TABS` in `sw.js`
-2. Bump `CACHE_SHELL` version (e.g. `v4` → `v5`)
+2. Bump `CACHE_SHELL` version (e.g. `v6` → `v7`)
 3. Update SW registration query string in frontend if used
 4. Users: hard refresh or clear site data once
 
 ---
 
-## 15. Production troubleshooting matrix
+## 16. Production troubleshooting matrix
 
 | Symptom | Feature | Likely cause | Resolution |
 |---------|---------|--------------|------------|
-| Tab blank after deploy | Any | Old SW cache | Bump `sw.js` cache version (`jyotish-shell-v6`+); hard refresh |
+| Tab blank after deploy | Any | Old SW cache | Bump `sw.js` cache (`jyotish-shell-v7`+); hard refresh |
+| Life Cycle tab blank / SW error | Life Cycle | `life-cycle` missing from SW | Deploy SW with `life-cycle` in `ALLOWED_TABS`; cache v7+ |
+| Life Cycle 404 / 500 | Life Cycle | Old backend | Redeploy Render ≥ Life Cycle commit; check `/prediction/simulate` in OpenAPI |
+| Life Cycle 422 / natal required | Life Cycle | Guest without chart body | Enter birth details on Home first; signed-in users need saved chart |
+| Life Cycle 500 stale chart | Life Cycle | Missing dasha / old schema | Recalculate chart (`StaleChartBanner`) |
+| Transit hits span full 10 years | Life Cycle | Pre-fix scan | Deploy agent with **per-sign** `_scan_transits_in_signs` |
+| All themes same peak window | Life Cycle | Old theme peak logic | Deploy `themes.py` with theme-house relevance filter |
+| Short AI reading → 503 | Life Cycle | Missing `OPENAI_API_KEY` | Set on Render; redeploy |
+| Short AI reading → no text | Life Cycle | OpenAI error after quota | Check Render logs; rule reading still works; `meta.ai_error` |
+| AI reading 429 | Life Cycle | Forecast AI quota | Same as daily reading limits; wait UTC day or raise env |
+| CORS on Life Cycle | All API | `ALLOWED_ORIGINS` | Add exact Vercel origin on Render |
 | Chat 503 every message | Chat | Broken import or oversized House Links prompt | Deploy ≥ `c1e399e`; verify lazy `house_connections_context_for_narrator` |
 | Chat 503 rate limit | Chat | OpenAI RPM/quota | Wait 1 min; check OpenAI dashboard |
 | Chat 503 API key | Chat | `OPENAI_API_KEY` missing/invalid on Render | Set env; redeploy backend |
@@ -949,6 +1115,11 @@ curl -s -X POST "$API/career/predict" -H 'Content-Type: application/json' \
 curl -s -X POST "$API/dosha-radar/analyze" -H 'Content-Type: application/json' \
   -d '{"natal_chart":{...}}' | jq '.summary, .pushkara_natal, .active_alerts'
 
+# Life Cycle
+curl -s -X POST "$API/prediction/simulate" -H 'Content-Type: application/json' \
+  -d '{"natal_chart":{...},"horizon_years":10}' \
+  | jq '.meta.phase, .narration.headline, .event_themes[0].sav, (.pratyantar_timeline|length)'
+
 # AV triggers (today)
 curl -s -X POST "$API/ashtakavarga/triggers" -H 'Content-Type: application/json' \
   -d '{"natal_chart":{...}}' | jq '.is_trigger_day, .active_planets, .next_trigger'
@@ -968,7 +1139,8 @@ pytest tests/test_dosha_radar.py tests/test_chat_dosha_radar_context.py -q
 pytest tests/test_tamil_doshas.py tests/test_indu_lagna.py -q
 pytest tests/test_ashtakavarga_triggers.py -q
 pytest tests/test_house_connections*.py tests/test_dasa_activation.py tests/test_chat_house_connections_context.py -q
-pytest tests/ -q   # full suite (~100 tests)
+pytest tests/test_prediction_simulator.py -q
+pytest tests/ -q   # full suite
 
 cd ../frontend && npm test -- src/lib/horai.test.js
 ```
@@ -983,9 +1155,10 @@ cd ../frontend && npm test -- src/lib/horai.test.js
 4. Wire in `chat_agent._build_gochara_block()` (try/except)
 5. `frontend/src/components/MyFeaturePanel.jsx` — `chartPayload(chart, userId)`
 6. Tab or sub-panel in `Home.jsx` + `enabled={activeTab === '...'}` pattern
-7. Optional chip in `ChatPanel.jsx` `TOPICS`
-8. `backend/tests/test_my_feature.py` + chat context test
-9. Update this doc + DEVELOPER-GUIDE feature index
+7. Add tab to `ALLOWED_TABS` in `frontend/public/sw.js` and bump `CACHE_SHELL`
+8. Optional chip in `ChatPanel.jsx` `TOPICS`
+9. `backend/tests/test_my_feature.py` + chat context test
+10. Update this doc + DEVELOPER-GUIDE feature index
 
 ---
 
