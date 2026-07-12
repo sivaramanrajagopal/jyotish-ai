@@ -71,6 +71,7 @@ from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
 from agents.house_connections_agent import compute_house_connections
+from agents.prediction_simulator import compute_life_cycle_simulation
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
@@ -1633,6 +1634,56 @@ def house_connections_analyze_endpoint(
             "House connections error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="House connections analysis failed.")
+
+
+class PredictionSimulateRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    horizon_years: int = 10
+    start_date: Optional[str] = None
+    include_ai: bool = False
+    language: str = "english"
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/prediction/simulate")
+@limiter.limit("30/minute")
+def prediction_simulate_endpoint(
+    request: Request,
+    req: PredictionSimulateRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """10-year Parasara life-cycle simulator: Dasa timeline + transit hits + event themes."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    chart = ensure_dasha(chart)
+    years = max(1, min(int(req.horizon_years or 10), 15))
+    if req.include_ai:
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key:
+            raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+        check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+    try:
+        result = compute_life_cycle_simulation(
+            chart,
+            horizon_years=years,
+            start_date=req.start_date,
+            include_ai=bool(req.include_ai),
+            language=req.language or "english",
+        )
+        if req.include_ai and not result.get("ai_reading"):
+            result.setdefault("meta", {})["ai_narration"] = False
+            result["meta"]["ai_error"] = "AI narration unavailable — rule-based reading only."
+        track_event("prediction_simulate", properties={
+            "horizon_years": years,
+            "include_ai": bool(req.include_ai),
+        })
+        return result
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Prediction simulate error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Life cycle simulation failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

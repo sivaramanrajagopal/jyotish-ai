@@ -115,6 +115,30 @@ def generate_bhuktis(dasha: dict) -> list[dict]:
     return bhuktis
 
 
+def generate_pratyantars(bhukti: dict) -> list[dict]:
+    """All 9 Pratyantar sub-periods within one Antardasha (Bhukti)."""
+    lords = list(DASA_DURATIONS.keys())
+    ad_lord = bhukti["planet"]
+    ad_years = float(bhukti["years"])
+    start_i = lords.index(ad_lord)
+    current = bhukti["start"]
+    pratyantars: list[dict] = []
+
+    for i in range(len(lords)):
+        pd_lord = lords[(start_i + i) % len(lords)]
+        pd_years = (DASA_DURATIONS[pd_lord] / 120.0) * ad_years
+        end = current + datetime.timedelta(days=pd_years * 365.25)
+        pratyantars.append({
+            "planet": pd_lord,
+            "start": current,
+            "end": end,
+            "years": round(pd_years, 4),
+        })
+        current = end
+
+    return pratyantars
+
+
 def find_current_dasha_bhukti(
     moon_long: float,
     birth_date: str,

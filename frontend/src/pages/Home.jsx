@@ -31,6 +31,7 @@ import TamilDoshasPanel from '../components/TamilDoshasPanel'
 import InduLagnaPanel from '../components/InduLagnaPanel'
 import CareerPanel from '../components/CareerPanel'
 import HealthPanel from '../components/HealthPanel'
+import LifeCycleSimulatorPanel from '../components/LifeCycleSimulatorPanel'
 import DoshaRadarPanel from '../components/DoshaRadarPanel'
 import HouseLinksPanel from '../components/HouseLinksPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
@@ -103,6 +104,7 @@ const BASE_TABS = [
   { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
   { key: 'chat',       label: 'Ask AI',     icon: '🔮' },
   { key: 'forecast',   label: 'Forecast',   icon: '📊' },
+  { key: 'life-cycle', label: 'Life Cycle', icon: '🔄', mobileLabel: 'Cycle' },
 ]
 const ADMIN_TAB = { key: 'admin', label: 'Admin', icon: '⚙️' }
 
@@ -930,7 +932,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -1070,6 +1072,18 @@ function HomeApp() {
         </div>
         )}
 
+        {mountedTabs.has('life-cycle') && (
+        <div style={tabPane('life-cycle')} role="tabpanel" id="panel-life-cycle" aria-labelledby="tab-life-cycle">
+          {chart
+            ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <LifeCycleSimulatorPanel chart={chart} userId={userId} enabled={activeTab === 'life-cycle'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
+        </div>
+        )}
+
         {mountedTabs.has('forecast') && (
         <div style={tabPane('forecast')} role="tabpanel" id="panel-forecast" aria-labelledby="tab-forecast">
           {chart
@@ -1129,7 +1143,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
