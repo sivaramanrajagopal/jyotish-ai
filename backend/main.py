@@ -529,6 +529,37 @@ def bulk_preload(
     }
 
 
+@app.get("/debug/sentry-test")
+@limiter.limit("5/minute")
+def sentry_test(
+    request: Request,
+    crash: bool = Query(False, description="If true, raise a real unhandled error"),
+    _: None = Depends(verify_admin_token),
+):
+    """
+    Verify Sentry wiring — admin only (X-Admin-Token header).
+    - Default: sends a test message event and returns 200.
+    - ?crash=true: raises a real exception to test unhandled-error capture.
+    Remove after confirming Sentry is receiving events.
+    """
+    dsn_set = bool(os.getenv("SENTRY_DSN", "").strip())
+    try:
+        import sentry_sdk
+        sentry_sdk.capture_message("Sentry backend test event ✅ (from /debug/sentry-test)")
+        sent = True
+    except Exception:
+        sent = False
+
+    if crash:
+        raise RuntimeError("Sentry backend CRASH test 💥 (from /debug/sentry-test?crash=true)")
+
+    return {
+        "sentry_dsn_configured": dsn_set,
+        "test_message_sent": sent,
+        "note": "Check Sentry → Issues. If dsn is false, set SENTRY_DSN on the server.",
+    }
+
+
 @app.get("/panchangam/validate-today", response_class=PlainTextResponse)
 @limiter.limit("10/minute")
 def validate_today(
