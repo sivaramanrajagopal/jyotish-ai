@@ -51,3 +51,6 @@ PyJWT==2.10.1
 
 # Timezone
 timezonefinder==6.5.2
+
+# Error tracking (opt-in via SENTRY_DSN — see docs/ROADMAP.md Phase A)
+sentry-sdk[fastapi]==2.19.2

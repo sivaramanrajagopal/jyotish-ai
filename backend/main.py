@@ -23,6 +23,24 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")  # explicit path — works from any cwd
+
+# ── Error tracking (Sentry) — opt-in: no-op unless SENTRY_DSN is set ──────────
+_SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=_SENTRY_DSN,
+            environment=os.getenv("APP_ENV", "development"),
+            # Keep tracing light on the free tier; tune via env if needed.
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
+            send_default_pii=False,  # never ship user birth data / PII to Sentry
+        )
+        print("[sentry] initialised")
+    except Exception as _exc:  # never let monitoring break startup
+        print(f"[sentry] init skipped: {_exc}")
+
 from typing import Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
