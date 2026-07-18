@@ -3,7 +3,7 @@
 Per-feature implementation guide for **debugging**, **production incidents**, and **onboarding engineers**.  
 Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 
-**Last updated:** 2026-07-12 (Life Cycle Simulator Phase 1–3, SW `life-cycle` tab)
+**Last updated:** 2026-07-18 (Life Cycle chat grounding + chip, faster transit scan, resilient panel, sharper caution flag)
 
 ---
 
@@ -882,19 +882,22 @@ Windows are **indications**, not guaranteed events.
 
 ```
 backend/agents/prediction_simulator/
-  __init__.py
-  agent.py              # compute_life_cycle_simulation (orchestrator)
+  __init__.py           # exports compute_life_cycle_simulation + life_cycle_context_for_narrator
+  agent.py              # orchestrator + one-pass slow-planet scan + chat narrator block
   constants.py          # LIFE_THEMES, KARAKA_ROLES, PLANET_WEIGHT
-  themes.py             # SAV natal promise, PD peaks, verdict + has_caution
+  themes.py             # SAV natal promise, PD peaks, verdict + has_caution (lord/karaka gated)
   narration.py          # short rule-based headline / theme lines
   ai_narrator.py        # optional 3-sentence OpenAI narration
 backend/dasha_core.py   # generate_pratyantars() — PD within each AD
 backend/main.py         # POST /prediction/simulate
-frontend/src/components/LifeCycleSimulatorPanel.jsx
+backend/agents/chat_agent.py         # keyword-gated Life Cycle block in chat system prompt
+frontend/src/components/LifeCycleSimulatorPanel.jsx  # fingerprint fetch + abort/timeout + soft loading
+frontend/src/components/ChatPanel.jsx # 🧭 Life Cycle topic chip + auto-tag
 frontend/src/pages/Home.jsx          # tab key: life-cycle
 frontend/src/constants/brand.js      # Life Cycle feature chip
 frontend/src/index.css               # .lcs-* mobile styles
-backend/tests/test_prediction_simulator.py
+backend/tests/test_prediction_simulator.py       # 11 tests
+backend/tests/test_chat_life_cycle_context.py    # chat gating + grounded block (3 tests)
 ```
 
 ### API
@@ -918,6 +921,17 @@ Body:
 1. Requires `OPENAI_API_KEY` on Render → else **503** `"OPENAI_API_KEY is not configured."`
 2. Then `check_ai_quota(..., "forecast", ...)` (same bucket as daily reading)
 3. If OpenAI fails after quota check → response still returns rule-based data; `meta.ai_error` set
+
+### Chat integration (Ask AI tab)
+
+Life Cycle answers are available **inside the chat** — no separate tab needed — via a grounded, hallucination-safe block.
+
+- **Grounding block:** `life_cycle_context_for_narrator(natal_chart)` (in `agent.py`) runs the simulator and emits a compact, **facts-only** text block: current MD/AD/PD, top 5 dated activation windows, event-theme verdicts (SAV + peak window + caution), and caution windows. Dates are month-scale (`Mar 2034–Apr 2035`).
+- **Keyword gate:** `_wants_life_cycle(user_message)` in `chat_agent.py`. The ~1.2 s simulation runs **only** for timing-related questions ("next few years", "best/worst period", "when will…", "timing", "forecast", "next N years"). Normal chats stay fast — the block is appended in `_build_gochara_block` alongside the other `*_context_for_narrator` blocks.
+- **Prompt routing:** the chat system prompt instructs the model to use **only** the LIFE CYCLE block, **quote dates verbatim, never invent timing**, and answer in the mobile format: 1-line verdict → 2–3 dated bullets → 1 caution line, under 6 lines. If a theme has no window, say so — never guess.
+- **UI chip:** `ChatPanel.jsx` has a 🧭 **Life Cycle** topic chip whose question trips the gate; replies mentioning activation/peak/caution windows auto-tag back to the chip for follow-ups.
+
+This reuses the same anti-hallucination contract as the CRITICAL DASHA RULES (quote only precomputed windows/dates).
 
 ### Response shape (key fields)
 
@@ -967,10 +981,10 @@ Body:
 
 | Piece | Rule |
 |-------|------|
-| Transit scan | **Per sign** — never pass all 12 signs as one target set (that bug spanned full horizon) |
+| Transit scan | **One pass per slow planet**, emitting a window each time it occupies a target sign (`_scan_slow_planet_windows` in `agent.py`). ~7× faster than the old per-sign×12 loop. Never pass all 12 signs as one target set (that bug spanned full horizon) |
 | Theme peak | Must hit **theme houses / lords / karakas** (`themes.py` relevance ≥ 45) |
 | Verdict | `highly_active` / `active` / `moderate` / `quiet` from natal + activation + SAV/D9 |
-| Caution | Separate flag `has_caution` — does **not** overwrite verdict |
+| Caution | Separate flag `has_caution` — does **not** overwrite verdict. Fires **only** when a slow malefic afflicts the theme's own **house-lord or karaka** with relevance ≥ 70 (`lord_transit`/`karaka_transit`). A bare transit through a theme sign is *not* enough — prevents every theme flagging caution |
 | SAV | Blended into natal promise; labels match Ashtakavarga (≥30 Strong, ≥25 Good, ≥20 Average) |
 | PD | `generate_pratyantars(bhukti)` in `dasha_core.py` — AD years × lord/120 |
 
@@ -994,7 +1008,7 @@ Deep link: `?tab=life-cycle`
 |-------|--------|
 | DOB | 1978-09-18, 17:35, Chennai |
 | Lagna | Aquarius |
-| Tests | `pytest tests/test_prediction_simulator.py -q` (11 tests) |
+| Tests | `pytest tests/test_prediction_simulator.py -q` (11) + `tests/test_chat_life_cycle_context.py` (3) |
 
 ### Debug checklist
 
@@ -1067,8 +1081,11 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | Life Cycle 404 / 500 | Life Cycle | Old backend | Redeploy Render ≥ Life Cycle commit; check `/prediction/simulate` in OpenAPI |
 | Life Cycle 422 / natal required | Life Cycle | Guest without chart body | Enter birth details on Home first; signed-in users need saved chart |
 | Life Cycle 500 stale chart | Life Cycle | Missing dasha / old schema | Recalculate chart (`StaleChartBanner`) |
-| Transit hits span full 10 years | Life Cycle | Pre-fix scan | Deploy agent with **per-sign** `_scan_transits_in_signs` |
+| Transit hits span full 10 years | Life Cycle | Pre-fix scan | Deploy agent with one-pass `_scan_slow_planet_windows` |
+| "Calculating 10-year life cycle…" stuck forever | Life Cycle | Overlapping refetches kept `loading` true (results hidden) + slow scan; axios had no timeout | Deploy panel with **chart-fingerprint fetch + AbortController + 90 s timeout + soft loading** (shows data as soon as it arrives, Retry on error) and faster scan |
+| All themes flagged CAUTION | Life Cycle | Old caution threshold (any theme-sign transit) | Deploy `themes.py` where `has_caution` requires lord/karaka affliction + relevance ≥ 70 |
 | All themes same peak window | Life Cycle | Old theme peak logic | Deploy `themes.py` with theme-house relevance filter |
+| Timing question in chat gives no dates / vague | Chat | Life Cycle block not gated in or old backend | Ensure `chat_agent.py` has `_wants_life_cycle` + `life_cycle_context_for_narrator`; redeploy Render |
 | Short AI reading → 503 | Life Cycle | Missing `OPENAI_API_KEY` | Set on Render; redeploy |
 | Short AI reading → no text | Life Cycle | OpenAI error after quota | Check Render logs; rule reading still works; `meta.ai_error` |
 | AI reading 429 | Life Cycle | Forecast AI quota | Same as daily reading limits; wait UTC day or raise env |

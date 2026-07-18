@@ -55,6 +55,14 @@ const TOPICS = [
     question: "Show my high-level full Vimshottari Dasa–Bhukti cycle: Mahadasha roadmap plus all bhuktis in my current Mahadasha, in tables.",
   },
   {
+    key: 'life_cycle',
+    label: '🧭 Life Cycle',
+    color: '#2dd4bf',
+    bg: 'rgba(45,212,191,0.15)',
+    border: 'rgba(45,212,191,0.4)',
+    question: "What are my strongest and most cautious periods over the next 10 years? Give the best windows for career, marriage, and health with dates.",
+  },
+  {
     key: 'tamil_doshas',
     label: '🔯 Tamil Doshas',
     color: '#e879f9',
@@ -145,6 +153,7 @@ function detectTopics(text) {
   if (/mahadasha|bhukti|antardasha|dasha|antar/.test(t))                              found.push('dasha')
   if (/\|.*\|.*\|/.test(text) && /bhukti|antardasha/i.test(t) && !/mahadasha cycle/i.test(t)) found.push('dasha_table')
   if (/vimshottari|mahadasha cycle|dasa cycle|dasa–bhukti overview/i.test(t))                  found.push('dasha_cycle')
+  if (/life cycle|activation window|peak window|caution window|next \d+ years|coming years|best (period|window)/.test(t)) found.push('life_cycle')
   if (/dagdha|soonya|mudakku|vadhai|vainasikam|avayogi|yogi graha|tamil dosha|parihara/.test(t)) found.push('tamil_doshas')
   if (/dosha radar|pushkara|visha gati|divine protection|chandrashtama|obstruction dosha|red zone transit/.test(t)) found.push('dosha_radar')
   if (/house link|house connection|lord link|blesser planet|prediction map|channels in|channels out|explain h\d|raja yoga.*lord|dharma-karma/.test(t)) found.push('house_links')

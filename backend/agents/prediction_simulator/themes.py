@@ -332,7 +332,7 @@ def _collect_theme_windows(
 
     cautions: list = []
     for w in caution_windows:
-        relevance, theme_hit, _ = _overlap_relevance(theme, w, asc_idx)
+        relevance, theme_hit, signals = _overlap_relevance(theme, w, asc_idx)
         # Require theme-house hit so global Saturn/Rahu overlaps don't caution every theme
         if relevance < 40 or not theme_hit:
             continue
@@ -343,6 +343,8 @@ def _collect_theme_windows(
             "planet": w["transit_planet"],
             "theme_houses": theme_hit,
             "relevance": relevance,
+            "lord_transit": signals.get("lord_transit", False),
+            "karaka_transit": signals.get("karaka_transit", False),
         })
 
     windows.sort(key=lambda x: (-x.get("relevance", 0), -x["score"], x["start"]))
@@ -376,7 +378,18 @@ def _verdict(
 
 
 def _has_strong_caution(cautions: list) -> bool:
-    return any(c.get("theme_houses") and c.get("relevance", 0) >= 40 for c in cautions)
+    """Flag caution only when a slow malefic afflicts the theme's own lord or karaka.
+
+    A mere transit through a theme-house sign (relevance ~40) is too weak — it fired
+    on almost every theme. Require the malefic to hit the house-lord or theme karaka
+    (lord/karaka_transit) with high relevance so the flag stays meaningful.
+    """
+    return any(
+        c.get("theme_houses")
+        and (c.get("lord_transit") or c.get("karaka_transit"))
+        and c.get("relevance", 0) >= 70
+        for c in cautions
+    )
 
 
 def build_event_theme_forecasts(

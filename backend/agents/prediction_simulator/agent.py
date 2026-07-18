@@ -448,3 +448,107 @@ def compute_life_cycle_simulation(
             result["meta"]["ai_narration"] = True
 
     return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chat grounding — compact, facts-only block for the Jyotish chat narrator.
+# Keyword-gated in chat_agent so it only runs for timing-related questions.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_VERDICT_TEXT = {
+    "highly_active": "Highly active",
+    "active": "Active",
+    "moderate": "Moderate",
+    "quiet": "Quiet",
+}
+
+
+def _fmt_month(iso: str) -> str:
+    """2027-03-14 → Mar 2027 (windows are month-scale, so day is noise)."""
+    try:
+        d = datetime.datetime.strptime(iso[:10], "%Y-%m-%d").date()
+        return d.strftime("%b %Y")
+    except Exception:
+        return iso or "?"
+
+
+def _fmt_range(start: str, end: str) -> str:
+    return f"{_fmt_month(start)}–{_fmt_month(end)}"
+
+
+def life_cycle_context_for_narrator(natal_chart: dict, horizon_years: int = 10) -> str:
+    """Compact, dates-verbatim life-cycle block for the chat system prompt.
+
+    Facts only — no interpretation. The narrator must quote windows/dates from
+    here and never invent timing (mirrors the CRITICAL DASHA RULES in the prompt).
+    """
+    try:
+        sim = compute_life_cycle_simulation(natal_chart, horizon_years=horizon_years)
+    except Exception:
+        return ""
+
+    meta = sim.get("meta", {})
+    lines: list[str] = [
+        f"=== LIFE CYCLE — next {horizon_years} years "
+        f"({meta.get('start_date', '?')} → {meta.get('end_date', '?')}) ===",
+        "Parasara: Bhava → SAV → D9 → Vimshottari MD/AD/PD → Gochara. "
+        "Quote windows and dates verbatim; never invent timing.",
+    ]
+
+    cur = sim.get("current_period")
+    if cur:
+        pd_txt = ""
+        if cur.get("pratyantar"):
+            pd_txt = (
+                f" · PD {cur['pratyantar']} "
+                f"({_fmt_range(cur.get('pratyantar_start', ''), cur.get('pratyantar_end', ''))})"
+            )
+        lines.append(
+            f"Now: {cur.get('mahadasha')} MD / {cur.get('antardasha')} AD "
+            f"({_fmt_range(cur.get('start', ''), cur.get('end', ''))}){pd_txt}"
+        )
+
+    tops = sim.get("top_windows") or []
+    if tops:
+        lines.append("Strongest activation windows:")
+        for w in tops[:5]:
+            themes = ", ".join(w.get("themes") or []) or "general"
+            lines.append(
+                f"  - {_fmt_range(w.get('transit_start', ''), w.get('transit_end', ''))}: "
+                f"{w.get('summary', '')} [{themes}]"
+            )
+
+    themes = sim.get("event_themes") or []
+    if themes:
+        lines.append("Event themes (verdict · SAV · peak window):")
+        for t in themes:
+            peak = t.get("peak_window") or {}
+            peak_txt = (
+                _fmt_range(peak.get("start", ""), peak.get("end", ""))
+                if peak else "no clear peak"
+            )
+            sav = (t.get("sav") or {}).get("label", "")
+            caution = " · CAUTION" if t.get("has_caution") else ""
+            lines.append(
+                f"  - {t.get('label')}: {_VERDICT_TEXT.get(t.get('verdict'), t.get('verdict'))}"
+                f" · SAV {sav} · peak {peak_txt}{caution}"
+            )
+
+    cautions = sim.get("caution_windows") or []
+    if cautions:
+        lines.append("Caution windows (slow malefics — plan carefully, not doom):")
+        seen: set = set()
+        for c in cautions[:4]:
+            rng = _fmt_range(c.get("transit_start", ""), c.get("transit_end", ""))
+            key = (c.get("transit_planet"), rng)
+            if key in seen:
+                continue
+            seen.add(key)
+            lines.append(f"  - {rng}: {c.get('transit_planet')} — {c.get('summary', '')}")
+
+    lines.append(
+        "HOW TO ANSWER timing questions: lead with a 1-line verdict, then 2–3 dated "
+        "windows as bullets (quote dates above), then one caution line if relevant. "
+        "Keep it under 6 short lines. If asked about a theme with no data here, say so."
+    )
+    return "\n".join(lines)

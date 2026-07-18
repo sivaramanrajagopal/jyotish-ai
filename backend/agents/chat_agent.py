@@ -33,6 +33,7 @@ from agents.health_agent import health_context_for_narrator
 from agents.dosha_radar_agent import dosha_radar_context_for_narrator
 from agents.house_connections_agent import house_connections_context_for_narrator
 from agents.bhavat_bhavam_agent import bhavat_bhavam_context_for_narrator
+from agents.prediction_simulator import life_cycle_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
     format_full_dasha_cycle_markdown,
@@ -80,6 +81,12 @@ When the user asks about **house connections**, **house links**, **lord links**,
 **which house channels results**, **explain H9** (or any house), **Raja Yoga from lords**, or **prediction map**, \
 use the HOUSE CONNECTIONS block below. Follow HOW TO EXPLAIN HOUSE LINKS in that block: cite each Channels IN/OUT bullet \
 from the matching house card; explain stress vs strength; name blessers with scores. Never invent lord placements or links.
+
+When the user asks about the **next few years**, **what's coming**, **best/worst periods**, **timing** of marriage/career/health, \
+**activation windows**, or a **life forecast**, use ONLY the LIFE CYCLE block below (if present). \
+Quote the windows and dates verbatim — NEVER invent or shift dates. Follow HOW TO ANSWER in that block: \
+one-line verdict, then 2–3 dated windows as bullets, then one caution line if relevant; keep it under 6 short lines. \
+If the LIFE CYCLE block is absent or a theme has no window there, say the timeline does not flag it — do not guess.
 
 === {name}'s NATAL CHART ===
 Ascendant  : {ascendant} (nakshatra: {asc_nak}, pada {asc_pada})
@@ -430,10 +437,42 @@ def _build_gochara_block(natal_chart: dict, dasha: dict, user_message: str = "")
     except Exception:
         house_ctx = ""
 
+    # Life Cycle is ~1.2s to compute, so gate it to timing-related questions only.
+    life_cycle_ctx = ""
+    if _wants_life_cycle(user_message):
+        try:
+            block = life_cycle_context_for_narrator(natal_chart)
+            if block:
+                life_cycle_ctx = "\n\n" + block
+        except Exception:
+            life_cycle_ctx = ""
+
     return (
         ("\n\n" + gochara if gochara else "")
         + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx + radar_ctx + house_ctx
+        + life_cycle_ctx
     )
+
+
+# Timing / "what's coming" cues → attach the Life Cycle grounding block.
+_LIFE_CYCLE_KEYWORDS = (
+    "life cycle", "lifecycle", "next few years", "next year", "coming years",
+    "next 5 years", "next 10 years", "next three years", "next 3 years",
+    "future", "upcoming", "what's coming", "whats coming", "what is coming",
+    "best period", "best time", "worst period", "tough period", "hard period",
+    "difficult period", "good period", "favourable period", "favorable period",
+    "when will", "when can", "when should", "timing", "time frame", "timeframe",
+    "activation window", "peak period", "10-year", "10 year", "forecast",
+    "marriage timing", "career timing", "when marriage", "when job", "when career",
+    "life forecast", "life prediction", "milestone",
+)
+
+
+def _wants_life_cycle(user_message: str) -> bool:
+    if not user_message:
+        return False
+    text = user_message.lower()
+    return any(kw in text for kw in _LIFE_CYCLE_KEYWORDS)
 
 
 _TAMIL_CHAT_SUFFIX = """
