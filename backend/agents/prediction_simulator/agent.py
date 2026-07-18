@@ -13,7 +13,11 @@ from typing import Optional
 from agents.bhavat_bhavam.core import lord_of_house
 from agents.house_connections.core import analyze_all_houses, houses_owned_by, planets_aspecting_house
 from agents.house_connections.yogas import detect_yogas
-from agents.indu_lagna_agent import _scan_transits_in_signs
+from agents.indu_lagna_agent import (
+    _jd_at_local_noon,
+    _planet_longitude,
+    _sign_index_from_longitude,
+)
 from agents.natal_agent import SIGNS
 from agents.prediction_simulator.narration import build_rule_narration
 from agents.prediction_simulator.themes import build_event_theme_forecasts
@@ -144,6 +148,85 @@ def _build_transit_targets(natal_chart: dict) -> list[dict]:
     return [{"index": idx, "label": " · ".join(labels)} for idx, labels in sorted(by_sign.items())]
 
 
+def _scan_slow_planet_windows(
+    target_by_idx: dict[int, str],
+    planets: list[str],
+    start_date: datetime.date,
+    end_date: datetime.date,
+    tz_name: str,
+) -> list[dict]:
+    """One ephemeris pass per planet — emit a window each time a target sign is occupied.
+
+    Unlike scanning all targets as one set (which never "leaves"), this tracks the
+    current sign and only records windows while that sign is a transit target.
+    """
+    windows: list[dict] = []
+    today = datetime.date.today()
+
+    for planet in planets:
+        d = start_date
+        period_start: Optional[datetime.date] = None
+        active_idx: Optional[int] = None
+
+        while d <= end_date:
+            jd = _jd_at_local_noon(d, tz_name)
+            sign_idx = _sign_index_from_longitude(_planet_longitude(jd, planet))
+            in_target = sign_idx in target_by_idx
+
+            if in_target and sign_idx != active_idx:
+                if period_start is not None and active_idx is not None:
+                    win_end = d - datetime.timedelta(days=1)
+                    label = target_by_idx[active_idx]
+                    windows.append({
+                        "planet": planet,
+                        "target": label,
+                        "start": period_start.isoformat(),
+                        "end": win_end.isoformat(),
+                        "duration_days": (win_end - period_start).days + 1,
+                        "currently_active": period_start <= today <= win_end,
+                        "activation_tier": "primary",
+                        "label": f"{planet} over {label}",
+                        "sign_index": active_idx,
+                    })
+                period_start = d
+                active_idx = sign_idx
+            elif not in_target and period_start is not None and active_idx is not None:
+                win_end = d - datetime.timedelta(days=1)
+                label = target_by_idx[active_idx]
+                windows.append({
+                    "planet": planet,
+                    "target": label,
+                    "start": period_start.isoformat(),
+                    "end": win_end.isoformat(),
+                    "duration_days": (win_end - period_start).days + 1,
+                    "currently_active": period_start <= today <= win_end,
+                    "activation_tier": "primary",
+                    "label": f"{planet} over {label}",
+                    "sign_index": active_idx,
+                })
+                period_start = None
+                active_idx = None
+
+            d += datetime.timedelta(days=1)
+
+        if period_start is not None and active_idx is not None:
+            label = target_by_idx[active_idx]
+            windows.append({
+                "planet": planet,
+                "target": label,
+                "start": period_start.isoformat(),
+                "end": end_date.isoformat(),
+                "duration_days": (end_date - period_start).days + 1,
+                "currently_active": period_start <= today <= end_date,
+                "activation_tier": "primary",
+                "label": f"{planet} over {label}",
+                "sign_index": active_idx,
+            })
+
+    windows.sort(key=lambda w: (w["start"], w["planet"]))
+    return windows
+
+
 def _build_transit_hits(
     natal_chart: dict,
     start: datetime.date,
@@ -154,26 +237,14 @@ def _build_transit_hits(
     if not targets:
         return []
 
-    # Scan each sign separately — when all 12 signs are targets at once, slow
-    # planets never "leave" the target set and windows span the full horizon.
-    raw: list[dict] = []
-    seen: set[tuple[str, str, str, int]] = set()
-    for target in targets:
-        for w in _scan_transits_in_signs(
-            [target],
-            list(SLOW_TRANSIT_PLANETS),
-            start,
-            end,
-            tz_name,
-            activation_tier="primary",
-        ):
-            key = (w["planet"], w["start"], w["end"], target["index"])
-            if key in seen:
-                continue
-            seen.add(key)
-            raw.append({**w, "target": target["label"]})
-
-    raw.sort(key=lambda w: (w["start"], w["planet"]))
+    target_by_idx = {t["index"]: t["label"] for t in targets}
+    raw = _scan_slow_planet_windows(
+        target_by_idx,
+        list(SLOW_TRANSIT_PLANETS),
+        start,
+        end,
+        tz_name,
+    )
 
     asc_idx = natal_chart["ascendant"]["sign_index"]
     hits: list[dict] = []
@@ -189,7 +260,7 @@ def _build_transit_hits(
 
         for lt in LIFE_THEMES:
             for k in lt["karakas"]:
-                if k in target_label and f"karaka" in target_label:
+                if k in target_label and "karaka" in target_label:
                     matched_houses.extend(lt["houses"])
 
         hits.append({

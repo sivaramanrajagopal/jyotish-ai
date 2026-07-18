@@ -2,10 +2,12 @@
  * LifeCycleSimulatorPanel — Phase 2 Parasara timeline:
  * event themes, D9 overlay, rule + optional AI narration, mobile-first layout.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import api from '../api/client'
-import { chartPayload } from '../lib/chartPayload'
+import { chartFingerprint, chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
+
+const SIM_TIMEOUT_MS = 90_000
 
 const RAG_CLASS = {
   strong: 'lcs-rag--strong',
@@ -244,9 +246,16 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
   const [selectedThemeKey, setSelectedThemeKey] = useState(null)
   const [chartView, setChartView] = useState('d1')
   const [impactOpen, setImpactOpen] = useState(false)
+  const abortRef = useRef(null)
+  const fingerprint = useMemo(() => chartFingerprint(chart), [chart])
 
   const fetchSim = useCallback(async (includeAi = false) => {
     if (!chart || !enabled) return
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const timer = setTimeout(() => controller.abort(), SIM_TIMEOUT_MS)
+
     if (includeAi) setAiLoading(true)
     else setLoading(true)
     setError(null)
@@ -254,7 +263,9 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
       const res = await api.post(
         '/prediction/simulate',
         chartPayload(chart, userId, { horizon_years: 10, include_ai: includeAi }),
+        { signal: controller.signal, timeout: SIM_TIMEOUT_MS },
       )
+      if (controller.signal.aborted) return
       setData(prev => {
         const next = includeAi && prev
           ? { ...prev, ai_reading: res.data.ai_reading, meta: { ...prev.meta, ...res.data.meta } }
@@ -272,17 +283,33 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
         setSelectedThemeKey(topTheme?.key || null)
       }
     } catch (e) {
-      setError(e.response?.data?.detail || e.message || 'Simulation failed')
+      if (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError') {
+        return
+      }
+      const timedOut = e.code === 'ECONNABORTED' || /timeout/i.test(e.message || '')
+      const detail = e.response?.data?.detail
+      const msg = timedOut
+        ? 'Life cycle calculation timed out. Please try again.'
+        : (typeof detail === 'string' ? detail : (detail?.msg || e.message || 'Simulation failed'))
+      console.error('[LifeCycle]', msg, e)
+      setError(msg)
       if (!includeAi) setData(null)
     } finally {
+      clearTimeout(timer)
+      if (abortRef.current === controller) abortRef.current = null
       setLoading(false)
       setAiLoading(false)
     }
   }, [chart, userId, enabled])
 
   useEffect(() => {
-    if (enabled && chart) fetchSim(false)
-  }, [enabled, chart, fetchSim])
+    if (!enabled || !chart) return undefined
+    fetchSim(false)
+    return () => {
+      if (abortRef.current) abortRef.current.abort()
+    }
+    // fingerprint (not chart object identity) avoids refetch storms on parent re-renders
+  }, [enabled, fingerprint, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedTheme = useMemo(
     () => data?.event_themes?.find(t => t.key === selectedThemeKey) || data?.event_themes?.[0],
@@ -334,10 +361,22 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
         <p className="lcs-hero__disc">{data?.meta?.disclaimer}</p>
       </header>
 
-      {loading && <p className="lcs-loading">Calculating 10-year life cycle…</p>}
-      {error && <p className="lcs-error" role="alert">{error}</p>}
+      {loading && !data && (
+        <p className="lcs-loading" role="status">Calculating 10-year life cycle…</p>
+      )}
+      {loading && data && (
+        <p className="lcs-loading" role="status">Refreshing life cycle…</p>
+      )}
+      {error && (
+        <p className="lcs-error" role="alert">
+          {error}{' '}
+          <button type="button" className="lcs-ai-btn" onClick={() => fetchSim(false)}>
+            Retry
+          </button>
+        </p>
+      )}
 
-      {data && !loading && (
+      {data && (
         <>
           {/* Narration */}
           {data.narration && (
