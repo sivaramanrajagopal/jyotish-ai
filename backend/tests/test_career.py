@@ -199,6 +199,9 @@ def test_cross_repo_d10_placements_match_thesis():
             planet = row["planet"]
             if planet not in pos:
                 continue
+            # Thesis dump used true node; this engine uses mean node.
+            if planet in ("Rahu", "Ketu"):
+                continue
             exp_sign = TAMIL_TO_ENGLISH.get(row["rasi"], row["rasi"])
             assert pos[planet]["sign"] == exp_sign, (
                 f"{native['name']} {planet} sign: {pos[planet]['sign']} vs {exp_sign}"
@@ -210,3 +213,18 @@ def test_cross_repo_d10_placements_match_thesis():
             assert chart and pos  # placate linter
             asc, _ = build_dasamsa_from_natal(chart)
             assert asc["sign"] == native["expected_d10_lagna"]
+
+
+def test_d10_rahu_ketu_derived_from_d1_mean_node():
+    chart = _chart(CHENNAI)
+    _, pos = build_dasamsa_from_natal(chart)
+    pp = chart["planet_positions"]
+    rahu_d1 = pp["Rahu"]["longitude"]
+    ketu_d1 = pp["Ketu"]["longitude"]
+    assert abs(((ketu_d1 - rahu_d1) % 360) - 180) < 1e-4
+    rahu_d10 = d1_longitude_to_d10(rahu_d1)
+    ketu_d10 = d1_longitude_to_d10(ketu_d1)
+    assert pos["Rahu"]["sign_index"] == int(rahu_d10 // 30) % 12
+    assert pos["Ketu"]["sign_index"] == int(ketu_d10 // 30) % 12
+    assert pos["Rahu"]["sign"] == "Gemini"
+    assert pos["Ketu"]["sign"] == "Sagittarius"

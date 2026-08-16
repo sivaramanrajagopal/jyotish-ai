@@ -18,7 +18,7 @@ _lock = threading.RLock()
 FLG_SIDEREAL = swe.FLG_SIDEREAL
 FLG_SPEED = swe.FLG_SPEED
 SIDM_LAHIRI = swe.SIDM_LAHIRI
-RAHU_NODE = swe.TRUE_NODE  # match Ashtavargam; Ketu = Rahu + 180°
+RAHU_NODE = swe.MEAN_NODE  # Vedic mean node; Ketu = Rahu + 180°
 
 SUN = swe.SUN
 MOON = swe.MOON

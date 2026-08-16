@@ -3,7 +3,19 @@ Golden chart regression tests — fixed birth data with known Lahiri sidereal po
 Reference: 18 Sep 1978, 17:35 IST, Chennai (13.0827°N, 80.2707°E).
 """
 
-from agents.natal_agent import calculate_natal_chart
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+import swisseph as swe
+
+import ephemeris as eph
+from agents.natal_agent import (
+    calculate_natal_chart,
+    _navamsa_sign_idx,
+    _to_jd,
+    SIGNS,
+)
+from ephemeris import RAHU_NODE
 
 CHENNAI = (13.0827, 80.2707, "Asia/Kolkata")
 
@@ -20,8 +32,8 @@ GOLDEN_1978 = {
         "Jupiter": ("Cancer", 8.85, "Pushya", 2),
         "Venus":   ("Libra", 15.89, "Swati", 3),
         "Saturn":  ("Leo", 13.16, "Magha", 4),
-        "Rahu":    ("Virgo", 3.18, "Uttara Phalguni", 2),
-        "Ketu":    ("Pisces", 3.18, "Purva Bhadrapada", 4),
+        "Rahu":    ("Virgo", 3.20, "Uttara Phalguni", 2),
+        "Ketu":    ("Pisces", 3.20, "Purva Bhadrapada", 4),
     },
 }
 
@@ -29,6 +41,15 @@ GOLDEN_1978 = {
 def _calc_golden():
     lat, lon, tz = CHENNAI
     return calculate_natal_chart(GOLDEN_1978["dob"], GOLDEN_1978["tob"], lat, lon, tz)
+
+
+def _golden_jd():
+    _, _, tz = CHENNAI
+    dt = datetime.strptime(
+        f"{GOLDEN_1978['dob']} {GOLDEN_1978['tob']}:00",
+        "%Y-%m-%d %H:%M:%S",
+    ).replace(tzinfo=ZoneInfo(tz))
+    return _to_jd(dt)
 
 
 def test_golden_ayanamsa_lahiri():
@@ -72,3 +93,35 @@ def test_navamsa_positions_include_degree_and_nakshatra():
         assert pos.get("nakshatra"), f"{planet} missing D9 nakshatra"
         assert pos.get("pada") is not None, f"{planet} missing D9 pada"
         assert pos["sign_index"] == int(pos["longitude"] // 30) % 12
+
+
+def test_rahu_uses_mean_node_not_true_node():
+    assert RAHU_NODE == swe.MEAN_NODE
+    assert RAHU_NODE != swe.TRUE_NODE
+    chart = _calc_golden()
+    assert chart.get("node_type") == "mean"
+    rahu_lon = chart["planet_positions"]["Rahu"]["longitude"]
+    ketu_lon = chart["planet_positions"]["Ketu"]["longitude"]
+    mean = eph.calc_ut(
+        _golden_jd(), swe.MEAN_NODE, swe.FLG_SIDEREAL | swe.FLG_SPEED
+    )[0][0] % 360
+    true = eph.calc_ut(
+        _golden_jd(), swe.TRUE_NODE, swe.FLG_SIDEREAL | swe.FLG_SPEED
+    )[0][0] % 360
+    assert abs(rahu_lon - mean) < 1e-4
+    assert abs(rahu_lon - true) > 1e-3
+    assert abs(((ketu_lon - rahu_lon) % 360) - 180) < 1e-4
+
+
+def test_navamsa_rahu_ketu_derived_from_d1_mean_node():
+    chart = _calc_golden()
+    pp = chart["planet_positions"]
+    nav = chart["navamsa_positions"]
+    for planet in ("Rahu", "Ketu"):
+        d1_lon = pp[planet]["longitude"]
+        expected_idx = _navamsa_sign_idx(d1_lon)
+        assert nav[planet]["sign_index"] == expected_idx
+        assert nav[planet]["sign"] == SIGNS[expected_idx]
+    assert nav["Rahu"]["sign"] == "Capricorn"
+    assert nav["Ketu"]["sign"] == "Cancer"
+    assert abs((nav["Ketu"]["sign_index"] - nav["Rahu"]["sign_index"]) % 12) == 6

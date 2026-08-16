@@ -6,8 +6,10 @@ Vedic birth chart (Janma Kundali) engine using pyswisseph + Lahiri ayanamsa.
 Computes for any birth date/time/location:
   - Ascendant (Lagna) — sign, degree, nakshatra
   - 9 planets: Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu
+    Rahu uses the mean lunar node; Ketu is always Rahu + 180°.
     Each planet: longitude, sign, sign_lord, house, nakshatra, pada,
                  degree_in_sign, retrograde
+  - D9 Navamsa positions derived from those D1 sidereal longitudes
   - House cusps (Whole Sign system — standard in Vedic)
   - Basic yoga detection: Gaja Kesari, Budha-Aditya, Chandra-Mangala,
     Neecha Bhanga, Vargottama
@@ -60,7 +62,7 @@ NAKSHATRA_LORDS = [
     "Saturn", "Mercury",
 ]
 
-# Swiss Ephemeris planet IDs
+# Swiss Ephemeris planet IDs (Rahu = mean node; Ketu derived as Rahu + 180°)
 PLANETS = {
     "Sun":     swe.SUN,
     "Moon":    swe.MOON,
@@ -417,6 +419,7 @@ def calculate_natal_chart(
         "moon_rasi_index":      moon_rasi_index,
         "ayanamsa":           "Lahiri",
         "ayanamsa_value":     round(ayanamsa_val, 6),
+        "node_type":          "mean",
         "birth_data": {
             "dob": dob,
             "tob": tob,
