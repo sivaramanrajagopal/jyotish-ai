@@ -870,6 +870,7 @@ class ChatRequest(BaseModel):
     messages: list[ChatMessage]
     location: str = "Chennai"
     language: str = "english"     # "english" | "tamil"
+    page: str = ""
 
     model_config = {"str_strip_whitespace": True}
 
@@ -1041,11 +1042,22 @@ def chat_endpoint(
     chart = refresh_dasha(chart, force=True)
 
     try:
-        reply = jyotish_chat(natal_chart=chart, messages=msgs, location=req.location, language=req.language)
+        reply = jyotish_chat(
+            natal_chart=chart,
+            messages=msgs,
+            location=req.location,
+            language=req.language,
+            page=_sanitise(req.page, 40),
+        )
         track_event("chat_sent", user_id=auth_user.id if auth_user else None, properties={"language": req.language})
         return {"reply": reply, "model": "gpt-4o-mini"}
     except RuntimeError as exc:
         msg = str(exc)
+        if "no credits" in msg.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="OpenAI account has no credits left. Add credits in the OpenAI billing page, then try again.",
+            )
         if "rate limit" in msg.lower():
             raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again in a minute.")
         if "api key" in msg.lower():

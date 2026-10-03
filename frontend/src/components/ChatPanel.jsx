@@ -314,6 +314,7 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
         messages: msgs,
         location: panchangamLocation,
         language,
+        page: 'Ask AI',
       }))
       const reply = data.reply || ''
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])

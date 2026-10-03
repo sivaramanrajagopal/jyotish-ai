@@ -23,6 +23,7 @@ import PlanetTable from '../components/PlanetTable'
 import ForecastPanel from '../components/ForecastPanel'
 import GocharamTab from '../components/GocharamTab'
 import ChatPanel from '../components/ChatPanel'
+import AskFloater from '../components/AskFloater'
 import PersonalPanchangamCard from '../components/PersonalPanchangamCard'
 import PanchangamTab from '../components/PanchangamTab'
 import PrashnaTab from '../components/PrashnaTab'
@@ -1192,6 +1193,15 @@ function HomeApp() {
           </div>
         )}
       </main>
+
+      {chart && activeTab !== 'chat' && (
+        <AskFloater
+          chart={chart}
+          userId={userId}
+          placeOfBirth={form.place_of_birth}
+          page={TABS.find((tab) => tab.key === activeTab)?.label || 'Home'}
+        />
+      )}
 
       <LegalFooter
         onOpenTerms={() => setLegalDoc('terms')}

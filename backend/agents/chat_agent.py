@@ -495,11 +495,17 @@ H1…H12 (வீட்டு எண்கள்) | எண் மதிப்ப�
 === END INSTRUCTION ==="""
 
 
+_TOOL_GUIDE = """
+When the question needs the current period, planet strength, planetary condition, or today's sky, call the matching tool and answer from its numbers. Do not invent rupas, ranks, dates, or tithis. Write plain sentences. Strength is capacity, not a promise that the period feels pleasant.
+"""
+
+
 def chat(
     natal_chart: dict,
     messages: list[dict],
     location: str = "Chennai",
     language: str = "english",
+    page: str = "",
 ) -> str:
     """
     Send one turn of conversation and return the assistant reply.
@@ -523,22 +529,50 @@ def chat(
 
     if language.lower() == "tamil":
         system_prompt += _TAMIL_CHAT_SUFFIX
+    page_label = " ".join(str(page or "").split())[:40]
+    if page_label:
+        system_prompt += f"\nThe person is looking at the {page_label} page. Start from that page when it fits the question.\n"
+    system_prompt += _TOOL_GUIDE
 
+    from agents.chat_tools import TOOLS, tool_result_json
     from openai import APIError, AuthenticationError, RateLimitError
     try:
         client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=MODEL,
-            max_tokens=TOKENS,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *messages,
-            ],
-        )
-        return response.choices[0].message.content or ""
+        thread = [
+            {"role": "system", "content": system_prompt},
+            *messages,
+        ]
+        reply = ""
+        for _ in range(3):
+            response = client.chat.completions.create(
+                model=MODEL,
+                max_tokens=TOKENS,
+                messages=thread,
+                tools=TOOLS,
+                tool_choice="auto",
+            )
+            message = response.choices[0].message
+            tool_calls = message.tool_calls or []
+            if not tool_calls:
+                reply = message.content or ""
+                break
+            thread.append(message.model_dump(exclude_none=True))
+            for call in tool_calls:
+                thread.append({
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "content": tool_result_json(call.function.name, natal_chart, location),
+                })
+            reply = message.content or reply
+        return reply or "I could not finish that reading from the chart."
     except AuthenticationError:
         raise RuntimeError("OpenAI API key is invalid. Please check server configuration.")
-    except RateLimitError:
+    except RateLimitError as exc:
+        text = str(exc).lower()
+        if "insufficient_quota" in text or "no credits" in text or "credit_balance" in text:
+            raise RuntimeError(
+                "OpenAI account has no credits remaining. Add credits in the OpenAI billing page."
+            )
         raise RuntimeError("OpenAI rate limit reached. Please try again in a moment.")
     except APIError as e:
         raise RuntimeError(f"OpenAI API error: {e}")
