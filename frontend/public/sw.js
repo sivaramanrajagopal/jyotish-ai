@@ -4,7 +4,7 @@ const CACHE_SHELL = 'jyotish-shell-v7'
 const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
 
 const ALLOWED_TABS = new Set([
-  'home', 'chart', 'career', 'health', 'dosha-radar', 'house-links', 'gochar',
+  'home', 'chart', 'career', 'health', 'dosha-radar', 'avastha', 'house-links', 'gochar',
   'panchangam', 'chat', 'forecast', 'prashna', 'life-cycle', 'admin',
 ])
 

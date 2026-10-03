@@ -38,7 +38,9 @@ const td = {
   color: "var(--text-primary)",
 }
 
-export default function PlanetTable({ planetPositions, navamsaPositions, ascendant }) {
+export default function PlanetTable({ planetPositions, navamsaPositions, ascendant, navamsaAscendant }) {
+  const d9Lagna = navamsaAscendant?.sign
+  const lagnaVargottama = Boolean(d9Lagna && d9Lagna === ascendant?.sign)
   return (
     <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
       <table style={{
@@ -72,11 +74,25 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
             <td style={{...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)"}}>
               {ascendant.degree_in_sign?.toFixed(2)}°
             </td>
-            <td style={{...td, textAlign:"center", color:"var(--text-muted)"}}>—</td>
+            <td style={{...td, textAlign:"center", fontWeight:700, color:"var(--orange)"}}>H1</td>
             <td style={{...td, color:"var(--text-secondary)"}}>{ascendant.nakshatra}</td>
             <td style={{...td, color:"var(--text-muted)"}}>{ascendant.nakshatra_lord}</td>
             <td style={{...td, textAlign:"center", color:"var(--text-secondary)"}}>{ascendant.pada}</td>
-            <td style={{...td, color:"var(--text-muted)"}}>—</td>
+            <td style={{
+              ...td,
+              fontWeight: 600,
+              color: lagnaVargottama ? "var(--orange-dark)" : "var(--text-primary)",
+            }}
+              title={lagnaVargottama ? "Vargottama lagna" : "Navamsa lagna sign"}
+            >
+              {d9Lagna || "—"}
+              {lagnaVargottama && (
+                <span title="Vargottama" style={{
+                  marginLeft: "4px", fontSize: "0.6rem",
+                  color: "var(--orange-dark)", fontWeight: 700,
+                }}>★V</span>
+              )}
+            </td>
             <td style={{...td, textAlign:"center", color:"var(--text-muted)"}}>—</td>
           </tr>
 

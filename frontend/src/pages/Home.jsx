@@ -33,10 +33,12 @@ import CareerPanel from '../components/CareerPanel'
 import HealthPanel from '../components/HealthPanel'
 import LifeCycleSimulatorPanel from '../components/LifeCycleSimulatorPanel'
 import DoshaRadarPanel from '../components/DoshaRadarPanel'
+import AvasthaPanel from '../components/AvasthaPanel'
 import HouseLinksPanel from '../components/HouseLinksPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
+import JanmaEssentials from '../components/JanmaEssentials'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
 import AuthPanel from '../components/AuthPanel'
 import NotificationSettings from '../components/NotificationSettings'
@@ -98,6 +100,7 @@ const BASE_TABS = [
   { key: 'career',     label: 'Career',     icon: '💼', mobileLabel: 'Career' },
   { key: 'health',     label: 'Health',     icon: '🏥', mobileLabel: 'Health' },
   { key: 'dosha-radar', label: 'Dosha Radar', icon: '🔥', mobileLabel: 'Dosha' },
+  { key: 'avastha',    label: 'Avastha',    icon: '⚖️', mobileLabel: 'Avastha' },
   { key: 'house-links', label: 'House Links', icon: '🔗', mobileLabel: 'Links' },
   { key: 'gochar',     label: 'Gochar',     icon: '🪐', mobileLabel: 'Gochar' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓', mobileLabel: 'Panch' },
@@ -491,6 +494,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive, onG
 
       <DashaSummaryCard chart={chart} />
 
+      <JanmaEssentials chart={chart} />
+
       {/* Big 3 */}
       <div className="big-three-grid mb-6 sm:mb-8">
         {[
@@ -543,7 +548,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive, onG
           </p>
         </div>
         <PlanetTable planetPositions={chart.planet_positions}
-          navamsaPositions={chart.navamsa_positions} ascendant={chart.ascendant} />
+          navamsaPositions={chart.navamsa_positions} ascendant={chart.ascendant}
+          navamsaAscendant={chart.navamsa_ascendant} />
       </div>
 
       {/* Yogas */}
@@ -932,7 +938,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -1013,6 +1019,18 @@ function HomeApp() {
             ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
                 <DoshaRadarPanel chart={chart} userId={userId} enabled={activeTab === 'dosha-radar'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
+        </div>
+        )}
+
+        {mountedTabs.has('avastha') && (
+        <div style={tabPane('avastha')} role="tabpanel" id="panel-avastha" aria-labelledby="tab-avastha">
+          {chart
+            ? <div className="tab-content-wrap max-w-5xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <AvasthaPanel chart={chart} userId={userId} enabled={activeTab === 'avastha'} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
@@ -1143,7 +1161,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','dosha-radar','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}

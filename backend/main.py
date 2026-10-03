@@ -88,6 +88,8 @@ from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
+from agents.avastha_agent import compute_avastha_analysis, evaluate_synergy_from_analysis
+from agents.janma_panchanga import build_janma_panchanga
 from agents.house_connections_agent import compute_house_connections
 from agents.prediction_simulator import compute_life_cycle_simulation
 from agents.sky_today_agent import build_sky_today
@@ -701,6 +703,7 @@ def natal_chart(
     chart["birth_data"]["panchangam_location"] = panchangam_location
     chart["birth_data"]["birth_time_approximate"] = birth_time_approximate
     chart["panchangam_location"] = panchangam_location
+    chart["janma_panchanga"] = build_janma_panchanga(chart)
 
     # Add dasha data
     chart["dasha"] = {}
@@ -1627,6 +1630,44 @@ def dosha_radar_analyze_endpoint(
             "Dosha radar error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Dosha radar analysis failed.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Avastha (Sthula / Sukshma manifestation scores)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AvasthaAnalyzeRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    dasa_lord: Optional[str] = None
+    bhukti_lord: Optional[str] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/avastha/analyze")
+@limiter.limit("30/minute")
+def avastha_analyze_endpoint(
+    request: Request,
+    req: AvasthaAnalyzeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Sthula/Sukshma avastha scoring and Dasa–Bhukti synergy."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    try:
+        result = compute_avastha_analysis(chart)
+        if req.dasa_lord and req.bhukti_lord:
+            result["dasa_bhukti"] = evaluate_synergy_from_analysis(
+                result, req.dasa_lord, req.bhukti_lord,
+            )
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Avastha analyze error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Avastha analysis failed.")
 
 
 class HouseConnectionsAnalyzeRequest(BaseModel):
