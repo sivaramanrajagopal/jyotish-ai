@@ -104,6 +104,8 @@ def birth_nazhikai_after_sunrise(
     if sunrise is None:
         return {
             "nazhikai": 0.0,
+            "naazhigai": None,
+            "vinazhigai": None,
             "sunrise_local": None,
             "minutes_after_sunrise": 0.0,
             "note": "Sunrise unavailable; nazhikai defaulted to 0.",
@@ -112,10 +114,18 @@ def birth_nazhikai_after_sunrise(
         prev = birth_dt - timedelta(days=1)
         sunrise = _sunrise_on_local_date(prev, lat, lon, tz) or sunrise
 
-    minutes = max(0.0, (birth_dt - sunrise).total_seconds() / 60.0)
-    nazhikai = round(minutes / 24.0, 4)
+    total_seconds = max(0.0, (birth_dt - sunrise).total_seconds())
+    minutes = total_seconds / 60.0
+    # 1 naazhigai = 24 minutes. 1 vinazhigai = 24 seconds (60 in a naazhigai).
+    naazhigai = int(total_seconds // (24 * 60))
+    vinazhigai = int(round((total_seconds % (24 * 60)) / 24.0))
+    if vinazhigai >= 60:
+        naazhigai += 1
+        vinazhigai = 0
     return {
-        "nazhikai": nazhikai,
+        "nazhikai": round(minutes / 24.0, 4),
+        "naazhigai": naazhigai,
+        "vinazhigai": vinazhigai,
         "sunrise_local": sunrise.isoformat(),
         "minutes_after_sunrise": round(minutes, 2),
         "note": None,

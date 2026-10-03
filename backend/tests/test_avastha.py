@@ -21,6 +21,7 @@ from agents.avastha.calc import (
     score_planet,
 )
 from agents.avastha_agent import (
+    birth_nazhikai_after_sunrise,
     classify_sign_dignity,
     compute_avastha_analysis,
 )
@@ -186,6 +187,14 @@ def test_capacity_keys_cover_all_sthula():
     ):
         assert name in STHULA_CAPACITY
         assert STHULA_CAPACITY[name] <= 90
+
+
+def test_chennai_birth_is_29_naazhigai_3_vinazhigai():
+    """18 Sep 1978, 17:35, Chennai. Counted from sunrise, 24 minutes and 24 seconds."""
+    result = birth_nazhikai_after_sunrise("1978-09-18", "17:35", 13.0827, 80.2707, "Asia/Kolkata")
+    assert result["naazhigai"] == 29
+    assert result["vinazhigai"] == 3
+    assert result["nazhikai"] == 29.0507
 
 
 def test_sign_dignity_labels():

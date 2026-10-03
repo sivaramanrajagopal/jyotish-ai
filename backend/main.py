@@ -88,7 +88,11 @@ from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
-from agents.avastha_agent import compute_avastha_analysis, evaluate_synergy_from_analysis
+from agents.avastha_agent import (
+    birth_nazhikai_after_sunrise,
+    compute_avastha_analysis,
+    evaluate_synergy_from_analysis,
+)
 from agents.janma_panchanga import build_janma_panchanga
 from agents.shadbala_agent import compute_shadbala_for_chart
 from agents.period_reading import compute_period_reading
@@ -702,6 +706,15 @@ def natal_chart(
     chart["birth_data"]["lon"] = lon
     chart["birth_data"]["timezone"] = timezone
     chart["birth_data"]["place_of_birth"] = place_of_birth
+    chart["birth_data"]["name"] = name
+    try:
+        tamil_time = birth_nazhikai_after_sunrise(dob, tob, lat, lon, timezone)
+        if tamil_time.get("naazhigai") is not None:
+            chart["birth_data"]["naazhigai"] = tamil_time["naazhigai"]
+            chart["birth_data"]["vinazhigai"] = tamil_time["vinazhigai"]
+            chart["birth_data"]["sunrise_local"] = tamil_time.get("sunrise_local")
+    except Exception as exc:
+        print(f"[tamil time error] {exc}")
     chart["birth_data"]["panchangam_location"] = panchangam_location
     chart["birth_data"]["birth_time_approximate"] = birth_time_approximate
     chart["panchangam_location"] = panchangam_location
@@ -731,7 +744,6 @@ def natal_chart(
             "place_of_birth": place_of_birth,
             "gender": cleaned.get("gender", "male"),
         }
-        chart["birth_data"]["name"] = name
         save_natal_chart(user_id, chart, birth_form)
 
     track_event(
@@ -1674,6 +1686,42 @@ def avastha_analyze_endpoint(
             "Avastha analyze error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Avastha analysis failed.")
+
+
+class TamilTimeRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/tamil-time")
+@limiter.limit("30/minute")
+def tamil_time_endpoint(
+    request: Request,
+    req: TamilTimeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Naazhigai and vinazhigai after sunrise for the birth time already on the chart."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    bd = chart.get("birth_data") or {}
+    if bd.get("naazhigai") is not None:
+        return {"naazhigai": bd["naazhigai"], "vinazhigai": bd.get("vinazhigai")}
+    dob, tob = bd.get("dob"), bd.get("tob")
+    lat, lon = bd.get("lat"), bd.get("lon")
+    if not dob or not tob or lat is None or lon is None:
+        raise HTTPException(status_code=400, detail="Birth date, time, and place are required.")
+    try:
+        result = birth_nazhikai_after_sunrise(
+            dob, str(tob)[:5], float(lat), float(lon), bd.get("timezone") or "Asia/Kolkata",
+        )
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Tamil time error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Tamil time could not be calculated.")
+    if result.get("naazhigai") is None:
+        raise HTTPException(status_code=400, detail="Sunrise could not be calculated for this birth.")
+    return {"naazhigai": result["naazhigai"], "vinazhigai": result["vinazhigai"]}
 
 
 class ShadbalaAnalyzeRequest(BaseModel):
