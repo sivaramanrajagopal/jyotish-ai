@@ -38,7 +38,9 @@ import HouseLinksPanel from '../components/HouseLinksPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
 import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
+import PeriodReadingCard from '../components/PeriodReadingCard'
 import JanmaEssentials from '../components/JanmaEssentials'
+import ShadbalaCard from '../components/ShadbalaCard'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
 import AuthPanel from '../components/AuthPanel'
 import NotificationSettings from '../components/NotificationSettings'
@@ -494,6 +496,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive, onG
 
       <DashaSummaryCard chart={chart} />
 
+      <PeriodReadingCard chart={chart} userId={userId} />
+
       <JanmaEssentials chart={chart} />
 
       {/* Big 3 */}
@@ -551,6 +555,8 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, userId, chartTabActive, onG
           navamsaPositions={chart.navamsa_positions} ascendant={chart.ascendant}
           navamsaAscendant={chart.navamsa_ascendant} />
       </div>
+
+      <ShadbalaCard chart={chart} userId={userId} />
 
       {/* Yogas */}
       {chart.yogas?.length > 0 && (

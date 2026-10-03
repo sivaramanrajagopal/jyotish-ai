@@ -90,6 +90,8 @@ from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
 from agents.avastha_agent import compute_avastha_analysis, evaluate_synergy_from_analysis
 from agents.janma_panchanga import build_janma_panchanga
+from agents.shadbala_agent import compute_shadbala_for_chart
+from agents.period_reading import compute_period_reading
 from agents.house_connections_agent import compute_house_connections
 from agents.prediction_simulator import compute_life_cycle_simulation
 from agents.sky_today_agent import build_sky_today
@@ -704,6 +706,10 @@ def natal_chart(
     chart["birth_data"]["birth_time_approximate"] = birth_time_approximate
     chart["panchangam_location"] = panchangam_location
     chart["janma_panchanga"] = build_janma_panchanga(chart)
+    try:
+        chart["shadbala"] = compute_shadbala_for_chart(chart)
+    except Exception as exc:
+        print(f"[shadbala error] {exc}")
 
     # Add dasha data
     chart["dasha"] = {}
@@ -1668,6 +1674,60 @@ def avastha_analyze_endpoint(
             "Avastha analyze error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Avastha analysis failed.")
+
+
+class ShadbalaAnalyzeRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/shadbala/analyze")
+@limiter.limit("30/minute")
+def shadbala_analyze_endpoint(
+    request: Request,
+    req: ShadbalaAnalyzeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Sixfold Shadbala in virupas, rupas, and ratio to the classical minimum."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    try:
+        return compute_shadbala_for_chart(chart)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Shadbala analyze error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Shadbala analysis failed.")
+
+
+class PeriodReadingRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/period-reading")
+@limiter.limit("30/minute")
+def period_reading_endpoint(
+    request: Request,
+    req: PeriodReadingRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Current mahadasha and bhukti, read from Avastha, Shadbala, BAV, and SAV."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    try:
+        return compute_period_reading(chart)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Period reading error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Period reading failed.")
 
 
 class HouseConnectionsAnalyzeRequest(BaseModel):
