@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildNativeDashboard, formatHotspotValue, formatTriggerItem, gandantaAt, natalGandanta, transitGandanta } from './nativeDashboard'
+import { buildNativeDashboard, formatHotspotValue, formatTodayLine, formatTriggerItem, gandantaAt, natalGandanta, transitGandanta } from './nativeDashboard'
 
 const CHENNAI = {
   birth_data: {
@@ -104,5 +104,41 @@ describe('buildNativeDashboard', () => {
       planet_labels: ['Mars', 'Mercury', 'Jupiter'],
     }, triggers)).toBe('Hasta (Mars 3, 10 · Mercury 5, 8 · Jupiter 2, 11)')
     expect(formatTriggerItem(triggers[3])).toBe('Moon (Revati · 6)')
+  })
+
+  it('says whether today’s Moon star is the hotspot', () => {
+    const status = {
+      today_moon_nak: 'Rohini',
+      is_trigger_day: false,
+      active_planets: [],
+      hotspots: [{ nakshatra: 'Hasta', is_triple_trigger: true, planet_labels: ['Mars', 'Mercury', 'Jupiter'] }],
+      all_triggers: [
+        { planet_label: 'Mars', houses_ruled: [3, 10] },
+        { planet_label: 'Mercury', houses_ruled: [5, 8] },
+        { planet_label: 'Jupiter', houses_ruled: [2, 11] },
+        { planet_label: 'Saturn', houses_ruled: [1, 12], trigger_nakshatra: 'Punarvasu' },
+      ],
+    }
+    expect(formatTodayLine(status)).toBe(
+      "Today the Moon is in Rohini. Hasta is quiet, so houses 3, 10, 5, 8, 2, and 11 are not the day's subject.",
+    )
+    expect(formatTodayLine({
+      ...status,
+      today_moon_nak: 'Hasta',
+      is_trigger_day: true,
+      active_planets: [
+        { planet_label: 'Mars' },
+        { planet_label: 'Mercury' },
+        { planet_label: 'Jupiter' },
+      ],
+    })).toBe('Today the Moon is in Hasta. Houses 3, 10, 5, 8, 2, and 11 are louder today.')
+    expect(formatTodayLine({
+      ...status,
+      today_moon_nak: 'Punarvasu',
+      is_trigger_day: true,
+      active_planets: [{ planet_label: 'Saturn' }],
+    })).toBe(
+      "Today the Moon is in Punarvasu. Houses 1 and 12 are louder today. Hasta is quiet, so houses 3, 10, 5, 8, 2, and 11 are not the day's subject.",
+    )
   })
 })

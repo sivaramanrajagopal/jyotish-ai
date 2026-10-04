@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
-import { buildNativeDashboard, formatHotspotValue, formatTriggerItem, natalGandanta, transitGandanta } from '../lib/nativeDashboard'
+import { buildNativeDashboard, formatHotspotValue, formatTodayLine, formatTriggerItem, natalGandanta, transitGandanta } from '../lib/nativeDashboard'
 import { resolvePanchangamLocation } from '../lib/resolveLocation'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -133,6 +133,7 @@ export default function NativeDashboard({ chart, keyedName, keyedPlace, userId }
   const badhakaValue = facts.badhaka
     ? `${facts.badhaka.planet}${facts.badhaka.star ? ' *' : ''}`
     : ''
+  const todayLine = formatTodayLine(triggers)
 
   if (!facts.name && !meta && !facts.lagnaLord) return null
 
@@ -193,9 +194,23 @@ export default function NativeDashboard({ chart, keyedName, keyedPlace, userId }
         )}
       </Group>
 
-      {facts.period && (
+      {(facts.period || todayLine) && (
         <Group title="Now">
-          <Fact label="Dasha / bhukti" value={facts.period} />
+          {facts.period && <Fact label="Dasha / bhukti" value={facts.period} />}
+          {todayLine && (
+            <p
+              className="col-span-2 sm:col-span-3"
+              style={{
+                margin: 0,
+                fontSize: '0.9rem',
+                lineHeight: 1.45,
+                color: 'var(--text-primary)',
+                overflowWrap: 'break-word',
+              }}
+            >
+              {todayLine}
+            </p>
+          )}
         </Group>
       )}
 

@@ -208,6 +208,44 @@ export function formatTriggerItem(item) {
   return `${item.planet_label} (${item.trigger_nakshatra} · ${houses})`
 }
 
+function housesForLabels(triggers, labels) {
+  const byLabel = new Map((triggers || []).map((item) => [item.planet_label, item.houses_ruled || []]))
+  const houses = []
+  for (const label of labels || []) {
+    for (const house of byLabel.get(label) || []) {
+      if (!houses.includes(house)) houses.push(house)
+    }
+  }
+  return houses
+}
+
+function housePhrase(houses) {
+  if (!houses.length) return ''
+  if (houses.length === 1) return String(houses[0])
+  if (houses.length === 2) return `${houses[0]} and ${houses[1]}`
+  return `${houses.slice(0, -1).join(', ')}, and ${houses[houses.length - 1]}`
+}
+
+export function formatTodayLine(status) {
+  const star = status?.today_moon_nak
+  if (!star) return ''
+  const triggers = status.all_triggers || []
+  const hotspots = status.hotspots || []
+  const primary = hotspots.find((item) => item.is_triple_trigger) || hotspots[0]
+  const activeHouses = housesForLabels(triggers, (status.active_planets || []).map((item) => item.planet_label))
+  const parts = [`Today the Moon is in ${star}.`]
+  if (status.is_trigger_day && activeHouses.length) {
+    parts.push(`Houses ${housePhrase(activeHouses)} are louder today.`)
+  }
+  if (primary && primary.nakshatra !== star) {
+    const quietHouses = housesForLabels(triggers, primary.planet_labels)
+    if (quietHouses.length) {
+      parts.push(`${primary.nakshatra} is quiet, so houses ${housePhrase(quietHouses)} are not the day's subject.`)
+    }
+  }
+  return parts.join(' ')
+}
+
 function yogiTrio(sunLon, moonLon) {
   const point = wrap360(sunLon + moonLon + (93 + 20 / 60))
   const ava = wrap360(point + (186 + 40 / 60))
