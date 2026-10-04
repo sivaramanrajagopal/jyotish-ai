@@ -41,6 +41,7 @@ import DashaRoadmap from '../components/DashaRoadmap'
 import DashaSummaryCard from '../components/DashaSummaryCard'
 import PeriodReadingCard from '../components/PeriodReadingCard'
 import JanmaEssentials from '../components/JanmaEssentials'
+import NativeDashboard from '../components/NativeDashboard'
 import ShadbalaCard from '../components/ShadbalaCard'
 import DarkModeToggle, { applyStoredTheme } from '../components/DarkModeToggle'
 import AuthPanel from '../components/AuthPanel'
@@ -49,7 +50,6 @@ import { useAuth } from '../hooks/useAuth'
 import { chartNeedsDasha, backfillChartDasha } from '../lib/ensureChartDasha'
 import { startNotificationWatcher } from '../lib/notifications'
 import { saveSessionChart, loadSessionChart, clearSessionChart } from '../lib/chartStorage'
-import { chartPayload } from '../lib/chartPayload'
 import AdminPanel from '../components/AdminPanel'
 import { useIsAdmin } from '../hooks/useIsAdmin'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -469,69 +469,6 @@ function HomeTab({ form, setForm, onChartReady, loading, error, chart, onGoToTab
   )
 }
 
-function formatBirthDate(iso) {
-  if (!iso) return ''
-  const [year, month, day] = String(iso).split('-').map(Number)
-  if (!year || !month || !day) return String(iso)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  return `${day} ${months[month - 1]} ${year}`
-}
-
-function NativeIdentity({ chart, keyedName, keyedPlace, userId }) {
-  const bd = chart?.birth_data || {}
-  const name = bd.name || keyedName || ''
-  const place = bd.place_of_birth || chart?.place_of_birth || keyedPlace || ''
-  const date = formatBirthDate(bd.dob)
-  const time = bd.birth_time_approximate ? '12:00 noon, time unknown' : (bd.tob || '')
-  const meta = [date, time, place].filter(Boolean).join(' · ')
-  const savedNaazhigai = bd.naazhigai
-  const savedVinazhigai = bd.vinazhigai
-  const [tamilTime, setTamilTime] = useState(
-    savedNaazhigai != null ? { naazhigai: savedNaazhigai, vinazhigai: savedVinazhigai } : null,
-  )
-
-  useEffect(() => {
-    if (savedNaazhigai != null) {
-      setTamilTime({ naazhigai: savedNaazhigai, vinazhigai: savedVinazhigai })
-      return undefined
-    }
-    if (!chart?.birth_data?.dob) return undefined
-    let cancelled = false
-    api.post('/tamil-time', chartPayload(chart, userId))
-      .then((res) => { if (!cancelled) setTamilTime(res.data) })
-      .catch(() => { if (!cancelled) setTamilTime(null) })
-    return () => { cancelled = true }
-  }, [chart, userId, savedNaazhigai, savedVinazhigai])
-
-  const traditional = tamilTime?.naazhigai != null
-    ? `${tamilTime.naazhigai} naazhigai · ${tamilTime.vinazhigai} vinazhigai`
-    : ''
-  const traditionalTa = tamilTime?.naazhigai != null
-    ? `${tamilTime.naazhigai} நாழிகை · ${tamilTime.vinazhigai} வினாழிகை`
-    : ''
-  if (!name && !meta) return null
-  return (
-    <header className="mb-6" aria-label="Birth details">
-      {name && (
-        <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-          {name}
-        </h2>
-      )}
-      {meta && (
-        <p style={{ margin: name ? '4px 0 0' : 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          {meta}
-        </p>
-      )}
-      {traditional && (
-        <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          {traditional}
-          <span style={{ display: 'block', color: 'var(--text-muted)' }}>{traditionalTa}</span>
-        </p>
-      )}
-    </header>
-  )
-}
-
 function ApproximateTimeBanner({ chart }) {
   if (!chart?.birth_data?.birth_time_approximate) return null
   return (
@@ -547,7 +484,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
 
-      <NativeIdentity chart={chart} keyedName={nativeName} keyedPlace={placeOfBirth} userId={userId} />
+      <NativeDashboard chart={chart} keyedName={nativeName} keyedPlace={placeOfBirth} userId={userId} />
 
       {!userId && (
         <div className="max-w-lg mx-auto mb-6">
