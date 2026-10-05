@@ -31,6 +31,7 @@ import AshtakavargaPanel from '../components/AshtakavargaPanel'
 import TamilDoshasPanel from '../components/TamilDoshasPanel'
 import InduLagnaPanel from '../components/InduLagnaPanel'
 import CareerPanel from '../components/CareerPanel'
+import NadiPanel from '../components/NadiPanel'
 import HealthPanel from '../components/HealthPanel'
 import LifeCycleSimulatorPanel from '../components/LifeCycleSimulatorPanel'
 import DoshaRadarPanel from '../components/DoshaRadarPanel'
@@ -107,6 +108,7 @@ const BASE_TABS = [
   { key: 'avastha',    label: 'Avastha',    icon: '⚖️', mobileLabel: 'Avastha' },
   { key: 'house-links', label: 'House Links', icon: '🔗', mobileLabel: 'Links' },
   { key: 'gochar',     label: 'Gochar',     icon: '🪐', mobileLabel: 'Gochar' },
+  { key: 'nadi',       label: 'Nadi',       icon: '📜', mobileLabel: 'Nadi' },
   { key: 'panchangam', label: 'Panchangam', icon: '🗓', mobileLabel: 'Panch' },
   { key: 'prashna',    label: 'Prashna',    icon: '🌙' },
   { key: 'chat',       label: 'Ask AI',     icon: '🔮' },
@@ -948,7 +950,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -1076,6 +1078,18 @@ function HomeApp() {
         </div>
         )}
 
+        {mountedTabs.has('nadi') && (
+        <div style={tabPane('nadi')} role="tabpanel" id="panel-nadi" aria-labelledby="tab-nadi">
+          {chart
+            ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <NadiPanel chart={chart} userId={userId} gender={form.gender} enabled={activeTab === 'nadi'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
+        </div>
+        )}
+
         {mountedTabs.has('panchangam') && (
         <div style={tabPane('panchangam')} role="tabpanel" id="panel-panchangam" aria-labelledby="tab-panchangam">
           <PanchangamTab />
@@ -1180,7 +1194,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}

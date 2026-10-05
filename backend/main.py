@@ -88,6 +88,7 @@ from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
+from agents.nadi_agent import compute_nadi
 from agents.avastha_agent import (
     birth_nazhikai_after_sunrise,
     compute_avastha_analysis,
@@ -717,6 +718,7 @@ def natal_chart(
         print(f"[tamil time error] {exc}")
     chart["birth_data"]["panchangam_location"] = panchangam_location
     chart["birth_data"]["birth_time_approximate"] = birth_time_approximate
+    chart["birth_data"]["gender"] = cleaned.get("gender", "male")
     chart["panchangam_location"] = panchangam_location
     chart["janma_panchanga"] = build_janma_panchanga(chart)
     try:
@@ -1660,6 +1662,43 @@ def dosha_radar_analyze_endpoint(
             "Dosha radar error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Dosha radar analysis failed.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Nadi (Bhrigu Nandi Nadi style chain for twelve questions)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class NadiRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    gender: Optional[str] = None
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/nadi")
+@limiter.limit("30/minute")
+def nadi_endpoint(
+    request: Request,
+    req: NadiRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Twelve life questions read from karaka signs, with Jupiter and Saturn seasons."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    gender = _sanitise(req.gender or "", 20).lower()
+    if gender in ("male", "female"):
+        birth = dict(chart.get("birth_data") or {})
+        birth["gender"] = gender
+        chart = {**chart, "birth_data": birth}
+    try:
+        return compute_nadi(chart)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Nadi error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Nadi reading failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
