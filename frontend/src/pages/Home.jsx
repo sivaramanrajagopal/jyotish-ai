@@ -32,6 +32,7 @@ import TamilDoshasPanel from '../components/TamilDoshasPanel'
 import InduLagnaPanel from '../components/InduLagnaPanel'
 import CareerPanel from '../components/CareerPanel'
 import NadiPanel from '../components/NadiPanel'
+import ReadingPanel from '../components/ReadingPanel'
 import HealthPanel from '../components/HealthPanel'
 import LifeCycleSimulatorPanel from '../components/LifeCycleSimulatorPanel'
 import DoshaRadarPanel from '../components/DoshaRadarPanel'
@@ -102,6 +103,7 @@ const G = {
 const BASE_TABS = [
   { key: 'home',       label: 'Home',       icon: '🏠' },
   { key: 'chart',      label: 'My Chart',   icon: '⭐' },
+  { key: 'reading',    label: 'Reading',    icon: '📖', mobileLabel: 'Read' },
   { key: 'career',     label: 'Career',     icon: '💼', mobileLabel: 'Career' },
   { key: 'health',     label: 'Health',     icon: '🏥', mobileLabel: 'Health' },
   { key: 'dosha-radar', label: 'Dosha Radar', icon: '🔥', mobileLabel: 'Dosha' },
@@ -841,7 +843,7 @@ function HomeApp() {
       const { data } = await api.post('/natal-chart', payload)
       setChart(data)
       saveToStorage(form, data, userId)
-      setTab('chart')
+      setTab('reading')
     } catch (err) {
       const detail = err.response?.data?.detail
       // Pydantic v2 returns an array of {type, loc, msg, input} objects
@@ -950,7 +952,7 @@ function HomeApp() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','reading','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
@@ -998,6 +1000,18 @@ function HomeApp() {
         {mountedTabs.has('chart') && (
         <div style={tabPane('chart')} role="tabpanel" id="panel-chart" aria-labelledby="tab-chart">
           <MyChartTab chart={chart} onGoHome={goHome} placeOfBirth={form.place_of_birth} nativeName={form.name} userId={userId} chartTabActive={chartTabActive} onGoToDoshaRadar={() => setTab('dosha-radar')} />
+        </div>
+        )}
+
+        {mountedTabs.has('reading') && (
+        <div style={tabPane('reading')} role="tabpanel" id="panel-reading" aria-labelledby="tab-reading">
+          {chart
+            ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
+                <StaleChartBanner chart={chart} onRecalculate={goHome} />
+                <ReadingPanel chart={chart} userId={userId} gender={form.gender} enabled={activeTab === 'reading'} />
+              </div>
+            : <NeedChart onGoHome={goHome} />
+          }
         </div>
         )}
 
@@ -1194,7 +1208,7 @@ function HomeApp() {
                 style={{ width: '20px', height: '3px', background: 'var(--orange)' }}
               />
             )}
-            {chart && ['chart','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
+            {chart && ['chart','reading','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
                 className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
