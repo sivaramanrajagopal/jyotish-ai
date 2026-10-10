@@ -8,6 +8,7 @@ import { chartPayload } from '../lib/chartPayload'
 import { formatApiError } from '../lib/apiError'
 import { resolvePanchangamLocation } from '../lib/resolveLocation'
 import { loadChatMessages, saveChatMessages } from '../lib/chatStorage'
+import ChartEvidence from './ChartEvidence'
 
 function visibleThread(messages) {
   return messages.filter((message) => message.role === 'user' || message.role === 'assistant')
@@ -87,21 +88,29 @@ export default function AskFloater({ chart, userId, placeOfBirth, page }) {
               </p>
             )}
             {messages.map((message, index) => (
-              <p
-                key={`${message.role}-${index}`}
-                style={{
-                  margin: 0,
-                  fontSize: 13,
-                  lineHeight: 1.45,
-                  whiteSpace: 'pre-wrap',
-                  color: 'var(--text-primary)',
-                  background: message.role === 'user' ? 'var(--highlight-bg)' : 'transparent',
-                  borderRadius: 8,
-                  padding: message.role === 'user' ? '6px 8px' : 0,
-                }}
-              >
-                {message.content}
-              </p>
+              <div key={`${message.role}-${index}`}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    lineHeight: 1.45,
+                    whiteSpace: 'pre-wrap',
+                    color: 'var(--text-primary)',
+                    background: message.role === 'user' ? 'var(--highlight-bg)' : 'transparent',
+                    borderRadius: 8,
+                    padding: message.role === 'user' ? '6px 8px' : 0,
+                  }}
+                >
+                  {message.content}
+                </p>
+                {message.role === 'assistant' && (
+                  <ChartEvidence
+                    chart={chart}
+                    userId={userId}
+                    question={messages[index - 1]?.role === 'user' ? messages[index - 1].content : ''}
+                  />
+                )}
+              </div>
             ))}
             {loading && <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Reading the chart…</p>}
             {error && <p style={{ margin: 0, fontSize: 12, color: '#c0392b' }}>{error}</p>}

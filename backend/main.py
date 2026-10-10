@@ -89,7 +89,7 @@ from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
 from agents.nadi_agent import compute_nadi
-from agents.reading_agent import compute_reading
+from agents.reading_agent import compute_reading, compute_watch
 from agents.avastha_agent import (
     birth_nazhikai_after_sunrise,
     compute_avastha_analysis,
@@ -1705,6 +1705,7 @@ def nadi_endpoint(
 class ReadingRequest(BaseModel):
     natal_chart: Optional[dict] = None
     gender: Optional[str] = None
+    note: Optional[str] = None
     model_config = {"str_strip_whitespace": True}
 
 
@@ -1719,10 +1720,13 @@ def reading_endpoint(
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     gender = _sanitise(req.gender or "", 20).lower()
+    note = _sanitise(req.note or "", 20).lower()
+    birth = dict(chart.get("birth_data") or {})
     if gender in ("male", "female"):
-        birth = dict(chart.get("birth_data") or {})
         birth["gender"] = gender
-        chart = {**chart, "birth_data": birth}
+    if note in ("married", "work"):
+        birth["note"] = note
+    chart = {**chart, "birth_data": birth}
     try:
         return compute_reading(chart)
     except ValueError as exc:
@@ -1733,6 +1737,33 @@ def reading_endpoint(
             "Reading error: %s\n%s", exc, traceback.format_exc()
         )
         raise HTTPException(status_code=500, detail="Reading failed.")
+
+
+@app.post("/watch")
+@limiter.limit("30/minute")
+def watch_endpoint(
+    request: Request,
+    req: ReadingRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """Next bhukti change and next season opening for the two opt-in alerts."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    note = _sanitise(req.note or "", 20).lower()
+    if note in ("married", "work"):
+        birth = dict(chart.get("birth_data") or {})
+        birth["note"] = note
+        chart = {**chart, "birth_data": birth}
+    try:
+        return compute_watch(chart)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "Watch error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="Could not load the coming dates.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

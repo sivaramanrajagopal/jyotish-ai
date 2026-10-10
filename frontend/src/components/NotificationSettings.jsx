@@ -7,16 +7,27 @@ import {
   saveNotificationPrefs,
   requestNotificationPermission,
   registerServiceWorker,
+  loadComing,
 } from '../lib/notifications'
 
 const LOCATIONS = ['Chennai', 'Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Coimbatore', 'Erlangen']
 
-export default function NotificationSettings({ placeOfBirth }) {
+export default function NotificationSettings({ placeOfBirth, chart, userId }) {
   const [prefs, setPrefs] = useState(getNotificationPrefs)
   const [status, setStatus] = useState('')
+  const [coming, setComing] = useState(null)
   const [perm, setPerm] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   )
+
+  useEffect(() => {
+    if (!chart) return undefined
+    let cancel = false
+    loadComing(chart, userId)
+      .then((data) => { if (!cancel) setComing(data) })
+      .catch(() => { if (!cancel) setComing(null) })
+    return () => { cancel = true }
+  }, [chart, userId])
 
   useEffect(() => {
     registerServiceWorker()
@@ -84,7 +95,7 @@ export default function NotificationSettings({ placeOfBirth }) {
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
-        Get notified about Chandra Ashtama, Rahu Kalam, and unfavourable Tara Balam days.
+        Chandra Ashtama, Rahu Kalam, and Tara stay as they are. Two more alerts cover the next bhukti and the next season opening.
         {perm === 'denied' && ' Enable notifications in your browser settings to use this feature.'}
       </p>
 
@@ -97,6 +108,8 @@ export default function NotificationSettings({ placeOfBirth }) {
           { key: 'chandraAshtama', label: 'Chandra Ashtama', desc: 'When Moon transits your 8th sign' },
           { key: 'rahuKalam', label: 'Rahu Kalam', desc: '10 min before + during inauspicious period' },
           { key: 'taraWarnings', label: 'Tara Balam warnings', desc: 'Alert on Naidhana / unfavourable Tara days' },
+          { key: 'bhuktiWatch', label: 'Next bhukti', desc: 'Once, when the change is within 7 days' },
+          { key: 'seasonWatch', label: 'Next season opening', desc: 'Once, when the opening is within 14 days' },
         ].map(({ key, label, desc }) => (
           <label
             key={key}
@@ -119,6 +132,8 @@ export default function NotificationSettings({ placeOfBirth }) {
           </label>
         ))}
 
+        {coming && <Coming coming={coming} />}
+
         <div style={{ marginTop: 4 }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
             Location for Rahu Kalam
@@ -137,6 +152,32 @@ export default function NotificationSettings({ placeOfBirth }) {
           </select>
         </div>
       </div>
+    </div>
+  )
+}
+
+function Coming({ coming }) {
+  const bhukti = coming.next_bhukti
+  const season = coming.next_season
+  const bhuktiDays = coming.days_until_bhukti
+  const seasonDays = coming.days_until_season
+  return (
+    <div style={{ padding: '8px 10px', borderRadius: 8, background: 'var(--highlight-bg)' }}>
+      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Coming</p>
+      {bhukti && (
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.45, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>
+          {`${bhukti.planet} bhukti begins ${bhukti.start}.`}
+          {bhuktiDays != null ? ` ${bhuktiDays} days away.` : ''}
+          {bhuktiDays != null && bhuktiDays <= 7 ? ' The alert can fire.' : ' The alert waits until this is within 7 days.'}
+        </p>
+      )}
+      {season?.labels?.length > 0 && (
+        <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.45, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>
+          {`${season.labels.join(', ')} open ${season.when}.`}
+          {seasonDays != null ? ` ${seasonDays} days away.` : ''}
+          {seasonDays != null && seasonDays <= 14 ? ' The alert can fire.' : ' The alert waits until this is within 14 days.'}
+        </p>
+      )}
     </div>
   )
 }

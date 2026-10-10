@@ -33,6 +33,11 @@ def _gender(chart: dict) -> str:
     return raw if raw in ("male", "female") else "male"
 
 
+def _note(chart: dict) -> str:
+    raw = str(_birth(chart).get("note") or "").lower()
+    return raw if raw in ("married", "work") else ""
+
+
 def _named(name: str) -> str:
     if name == "Sun":
         return "the Sun"
@@ -122,10 +127,16 @@ def _voice(chart: dict, dasha_lord: str, bhukti_lord: str, avastha: dict) -> dic
     karaka_row = condition.get(karaka) or {}
     sthula = ((karaka_row.get("sthula") or {}).get("name")) or "its condition"
     held = "holds more than needed" if karaka in meeting else "is short of what is needed"
-    parts.append(
-        f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
-        f"Marriage starts from {_named(karaka)}, so both are read together."
-    )
+    if _note(chart) == "married":
+        parts.append(
+            f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
+            "The marriage matter is already lived, so this sitting does not lead with it."
+        )
+    else:
+        parts.append(
+            f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
+            f"Marriage starts from {_named(karaka)}, so both are read together."
+        )
 
     wanted = []
     for name in leaders + short + [dasha_lord, bhukti_lord, karaka]:
@@ -179,6 +190,7 @@ def _chapter(chart: dict, as_of: date, avastha: dict) -> dict:
     return {
         "sentence": sentence,
         "mahadasha": mahadasha["planet"],
+        "mahadasha_start": _fmt(mahadasha["start"].date()),
         "mahadasha_end": _fmt(mahadasha["end"].date()),
         "bhukti": bhukti["planet"],
         "bhukti_end": _fmt(bhukti["end"].date()),
@@ -328,13 +340,25 @@ def _life(chart: dict, as_of: date) -> list[dict]:
             "open": bool(open_rows),
             "significator": reading.get("significator") or "",
             "when": current["label"] if current else reading.get("season_status") or "",
+            "start": current["start"] if current else "",
             "sort": current["end"] if open_rows else (current["start"] if current else "9999"),
             "analysis": reading.get("analysis") or "",
             "today": reading.get("today") or "",
             "season_status": reading.get("season_status") or "",
             "house": house_giving(chart, reading["id"], gender),
         })
-    rows.sort(key=lambda row: (0 if row["open"] else 1, row["sort"], row["label"]))
+    note = _note(chart)
+
+    def _rank(row: dict) -> tuple:
+        if note == "work" and row["id"] == "work":
+            group = -1
+        elif note == "married" and row["id"] == "marriage":
+            group = 2
+        else:
+            group = 0 if row["open"] else 1
+        return (group, row["sort"], row["label"])
+
+    rows.sort(key=_rank)
     for row in rows:
         row.pop("sort", None)
     return rows
@@ -360,20 +384,64 @@ def _snags(chart: dict) -> dict:
     return {"sentence": sentence, "alerts": lines}
 
 
-def _next(chapter: dict, life: list[dict]) -> dict:
+def _closed_ahead(life: list[dict], note: str) -> list[dict]:
+    closed = [row for row in life if not row["open"] and row.get("start")]
+    if note == "married":
+        closed = [row for row in closed if row["id"] != "marriage"]
+    closed.sort(key=lambda row: row["start"])
+    return closed
+
+
+def _timeline(chapter: dict, life: list[dict], note: str) -> dict:
+    open_rows = [row for row in life if row["open"]]
+    if note == "married":
+        open_rows = [row for row in open_rows if row["id"] != "marriage"]
+    today_names = _join([row["label"] for row in open_rows]) or "No season is open"
+    today = (
+        f"Open: {today_names}. "
+        f"{chapter['bhukti']} bhukti until {chapter['bhukti_end']}."
+    )
+    past = f"{chapter['mahadasha']} mahadasha began {chapter['mahadasha_start']}."
+    parts = []
+    nxt = chapter.get("next_bhukti")
+    if nxt:
+        parts.append(f"{nxt['planet']} bhukti begins {nxt['start']}.")
+    closed = _closed_ahead(life, note)
+    next_season = None
+    if closed:
+        soonest = closed[0]["start"]
+        names = [row["label"] for row in closed if row["start"] == soonest]
+        opening = _fmt(date.fromisoformat(soonest))
+        parts.append(f"{_join(names)} open {opening}.")
+        next_season = {
+            "labels": names,
+            "when": opening,
+            "start": soonest,
+        }
+    return {
+        "past": past,
+        "today": today,
+        "next": " ".join(parts),
+        "next_season": next_season,
+    }
+
+
+def _next(chapter: dict, life: list[dict], note: str = "") -> dict:
     parts = []
     nxt = chapter.get("next_bhukti")
     if nxt:
         parts.append(
             f"{nxt['planet']} bhukti runs from {nxt['start']} to {nxt['end']}."
         )
-    closed = [row for row in life if not row["open"] and row.get("when")]
+    closed = _closed_ahead(life, note)
     if closed:
         soonest = closed[0]["when"]
         names = [row["label"] for row in closed if row["when"] == soonest]
         verb = "is" if len(names) == 1 else "are"
         parts.append(f"{_join(names)} {verb} next: {soonest}.")
     open_rows = [row for row in life if row["open"] and row.get("when")]
+    if note == "married":
+        open_rows = [row for row in open_rows if row["id"] != "marriage"]
     if open_rows:
         named = [
             f"{row['label']} until {row['when'].split('–')[-1].strip()}"
@@ -389,14 +457,48 @@ def compute_reading(chart: dict, as_of: date | None = None) -> dict:
     avastha = compute_avastha_analysis(chart)
     chapter = _chapter(chart, when, avastha)
     life = _life(chart, when)
+    note = _note(chart)
     return {
         "as_of": when.isoformat(),
         "gender": _gender(chart),
+        "note": note,
         "who": _who(chart),
         "voice": _voice(chart, chapter["mahadasha"], chapter["bhukti"], avastha),
         "chapter": chapter,
         "pressing": _pressing(chart, when),
         "life": life,
         "snags": _snags(chart),
-        "next": _next(chapter, life),
+        "next": _next(chapter, life, note),
+        "timeline": _timeline(chapter, life, note),
+    }
+
+
+def compute_watch(chart: dict, as_of: date | None = None) -> dict:
+    """Next bhukti and next season, without the full sitting."""
+    when = as_of or datetime.now(TZ).date()
+    avastha = compute_avastha_analysis(chart)
+    chapter = _chapter(chart, when, avastha)
+    life = _life(chart, when)
+    note = _note(chart)
+    timeline = _timeline(chapter, life, note)
+    season = timeline.get("next_season") or {}
+    days_until_season = None
+    if season.get("start"):
+        days_until_season = (date.fromisoformat(season["start"]) - when).days
+    nxt = chapter.get("next_bhukti") or {}
+    days_until_bhukti = None
+    if nxt.get("start"):
+        # start is a display label; days come from the chapter end of the current bhukti
+        days_until_bhukti = chapter["days_left"]
+    return {
+        "as_of": when.isoformat(),
+        "days_until_bhukti": days_until_bhukti,
+        "next_bhukti": nxt or None,
+        "days_until_season": days_until_season,
+        "next_season": season or None,
+        "timeline": {
+            "past": timeline["past"],
+            "today": timeline["today"],
+            "next": timeline["next"],
+        },
     }

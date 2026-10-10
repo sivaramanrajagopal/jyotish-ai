@@ -498,7 +498,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
 
       <ApproximateTimeBanner chart={chart} />
 
-      <NotificationSettings placeOfBirth={placeOfBirth} />
+      <NotificationSettings placeOfBirth={placeOfBirth} chart={chart} userId={userId} />
 
       <StaleChartBanner chart={chart} onRecalculate={onGoHome} />
 
@@ -800,8 +800,8 @@ function HomeApp() {
   // Cosmic alert watcher (while app is open / installed as PWA)
   useEffect(() => {
     if (!chart) return undefined
-    return startNotificationWatcher(chart, form.place_of_birth)
-  }, [chart, form.place_of_birth])
+    return startNotificationWatcher(chart, form.place_of_birth, userId)
+  }, [chart, form.place_of_birth, userId])
 
   // Switch tab when user taps a notification while app is open
   useEffect(() => {

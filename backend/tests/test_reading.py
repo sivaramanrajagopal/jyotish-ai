@@ -3,7 +3,7 @@
 from datetime import date
 
 from agents.natal_agent import calculate_natal_chart
-from agents.reading_agent import compute_reading
+from agents.reading_agent import compute_reading, compute_watch
 
 AS_OF = date(2026, 10, 6)
 
@@ -114,3 +114,29 @@ def test_house_giving_for_chennai_man():
     assert "The fruit holds." in life["skill"][3]
     assert "joined with Mercury, lord of the 8th" in life["self"][2]
     assert "In the Navamsa chart the 9th is Sagittarius" in "".join(life["father"])
+
+
+def test_timeline_note_and_watch():
+    chart = _muzaffarpur()
+    reading = compute_reading(chart, as_of=AS_OF)
+    assert "mahadasha began" in reading["timeline"]["past"]
+    assert reading["timeline"]["today"].startswith("Open:")
+    assert "Ketu bhukti begins" in reading["timeline"]["next"]
+    assert "Father, Marriage and Skill are next" in reading["next"]["sentence"]
+
+    watch = compute_watch(chart, as_of=AS_OF)
+    assert watch["days_until_bhukti"] == 5
+    assert watch["next_bhukti"]["planet"] == "Ketu"
+    assert watch["days_until_season"] is not None
+
+    chart["birth_data"]["note"] = "married"
+    noted = compute_reading(chart, as_of=AS_OF)
+    assert "already lived" in noted["voice"]["sentence"]
+    assert "Marriage starts from" not in noted["voice"]["sentence"]
+    lead = noted["next"]["sentence"].split("Already open")[0]
+    assert "Marriage" not in lead
+    assert noted["life"][-1]["id"] == "marriage"
+
+    chart["birth_data"]["note"] = "work"
+    focused = compute_reading(chart, as_of=AS_OF)
+    assert focused["life"][0]["id"] == "work"

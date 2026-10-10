@@ -11,6 +11,7 @@ import { formatApiError } from '../lib/apiError'
 import { resolvePanchangamLocation } from '../lib/resolveLocation'
 import { loadChatMessages, saveChatMessages } from '../lib/chatStorage'
 import QuotaHint from './QuotaHint'
+import ChartEvidence from './ChartEvidence'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -451,6 +452,13 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
                     {(CHAT_TR[language] || CHAT_TR.english).aiNarration}
                   </span>
                 </div>
+              )}
+              {msg.role === 'assistant' && (
+                <ChartEvidence
+                  chart={chart}
+                  userId={userId}
+                  question={messages[i - 1]?.role === 'user' ? messages[i - 1].content : ''}
+                />
               )}
               {/* Auto-tag badges on AI replies */}
               {msg.role === 'assistant' && i === messages.length - 1 && activeTopics.length > 0 && (

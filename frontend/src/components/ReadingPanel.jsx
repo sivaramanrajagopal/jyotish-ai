@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
+import { getNativeNote, saveNativeNote } from '../lib/nativeNote'
 
 function Movement({ index, title, children }) {
   return (
@@ -122,22 +123,54 @@ function VoiceTable({ rows }) {
   )
 }
 
+const NOTES = [
+  { id: '', label: 'No note' },
+  { id: 'married', label: 'Already married' },
+  { id: 'work', label: 'The question is work' },
+]
+
+function Timeline({ timeline }) {
+  if (!timeline) return null
+  const items = [
+    ['Past', timeline.past],
+    ['Today', timeline.today],
+    ['Next', timeline.next],
+  ]
+  return (
+    <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2 list-none p-0 m-0">
+      {items.map(([label, text]) => (
+        <li
+          key={label}
+          className="rounded-md px-2.5 py-2"
+          style={{ background: 'var(--surface-muted)', border: '1px solid var(--card-border)' }}
+        >
+          <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
+          <span className="block text-sm" style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{text}</span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 export default function ReadingPanel({ chart, userId, gender = 'male', enabled = true }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [openIds, setOpenIds] = useState([])
+  const [note, setNote] = useState(getNativeNote)
 
   useEffect(() => {
     if (!chart || !enabled) return undefined
     let cancel = false
     setLoading(true)
     setError('')
-    api.post('/reading', chartPayload(chart, userId, { gender }))
+    api.post('/reading', chartPayload(chart, userId, { gender, note }))
       .then((res) => {
         if (cancel) return
         setData(res.data)
-        setOpenIds((res.data.life || []).filter((row) => row.open).map((row) => row.id))
+        const ids = (res.data.life || []).filter((row) => row.open).map((row) => row.id)
+        if (note === 'work' && !ids.includes('work')) ids.unshift('work')
+        setOpenIds(note === 'married' ? ids.filter((id) => id !== 'marriage') : ids)
       })
       .catch((err) => {
         if (!cancel) setError(err.response?.data?.detail || 'Could not load the reading.')
@@ -146,7 +179,11 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
         if (!cancel) setLoading(false)
       })
     return () => { cancel = true }
-  }, [chart, userId, gender, enabled])
+  }, [chart, userId, gender, note, enabled])
+
+  const chooseNote = (value) => {
+    setNote(saveNativeNote(value))
+  }
 
   if (!enabled) return null
 
@@ -166,6 +203,31 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
         </p>
       </header>
 
+      <div className="space-y-2">
+        <p className="text-sm font-semibold m-0" style={{ color: 'var(--text-primary)' }}>A note on this chart</p>
+        <div className="flex flex-wrap gap-2">
+          {NOTES.map((item) => {
+            const selected = note === item.id
+            return (
+              <button
+                key={item.label}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => chooseNote(item.id)}
+                className="rounded-md px-3 text-sm font-semibold min-h-[44px] max-w-full"
+                style={{
+                  background: selected ? 'var(--orange)' : 'var(--surface-muted)',
+                  color: selected ? 'var(--accent-dark)' : 'var(--text-primary)',
+                  border: '1px solid var(--card-border)',
+                }}
+              >
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {loading && !data && (
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Reading the chart…</p>
       )}
@@ -178,6 +240,8 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
           className="rounded-lg px-3 py-3 space-y-4"
           style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
         >
+          <Timeline timeline={data.timeline} />
+
           <Movement index="1" title="Who this is">
             <Said>{data.who.sentence}</Said>
           </Movement>

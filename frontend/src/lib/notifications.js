@@ -4,9 +4,13 @@
  */
 
 import api from '../api/client'
+import { chartFingerprint, chartPayload } from './chartPayload'
+import { getNativeNote } from './nativeNote'
 
 const PREFS_KEY = 'jyotish-notif-prefs-v1'
 const SENT_KEY  = 'jyotish-notif-sent-v1'
+const WATCH_SENT_KEY = 'jyotish-watch-sent-v1'
+const WATCH_CACHE_KEY = 'jyotish-watch-cache-v1'
 const CHECK_MS  = 5 * 60 * 1000  // every 5 minutes while app is open
 
 const DEFAULT_PREFS = {
@@ -14,6 +18,8 @@ const DEFAULT_PREFS = {
   chandraAshtama: true,
   rahuKalam: true,
   taraWarnings: true,
+  bhuktiWatch: true,
+  seasonWatch: true,
   location: 'Chennai',
 }
 
@@ -58,6 +64,39 @@ function markSent(tag) {
 function alreadySent(tag) {
   const log = getSentLog()
   return log._date === todayKey() && !!log[tag]
+}
+
+function watchSent(tag) {
+  try {
+    const log = JSON.parse(localStorage.getItem(WATCH_SENT_KEY) || '{}')
+    return !!log[tag]
+  } catch {
+    return false
+  }
+}
+
+function markWatchSent(tag) {
+  try {
+    const log = JSON.parse(localStorage.getItem(WATCH_SENT_KEY) || '{}')
+    log[tag] = true
+    localStorage.setItem(WATCH_SENT_KEY, JSON.stringify(log))
+  } catch {}
+}
+
+export async function loadComing(chart, userId) {
+  const note = getNativeNote()
+  const today = todayKey()
+  const fp = chartFingerprint(chart)
+  try {
+    const cached = JSON.parse(localStorage.getItem(WATCH_CACHE_KEY) || 'null')
+    if (cached?.date === today && cached.note === note && cached.fp === fp) return cached.data
+  } catch {}
+  const gender = chart?.birth_data?.gender || ''
+  const { data } = await api.post('/watch', chartPayload(chart, userId, { note, gender }))
+  try {
+    localStorage.setItem(WATCH_CACHE_KEY, JSON.stringify({ date: today, note, fp, data }))
+  } catch {}
+  return data
 }
 
 export async function registerServiceWorker() {
@@ -127,10 +166,52 @@ function minutesUntil(iso) {
   return (new Date(iso).getTime() - Date.now()) / 60000
 }
 
-/** Run all alert checks for a saved natal chart */
-export async function checkCosmicAlerts(chart, placeOfBirth) {
+async function showWatch(title, body, tag, url) {
+  if (Notification.permission !== 'granted' || watchSent(tag)) return
+  const reg = await navigator.serviceWorker?.ready?.catch(() => null)
+  if (reg?.active) {
+    reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body, tag, url })
+  } else if ('Notification' in window) {
+    new Notification(title, { body, icon: '/icons/icon-192.svg', tag, data: { url } })
+  }
+  markWatchSent(tag)
+}
+
+async function checkComingAlerts(chart, userId) {
   const prefs = getNotificationPrefs()
   if (!prefs.enabled || Notification.permission !== 'granted') return
+  if (!prefs.bhuktiWatch && !prefs.seasonWatch) return
+  try {
+    const data = await loadComing(chart, userId)
+    const daysBhukti = data?.days_until_bhukti
+    if (prefs.bhuktiWatch && daysBhukti != null && daysBhukti >= 0 && daysBhukti <= 7 && data.next_bhukti) {
+      await showWatch(
+        'Bhukti change',
+        `${data.next_bhukti.planet} bhukti begins ${data.next_bhukti.start}.`,
+        `bhukti-${data.next_bhukti.start}`,
+        '/?tab=reading',
+      )
+    }
+    const daysSeason = data?.days_until_season
+    const season = data?.next_season
+    if (prefs.seasonWatch && daysSeason != null && daysSeason >= 0 && daysSeason <= 14 && season?.labels?.length) {
+      await showWatch(
+        'Season opening',
+        `${season.labels.join(', ')} open ${season.when}.`,
+        `season-${season.start}`,
+        '/?tab=reading',
+      )
+    }
+  } catch (e) {
+    console.warn('[notifications] coming dates failed', e)
+  }
+}
+
+/** Run all alert checks for a saved natal chart */
+export async function checkCosmicAlerts(chart, placeOfBirth, userId) {
+  const prefs = getNotificationPrefs()
+  if (!prefs.enabled || Notification.permission !== 'granted') return
+  await checkComingAlerts(chart, userId)
   if (chart?.moon_nakshatra_index == null || chart?.moon_rasi_index == null) return
 
   const location = prefs.location || guessLocation(placeOfBirth)
@@ -193,20 +274,20 @@ export async function checkCosmicAlerts(chart, placeOfBirth) {
 }
 
 /** Start periodic checks while the app is open */
-export function startNotificationWatcher(chart, placeOfBirth) {
+export function startNotificationWatcher(chart, placeOfBirth, userId) {
   if (!chart) return () => {}
 
   registerServiceWorker()
-  checkCosmicAlerts(chart, placeOfBirth)
+  checkCosmicAlerts(chart, placeOfBirth, userId)
 
   const id = setInterval(() => {
     if (document.visibilityState === 'visible') {
-      checkCosmicAlerts(chart, placeOfBirth)
+      checkCosmicAlerts(chart, placeOfBirth, userId)
     }
   }, CHECK_MS)
 
   const onVisible = () => {
-    if (document.visibilityState === 'visible') checkCosmicAlerts(chart, placeOfBirth)
+    if (document.visibilityState === 'visible') checkCosmicAlerts(chart, placeOfBirth, userId)
   }
   document.addEventListener('visibilitychange', onVisible)
 
