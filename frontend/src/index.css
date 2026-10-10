@@ -289,19 +289,76 @@ input:focus, select:focus, textarea:focus {
   .forecast-grid-toggle { display: none !important; }
 }
 
-/* ── Mobile bottom nav (7 tabs — horizontal scroll) ───────────────────────── */
+/* ── Mobile bottom nav — the bar slides; the chosen tab stays in view ────── */
+.mobile-bottom-nav-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: var(--nav-tab-bg);
+  border-top: 1px solid var(--nav-tab-border);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-bottom-nav-wrap::before,
+.mobile-bottom-nav-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+.mobile-bottom-nav-wrap[data-more-left="1"]::before { opacity: 1; }
+.mobile-bottom-nav-wrap[data-more-right="1"]::after { opacity: 1; }
+.mobile-bottom-nav-wrap::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--nav-tab-bg) 15%, transparent);
+}
+.mobile-bottom-nav-wrap::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--nav-tab-bg) 15%, transparent);
+}
 .mobile-bottom-nav {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 18px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .mobile-bottom-nav::-webkit-scrollbar { display: none; }
 .mobile-bottom-nav__item {
-  flex: 1 0 auto;
-  min-width: 52px;
-  max-width: 72px;
-  padding-left: 4px;
-  padding-right: 4px;
+  flex: 0 0 auto;
+  min-width: 4.25rem;
+  min-height: 52px;
+  padding: 8px 12px 6px;
+  scroll-snap-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-bottom-nav__label {
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.app-main {
+  padding-bottom: 0;
+}
+.ask-floater {
+  bottom: 1.5rem;
+}
+@media (max-width: 639px) {
+  .app-main {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .ask-floater {
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
 }
 
 /* ── Gochara tab ─────────────────────────────────────────────────────────── */
@@ -1222,6 +1279,12 @@ html[data-theme="dark"] .prashna-disclaimer {
   color: var(--input-text);
   -webkit-appearance: none;
   appearance: none;
+}
+
+.panch-controls__input[type="date"] {
+  -webkit-appearance: auto;
+  appearance: auto;
+  min-width: 0;
 }
 
 @media (min-width: 640px) {
@@ -4056,7 +4119,7 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   }
 
   .legal-footer {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   }
 
   .legal-accept {
@@ -4287,6 +4350,12 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   padding: 20px 16px 24px;
   border-top: 1px solid var(--card-border);
   background: var(--surface-muted, var(--app-bg));
+}
+
+@media (max-width: 639px) {
+  .legal-footer {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
 }
 
 .legal-footer__disclaimer {

@@ -3,7 +3,7 @@
  * Tabbed layout: Home · My Chart · Panchangam · Ask AI · Forecast
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import api from '../api/client'
 import {
   APP_NAME,
@@ -705,6 +705,10 @@ function HomeApp() {
   })
   const [legalReady, setLegalReady] = useState(() => hasLegalConsent())
   const [legalDoc, setLegalDoc] = useState(null)
+  const mobileNavRef = useRef(null)
+  const mobileNavWrapRef = useRef(null)
+  const scrollTargetRef = useRef(scrollTarget)
+  scrollTargetRef.current = scrollTarget
 
   const DISCLAIMER_SECTIONS = useMemo(
     () => [{ title: 'Disclaimer', body: SHORT_DISCLAIMER }],
@@ -729,6 +733,35 @@ function HomeApp() {
       window.history.replaceState({}, '', url)
     } catch {}
   }, [])
+
+  // Keep the chosen phone tab in the bar, and open each tab at the top of the page.
+  useEffect(() => {
+    const nav = mobileNavRef.current
+    const wrap = mobileNavWrapRef.current
+    if (nav) {
+      const button = nav.querySelector(`[data-tab="${activeTab}"]`)
+      if (button) {
+        const left = button.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft
+        const target = left - (nav.clientWidth - button.offsetWidth) / 2
+        nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' })
+      }
+    }
+    if (!scrollTargetRef.current) window.scrollTo(0, 0)
+
+    if (!nav || !wrap) return undefined
+    const markEdges = () => {
+      const max = nav.scrollWidth - nav.clientWidth
+      wrap.dataset.moreLeft = nav.scrollLeft > 8 ? '1' : '0'
+      wrap.dataset.moreRight = max > 8 && nav.scrollLeft < max - 8 ? '1' : '0'
+    }
+    markEdges()
+    nav.addEventListener('scroll', markEdges, { passive: true })
+    window.addEventListener('resize', markEdges)
+    return () => {
+      nav.removeEventListener('scroll', markEdges)
+      window.removeEventListener('resize', markEdges)
+    }
+  }, [activeTab])
 
   // Scroll to in-chart section after tab switch (e.g. Ashtakavarga from home chip)
   useEffect(() => {
@@ -967,7 +1000,7 @@ function HomeApp() {
       </nav>
 
       {/* ── Tab content (kept mounted to preserve Chat / Forecast state) ── */}
-      <main className="flex-1 pb-20 sm:pb-0">
+      <main className="app-main flex-1">
         {syncNotice && (
           <div className="app-notice app-notice--warn" role="alert">
             {syncNotice}
@@ -1175,16 +1208,12 @@ function HomeApp() {
       />
 
       {/* ── Mobile bottom nav (visible only on mobile) ── */}
+      <div className="mobile-bottom-nav-wrap sm:hidden" ref={mobileNavWrapRef}>
       <nav
-        className="mobile-bottom-nav sm:hidden fixed bottom-0 left-0 right-0 z-30 flex"
+        ref={mobileNavRef}
+        className="mobile-bottom-nav flex"
         role="tablist"
         aria-label="Main navigation"
-        style={{
-          background: 'var(--nav-tab-bg)',
-          borderTop: '1px solid var(--nav-tab-border)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
-        }}
       >
         {TABS.map(tab => (
           <button
@@ -1192,14 +1221,15 @@ function HomeApp() {
             type="button"
             role="tab"
             id={`tab-mobile-${tab.key}`}
+            data-tab={tab.key}
             aria-selected={activeTab === tab.key}
             aria-controls={`panel-${tab.key}`}
             onClick={() => setTab(tab.key)}
-            className="mobile-bottom-nav__item flex flex-col items-center justify-center py-2 gap-0.5 relative min-h-[52px]"
+            className="mobile-bottom-nav__item flex flex-col items-center justify-center gap-0.5 relative"
             style={{ color: activeTab === tab.key ? 'var(--orange)' : 'var(--text-muted)' }}
           >
             <span style={{ fontSize: '18px', lineHeight: 1 }}>{tab.icon}</span>
-            <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.04em' }}>
+            <span className="mobile-bottom-nav__label">
               {tab.mobileLabel || tab.label}
             </span>
             {activeTab === tab.key && (
@@ -1217,6 +1247,7 @@ function HomeApp() {
           </button>
         ))}
       </nav>
+      </div>
     </div>
   )
 }

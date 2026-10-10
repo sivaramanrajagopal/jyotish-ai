@@ -60,7 +60,7 @@ export default function AskFloater({ chart, userId, placeOfBirth, page }) {
   }
 
   return (
-    <div className="fixed z-40 right-3 bottom-20 sm:bottom-6" style={{ width: open ? 'min(22rem, calc(100vw - 1.5rem))' : 'auto' }}>
+    <div className="ask-floater fixed z-40 right-3" style={{ width: open ? 'min(22rem, calc(100vw - 1.5rem))' : 'auto' }}>
       {open && (
         <section
           className="mb-2 rounded-xl overflow-hidden flex flex-col"

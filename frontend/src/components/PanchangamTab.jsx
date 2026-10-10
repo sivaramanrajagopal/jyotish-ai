@@ -11,7 +11,7 @@
  *   Mobile:  Panchangam data stacked, then Transit chart below
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import HoraiPanel from './HoraiPanel'
@@ -203,9 +203,49 @@ function PanchangamLimbs({ data }) {
 function TransitPlanetTable({ planetPositions, ascendant }) {
   const ORDER = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu']
   const SYMS  = { Sun:'☉', Moon:'☽', Mars:'♂', Mercury:'☿', Jupiter:'♃', Venus:'♀', Saturn:'♄', Rahu:'☊', Ketu:'☋' }
+  const rows = []
+  if (ascendant) {
+    rows.push({
+      key: 'asc',
+      label: 'Ascendant',
+      sign: ascendant.sign,
+      deg: ascendant.degree_in_sign?.toFixed(2),
+      pada: ascendant.pada,
+      nakshatra: ascendant.nakshatra,
+      retro: false,
+    })
+  }
+  ORDER.forEach((name) => {
+    const p = planetPositions?.[name]
+    if (!p) return
+    rows.push({
+      key: name,
+      label: name,
+      symbol: SYMS[name],
+      sign: p.sign,
+      deg: p.degree_in_sign?.toFixed(2),
+      pada: p.pada,
+      nakshatra: p.nakshatra,
+      retro: isPlanetRetrograde(name, p),
+    })
+  })
 
   return (
-    <div className="mt-3 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <>
+      <ul className="sm:hidden m-0 p-0 list-none">
+        {rows.map((row) => (
+          <li key={row.key} className="py-2" style={{ borderBottom: '1px solid var(--card-border)' }}>
+            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {row.symbol ? `${row.symbol} ` : ''}{row.label} · {row.sign} · {row.deg}°
+              {row.retro ? <sup className="retro-sup-r">R</sup> : null}
+            </div>
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {row.nakshatra} · pada {row.pada}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 overflow-x-auto hidden sm:block" style={{ WebkitOverflowScrolling: 'touch' }}>
       <table className="panch-transit-planet-table" style={{
         width: '100%', minWidth: '420px', borderCollapse: 'collapse',
         fontFamily: "'Inter', system-ui, sans-serif",
@@ -264,7 +304,8 @@ function TransitPlanetTable({ planetPositions, ascendant }) {
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -381,8 +422,24 @@ function CalendarSubscribe({ location, natalNak }) {
   )
 }
 
+async function loadSky(url, params) {
+  try {
+    return await api.get(url, { params })
+  } catch (err) {
+    if (err.response) throw err
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    return api.get(url, { params })
+  }
+}
+
+function skyError(err, fallback) {
+  const detail = err?.response?.data?.detail
+  return typeof detail === 'string' && detail ? detail : fallback
+}
+
 export default function PanchangamTab({ chart = null }) {
   const todayStr = new Date().toISOString().split('T')[0]
+  const requestRef = useRef(0)
 
   const [date, setDate]           = useState(todayStr)
   const [location, setLocation]   = useState('Chennai')
@@ -393,35 +450,43 @@ export default function PanchangamTab({ chart = null }) {
   const [errorP, setErrorP]       = useState('')
   const [errorT, setErrorT]       = useState('')
 
-  // Fetch both panchangam and transit chart whenever date/location changes
+  // Fetch both panchangam and transit chart whenever date/location changes.
+  // A dropped phone connection retries once. An older request cannot overwrite a newer one.
   const fetchAll = useCallback(async () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
+    const id = requestRef.current + 1
+    requestRef.current = id
     setLoadingP(true)
     setLoadingT(true)
     setErrorP('')
     setErrorT('')
 
-    // Panchangam
-    try {
-      const isToday = date === todayStr
-      const res = isToday
-        ? await api.get('/panchangam/today', { params: { location } })
-        : await api.get('/panchangam/date',  { params: { date, location } })
-      setPanch(res.data)
-    } catch (e) {
-      setErrorP(e.response?.data?.detail || 'Could not load Panchangam.')
-    } finally {
-      setLoadingP(false)
-    }
+    const isToday = date === todayStr
+    const [panchResult, transitResult] = await Promise.allSettled([
+      loadSky(
+        isToday ? '/panchangam/today' : '/panchangam/date',
+        isToday ? { location } : { date, location },
+      ),
+      loadSky('/transit-chart', { date, location }),
+    ])
+    if (id !== requestRef.current) return
 
-    // Transit chart
-    try {
-      const res = await api.get('/transit-chart', { params: { date, location } })
-      setTransit(res.data)
-    } catch (e) {
-      setErrorT(e.response?.data?.detail || 'Could not load transit chart.')
-    } finally {
-      setLoadingT(false)
+    if (panchResult.status === 'fulfilled') {
+      setPanch(panchResult.value.data)
+      setErrorP('')
+    } else {
+      setPanch(null)
+      setErrorP(skyError(panchResult.reason, 'Could not load Panchangam.'))
     }
+    if (transitResult.status === 'fulfilled') {
+      setTransit(transitResult.value.data)
+      setErrorT('')
+    } else {
+      setTransit(null)
+      setErrorT(skyError(transitResult.reason, 'Could not load transit chart.'))
+    }
+    setLoadingP(false)
+    setLoadingT(false)
   }, [date, location, todayStr])
 
   useEffect(() => { fetchAll() }, [fetchAll])
@@ -436,7 +501,10 @@ export default function PanchangamTab({ chart = null }) {
           <input
             type="date" value={date}
             min="2020-01-01" max="2030-12-31"
-            onChange={e => setDate(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value
+              if (/^\d{4}-\d{2}-\d{2}$/.test(next)) setDate(next)
+            }}
             className="panch-controls__input"
           />
         </label>
@@ -477,6 +545,9 @@ export default function PanchangamTab({ chart = null }) {
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
               style={{ color: 'var(--error-text)', background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}>
               {errorP}
+              <button type="button" onClick={fetchAll} className="block mt-2 font-semibold min-h-[44px]" style={{ color: 'var(--orange-dark)' }}>
+                Try again
+              </button>
             </div>
           )}
           {panch && !loadingP && <PanchangamLimbs data={panch} />}
@@ -507,6 +578,9 @@ export default function PanchangamTab({ chart = null }) {
             <div className="text-sm rounded-xl px-4 py-3 mb-3"
               style={{ color: 'var(--error-text)', background: 'var(--error-bg)', border: '1px solid var(--error-border)' }}>
               {errorT}
+              <button type="button" onClick={fetchAll} className="block mt-2 font-semibold min-h-[44px]" style={{ color: 'var(--orange-dark)' }}>
+                Try again
+              </button>
             </div>
           )}
 
