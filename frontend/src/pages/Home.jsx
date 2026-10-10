@@ -1106,7 +1106,7 @@ function HomeApp() {
 
         {mountedTabs.has('panchangam') && (
         <div style={tabPane('panchangam')} role="tabpanel" id="panel-panchangam" aria-labelledby="tab-panchangam">
-          <PanchangamTab />
+          <PanchangamTab chart={chart} />
         </div>
         )}
 

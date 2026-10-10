@@ -47,7 +47,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -72,6 +72,7 @@ from agents.panchangam_agent import (
     calculate_panchangam,
     format_validation_output,
 )
+from agents.panchangam_calendar import build_panchangam_ics
 from agents.natal_agent import calculate_natal_chart, format_chart_output
 from agents.orchestrator import assemble_context
 from agents.narrator import generate_forecast
@@ -481,6 +482,31 @@ def sky_today(
         import logging
         logging.getLogger(__name__).error("sky/today error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Sky data unavailable. Please try again.")
+
+
+@app.get("/panchangam/calendar.ics")
+@limiter.limit("30/minute")
+def panchangam_calendar(
+    request: Request,
+    location: str = Query("Chennai"),
+    days: int = Query(30, ge=1, le=60),
+    natal_nak: Optional[int] = Query(None, ge=0, le=26),
+):
+    """All-day panchangam line and Rahu Kalam, for a calendar subscription."""
+    if location not in LOCATIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown location '{location}'.")
+    try:
+        body = build_panchangam_ics(location, days=days, natal_nak=natal_nak)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Panchangam calendar error: %s", exc)
+        raise HTTPException(status_code=500, detail="Could not build the calendar.")
+    filename = f"panchangam-{location.lower()}.ics"
+    return Response(
+        content=body,
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
 
 
 @app.get("/panchangam/date")

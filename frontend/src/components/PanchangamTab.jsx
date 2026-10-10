@@ -16,6 +16,7 @@ import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import HoraiPanel from './HoraiPanel'
 import { isPlanetRetrograde } from '../lib/planetRetrograde'
+import { computeLiveHorai, expandPlanetSequence, weekdaySunZeroFromYmd } from '../lib/horai'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -276,7 +277,111 @@ const td = { padding: '5px 8px', whiteSpace: 'nowrap' }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PanchangamTab() {
+function calendarFeedUrl(location, natalNak) {
+  const configured = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+  const base = String(configured).startsWith('http')
+    ? String(configured).replace(/\/$/, '')
+    : 'http://127.0.0.1:8000'
+  const params = new URLSearchParams({ location, days: '30' })
+  if (Number.isInteger(natalNak)) params.set('natal_nak', String(natalNak))
+  return `${base}/panchangam/calendar.ics?${params}`
+}
+
+function slotClock(slotIndex) {
+  const start = slotIndex < 12 ? 6 + slotIndex : (18 + (slotIndex - 12)) % 24
+  const hour12 = start % 12 || 12
+  const ampm = start < 12 || start === 24 ? 'am' : 'pm'
+  return `${hour12}:00 ${ampm}`
+}
+
+function DesktopLine({ panch }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000)
+    return () => clearInterval(id)
+  }, [])
+  const zone = panch.timezone || 'Asia/Kolkata'
+  const live = computeLiveHorai({
+    now,
+    timeZone: zone,
+    getWeekdayForYmd: (ymd) => weekdaySunZeroFromYmd(ymd, zone),
+  })
+  if (!live) return null
+  const sequence = expandPlanetSequence(live.ownerWeekday)
+  const upcoming = [1, 2, 3].map((step) => {
+    const slot = (live.slotIndex + step) % 24
+    return `${slotClock(slot)} ${sequence[slot]}`
+  })
+  const rahuEnd = panch.rahu_kalam_end ? new Date(panch.rahu_kalam_end) : null
+  const rahuStart = panch.rahu_kalam_start ? new Date(panch.rahu_kalam_start) : null
+  const rahuOpen = rahuStart && rahuEnd && now >= rahuStart && now <= rahuEnd
+  const rahuLabel = rahuOpen
+    ? `Rahu until ${fmtTime(panch.rahu_kalam_end)}`
+    : `Rahu ${fmtTime(panch.rahu_kalam_start)}–${fmtTime(panch.rahu_kalam_end)}`
+
+  return (
+    <div className="rounded-xl mb-4 px-3 py-3" style={S.card}>
+      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>
+        {rahuLabel} · {live.planet} hora
+      </div>
+      <p className="text-sm mt-1 mb-0" style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>
+        Next {upcoming.join(' · ')}
+      </p>
+    </div>
+  )
+}
+
+function CalendarSubscribe({ location, natalNak }) {
+  const url = calendarFeedUrl(location, natalNak)
+  const local = url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost')
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <div className="rounded-xl mb-4 px-3 py-3" style={S.card}>
+      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Add to calendar</div>
+      <p className="text-sm mt-1 mb-3" style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>
+        Thirty days of the all-day line and Rahu Kalam. Horai stay on this page.
+        {natalNak == null ? ' Calculate a chart to include Tara on the all-day line.' : ' Tara is included from this chart.'}
+      </p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button
+          type="button"
+          onClick={copy}
+          className="rounded-md px-3 text-sm font-semibold min-h-[44px]"
+          style={{ background: 'var(--orange)', color: 'var(--accent-dark)', border: 'none' }}
+        >
+          {copied ? 'Link copied' : 'Copy subscribe link'}
+        </button>
+        <a
+          href={url}
+          className="rounded-md px-3 text-sm font-semibold min-h-[44px] inline-flex items-center"
+          style={{ background: 'var(--surface-muted)', color: 'var(--text-primary)', border: '1px solid var(--card-border)' }}
+        >
+          Open the calendar file
+        </a>
+      </div>
+      <p className="text-xs mb-2" style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{url}</p>
+      <ol className="text-sm m-0 pl-5 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+        <li>On this Mac, open Outlook, then Calendar, then Add calendar, then Subscribe from web, and paste the link.</li>
+        <li>On the iPhone, add it in Apple Calendar: Settings, Calendar, Accounts, Add Account, Other, Add Subscribed Calendar.</li>
+        {local && (
+          <li>This link is on this computer. The phone can use it after the same address is a public https link. Until then, open the file here and share it to the phone. That copy covers the next 30 days.</li>
+        )}
+      </ol>
+    </div>
+  )
+}
+
+export default function PanchangamTab({ chart = null }) {
   const todayStr = new Date().toISOString().split('T')[0]
 
   const [date, setDate]           = useState(todayStr)
@@ -348,6 +453,11 @@ export default function PanchangamTab() {
         </select>
         </label>
       </div>
+
+      {panch && panch.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()) && (
+        <DesktopLine panch={panch} />
+      )}
+      <CalendarSubscribe location={location} natalNak={Number.isInteger(chart?.moon_nakshatra_index) ? chart.moon_nakshatra_index : null} />
 
       {/* ── Two-column layout: Panchangam left, Transit chart right ── */}
       <div className="panch-layout">
