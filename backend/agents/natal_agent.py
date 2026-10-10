@@ -28,6 +28,8 @@ from zoneinfo import ZoneInfo
 import ephemeris as swe
 from ephemeris import RAHU_NODE
 
+from agents.dosha_radar.pushkara import pushkara_seat
+
 # ─────────────────────────────────────────────
 # Lookup tables
 # ─────────────────────────────────────────────
@@ -329,6 +331,7 @@ def calculate_natal_chart(
             "pada":           pada,
             "degree_in_sign": round(deg_in_sign, 4),
             "retrograde":     retro,
+            "pushkara":       pushkara_seat(p_lon),
         }
 
     # ── Ketu (always 180° from Rahu) ─────────────────────────
@@ -349,6 +352,7 @@ def calculate_natal_chart(
         "pada":           k_pada,
         "degree_in_sign": round(ketu_lon % 30, 4),
         "retrograde":     True,   # Ketu always retrograde by convention
+        "pushkara":       pushkara_seat(ketu_lon),
     }
 
     # ── Yogas ────────────────────────────────────────────────
@@ -401,6 +405,7 @@ def calculate_natal_chart(
             "nakshatra":      asc_naks,
             "nakshatra_lord": asc_naks_lord,
             "pada":           asc_pada,
+            "pushkara":       pushkara_seat(asc_lon),
         },
         "navamsa_ascendant": {
             "sign":       asc_nav_sign,

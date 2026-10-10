@@ -19,6 +19,19 @@ _PLANET_IDS = {
 
 SCAN_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 
+_SIGNS = (
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+)
+
+# One auspicious degree in each sign. It sits inside a Pushkara pada.
+PUSHKARA_BHAGA = {
+    "Aries": 21.0, "Taurus": 14.0, "Gemini": 24.0, "Cancer": 7.0,
+    "Leo": 21.0, "Virgo": 14.0, "Libra": 24.0, "Scorpio": 7.0,
+    "Sagittarius": 21.0, "Capricorn": 14.0, "Aquarius": 24.0, "Pisces": 7.0,
+}
+BHAGA_ORB = 1.0
+
 _PUSHKARA_ZONES = [
     {"start": 20.00, "end": 23.33, "sign": "Aries", "nakshatra": "Bharani", "pada": 3, "nak_lord": "Venus"},
     {"start": 26.67, "end": 30.00, "sign": "Aries", "nakshatra": "Krittika", "pada": 1, "nak_lord": "Sun"},
@@ -68,6 +81,29 @@ def check_pushkara(planet_lon: float) -> dict:
     return {
         "pushkara": False, "zone": "", "zone_en": "", "zone_ta": "",
         "sign": "", "nakshatra": "", "pada": 0, "nak_lord": "",
+    }
+
+
+def pushkara_seat(longitude: float) -> dict:
+    """Pada mark, or the closer degree mark when within 1° of Pushkara Bhaga."""
+    lon = float(longitude) % 360.0
+    sign = _SIGNS[int(lon // 30) % 12]
+    degree = lon % 30.0
+    zone = check_pushkara(lon)
+    on_degree = abs(degree - PUSHKARA_BHAGA[sign]) <= BHAGA_ORB
+    if on_degree:
+        mark = "degree"
+    elif zone["pushkara"]:
+        mark = "pada"
+    else:
+        mark = ""
+    return {
+        "mark": mark,
+        "sign": sign,
+        "degree_in_sign": round(degree, 2),
+        "bhaga": PUSHKARA_BHAGA[sign],
+        "nakshatra": zone.get("nakshatra") or "",
+        "pada": int(zone.get("pada") or 0),
     }
 
 

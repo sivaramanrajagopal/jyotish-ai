@@ -12,6 +12,55 @@ const PLANET_SYMBOLS = {
 const CRISIS_SET = new Set(["Mars","Rahu","Saturn","Ketu"])
 const GROWTH_SET = new Set(["Jupiter","Venus"])
 
+function PushkaraMark({ seat }) {
+  if (!seat?.mark) return null
+  const degree = seat.mark === 'degree'
+  const label = degree ? 'Pushkara degree' : 'Pushkara'
+  const title = degree
+    ? `Within 1° of the Pushkara degree, ${seat.sign} ${seat.bhaga}°`
+    : `Pushkara Navamsa, ${seat.nakshatra} pada ${seat.pada}`
+  return (
+    <div title={title} style={{
+      marginTop: 2,
+      fontSize: '0.62rem',
+      fontWeight: 700,
+      letterSpacing: '0.02em',
+      color: degree ? 'var(--orange-dark)' : 'var(--text-secondary)',
+      whiteSpace: 'normal',
+    }}>
+      {label}
+    </div>
+  )
+}
+
+function MobileRow({ name, sign, degree, house, nakshatra, pada, d9, retro, seat, vargottama }) {
+  return (
+    <li
+      className="rounded-md px-2.5 py-2 text-sm"
+      style={{
+        color: 'var(--text-primary)',
+        background: 'var(--surface-muted)',
+        border: '1px solid var(--card-border)',
+        overflowWrap: 'anywhere',
+      }}
+    >
+      <p className="font-semibold">
+        {name}
+        {retro ? ' · retrograde' : ''}
+        {vargottama ? ' · vargottama' : ''}
+      </p>
+      <p>
+        {sign} {degree?.toFixed(2)}° · house {house}
+      </p>
+      <p style={{ color: 'var(--text-muted)' }}>
+        {nakshatra} pada {pada}
+        {d9 ? ` · Navamsa ${d9}` : ''}
+      </p>
+      <PushkaraMark seat={seat} />
+    </li>
+  )
+}
+
 function planetRowColor(planet) {
   if (GROWTH_SET.has(planet)) return "var(--row-growth)"
   if (CRISIS_SET.has(planet)) return "var(--row-crisis)"
@@ -41,8 +90,43 @@ const td = {
 export default function PlanetTable({ planetPositions, navamsaPositions, ascendant, navamsaAscendant }) {
   const d9Lagna = navamsaAscendant?.sign
   const lagnaVargottama = Boolean(d9Lagna && d9Lagna === ascendant?.sign)
+  const rows = PLANET_ORDER.map((planet) => {
+    const p = planetPositions[planet]
+    if (!p) return null
+    return { planet, p, d9: navamsaPositions?.[planet] }
+  }).filter(Boolean)
+
   return (
-    <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+    <>
+      <ul className="md:hidden space-y-2 p-3" aria-label="Planet degrees and Pushkara marks">
+        <MobileRow
+          name="Ascendant"
+          sign={ascendant.sign}
+          degree={ascendant.degree_in_sign}
+          house={1}
+          nakshatra={ascendant.nakshatra}
+          pada={ascendant.pada}
+          d9={d9Lagna}
+          seat={ascendant.pushkara}
+          vargottama={lagnaVargottama}
+        />
+        {rows.map(({ planet, p, d9 }) => (
+          <MobileRow
+            key={planet}
+            name={planet}
+            sign={p.sign}
+            degree={p.degree_in_sign}
+            house={p.house}
+            nakshatra={p.nakshatra}
+            pada={p.pada}
+            d9={d9?.sign}
+            retro={p.retrograde}
+            seat={p.pushkara}
+            vargottama={d9?.vargottama}
+          />
+        ))}
+      </ul>
+    <div className="hidden md:block" style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
       <table style={{
         width:"100%",
         minWidth: "640px",
@@ -71,8 +155,9 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
             </td>
             <td style={{...td, fontWeight:700, color:"var(--text-primary)"}}>{ascendant.sign}</td>
             <td style={{...td, color:"var(--text-muted)"}}>{ascendant.sign_lord}</td>
-            <td style={{...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)"}}>
+            <td style={{...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)", whiteSpace:"normal"}}>
               {ascendant.degree_in_sign?.toFixed(2)}°
+              <PushkaraMark seat={ascendant.pushkara} />
             </td>
             <td style={{...td, textAlign:"center", fontWeight:700, color:"var(--orange)"}}>H1</td>
             <td style={{...td, color:"var(--text-secondary)"}}>{ascendant.nakshatra}</td>
@@ -121,8 +206,9 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
                 </td>
                 <td style={{ ...td, fontWeight:600, color:"var(--text-primary)" }}>{p.sign}</td>
                 <td style={{ ...td, color:"var(--text-muted)" }}>{p.sign_lord}</td>
-                <td style={{ ...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)" }}>
+                <td style={{ ...td, textAlign:"right", fontFamily:"monospace", color:"var(--text-secondary)", whiteSpace:"normal" }}>
                   {p.degree_in_sign?.toFixed(2)}°
+                  <PushkaraMark seat={p.pushkara} />
                 </td>
                 <td style={{ ...td, textAlign:"center", fontWeight:700, color:"var(--orange)" }}>
                   H{p.house}
@@ -142,5 +228,6 @@ export default function PlanetTable({ planetPositions, navamsaPositions, ascenda
         </tbody>
       </table>
     </div>
+    </>
   )
 }

@@ -11,6 +11,7 @@ from agents.avastha_agent import compute_avastha_analysis
 from dasha_core import find_current_dasha_bhukti
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
 from agents.nadi_agent import SIGNS, TZ, _fmt, _sky, _to_jd, compute_nadi
+from agents.reading_house import house_giving
 from agents.panchangam_agent import calculate_panchangam
 from agents.shadbala_agent import compute_shadbala_for_chart
 from agents.tara_engine import compute_all
@@ -314,6 +315,7 @@ def _pressing(chart: dict, as_of: date) -> dict:
 def _life(chart: dict, as_of: date) -> list[dict]:
     payload = compute_nadi(chart, as_of=as_of)
     today = as_of.isoformat()
+    gender = _gender(chart)
     rows = []
     for reading in payload["readings"]:
         seasons = reading.get("seasons") or []
@@ -330,6 +332,7 @@ def _life(chart: dict, as_of: date) -> list[dict]:
             "analysis": reading.get("analysis") or "",
             "today": reading.get("today") or "",
             "season_status": reading.get("season_status") or "",
+            "house": house_giving(chart, reading["id"], gender),
         })
     rows.sort(key=lambda row: (0 if row["open"] else 1, row["sort"], row["label"]))
     for row in rows:

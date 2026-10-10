@@ -35,6 +35,20 @@ def test_pushkara_zone_detection():
     assert "Bharani" in pk["zone"]
 
 
+def test_pushkara_seat_on_chennai():
+    from agents.dosha_radar.pushkara import pushkara_seat
+
+    chart = _chart()
+    seats = {name: pushkara_seat(row["longitude"]) for name, row in chart["planet_positions"].items()}
+    assert seats["Mercury"]["mark"] == "degree"
+    assert seats["Jupiter"]["mark"] == "pada"
+    assert seats["Jupiter"]["nakshatra"] == "Pushya"
+    assert seats["Ketu"]["mark"] == "pada"
+    assert seats["Sun"]["mark"] == ""
+    assert chart["planet_positions"]["Mercury"]["pushkara"]["mark"] == "degree"
+    assert chart["ascendant"]["pushkara"]["mark"] == ""
+
+
 def test_vadhai_vainasikam_offsets():
     vv = get_vadhai_vainasikam(0)
     assert vv["vadhai_idx"] == 6

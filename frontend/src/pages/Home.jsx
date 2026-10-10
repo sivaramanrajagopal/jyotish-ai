@@ -556,7 +556,7 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
             Planet Details — D1 Rasi
           </h3>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Ayanamsa: {chart.ayanamsa} {chart.ayanamsa_value?.toFixed(4)}° &nbsp;·&nbsp; ★ Vargottama &nbsp;·&nbsp; ℞ Retrograde
+            Ayanamsa: {chart.ayanamsa} {chart.ayanamsa_value?.toFixed(4)}° &nbsp;·&nbsp; ★ Vargottama &nbsp;·&nbsp; ℞ Retrograde &nbsp;·&nbsp; Pushkara degree is within 1° · Pushkara is the pada
           </p>
         </div>
         <PlanetTable planetPositions={chart.planet_positions}

@@ -234,6 +234,16 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
                         <Said>{row.analysis}</Said>
                         <Said>{row.today}</Said>
                         <Said>{row.season_status}</Said>
+                        {row.house?.lines?.length > 0 && (
+                          <div className="space-y-1 pt-1">
+                            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                              How this house gives
+                            </p>
+                            {row.house.lines.map((line) => (
+                              <Said key={line}>{line}</Said>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </li>
