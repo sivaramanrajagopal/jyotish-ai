@@ -375,7 +375,18 @@ function DesktopLine({ panch }) {
 function CalendarSubscribe({ location, natalNak }) {
   const url = calendarFeedUrl(location, natalNak)
   const local = url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost')
+  const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onDoc = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDoc)
+    return () => document.removeEventListener('pointerdown', onDoc)
+  }, [open])
 
   const copy = async () => {
     try {
@@ -387,37 +398,57 @@ function CalendarSubscribe({ location, natalNak }) {
   }
 
   return (
-    <div className="rounded-xl mb-4 px-3 py-3" style={S.card}>
-      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Add to calendar</div>
-      <p className="text-sm mt-1 mb-3" style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>
-        Thirty days of the all-day line and Rahu Kalam. Horai stay on this page.
-        {natalNak == null ? ' Calculate a chart to include Tara on the all-day line.' : ' Tara is included from this chart.'}
-      </p>
-      <div className="flex flex-wrap gap-2 mb-3">
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded-md px-3 text-sm font-semibold min-h-[44px]"
-          style={{ background: 'var(--orange)', color: 'var(--accent-dark)', border: 'none' }}
-        >
-          {copied ? 'Link copied' : 'Copy subscribe link'}
-        </button>
-        <a
-          href={url}
-          className="rounded-md px-3 text-sm font-semibold min-h-[44px] inline-flex items-center"
-          style={{ background: 'var(--surface-muted)', color: 'var(--text-primary)', border: '1px solid var(--card-border)' }}
-        >
-          Open the calendar file
-        </a>
-      </div>
-      <p className="text-xs mb-2" style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{url}</p>
-      <ol className="text-sm m-0 pl-5 space-y-1" style={{ color: 'var(--text-secondary)' }}>
-        <li>On this Mac, open Outlook, then Calendar, then Add calendar, then Subscribe from web, and paste the link.</li>
-        <li>On the iPhone, add it in Apple Calendar: Settings, Calendar, Accounts, Add Account, Other, Add Subscribed Calendar.</li>
-        {local && (
-          <li>This link is on this computer. The phone can use it after the same address is a public https link. Until then, open the file here and share it to the phone. That copy covers the next 30 days.</li>
-        )}
-      </ol>
+    <div className="panch-cal" ref={rootRef}>
+      <span className="panch-controls__label panch-cal__label" aria-hidden="true">Calendar</span>
+      <button
+        type="button"
+        className="panch-cal__btn"
+        aria-label="Add to calendar"
+        aria-expanded={open}
+        onClick={() => {
+          setCopied(false)
+          setOpen((value) => !value)
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="panch-cal__panel" role="dialog" aria-label="Add to calendar" style={S.card}>
+          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Add to calendar</div>
+          <p className="text-sm mt-1 mb-3" style={{ color: 'var(--text-secondary)' }}>
+            Thirty days of the all-day line and Rahu Kalam. Horai stay on this page.
+            {natalNak == null ? ' Calculate a chart to include Tara on the all-day line.' : ' Tara is included from this chart.'}
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              type="button"
+              onClick={copy}
+              className="rounded-md px-3 text-sm font-semibold min-h-[44px]"
+              style={{ background: 'var(--orange)', color: 'var(--accent-dark)', border: 'none' }}
+            >
+              {copied ? 'Link copied' : 'Copy subscribe link'}
+            </button>
+            <a
+              href={url}
+              className="rounded-md px-3 text-sm font-semibold min-h-[44px] inline-flex items-center"
+              style={{ background: 'var(--surface-muted)', color: 'var(--text-primary)', border: '1px solid var(--card-border)' }}
+            >
+              Open the calendar file
+            </a>
+          </div>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{url}</p>
+          <ol className="text-sm m-0 pl-5 space-y-1" style={{ color: 'var(--text-secondary)' }}>
+            <li>On this Mac, open Outlook, then Calendar, then Add calendar, then Subscribe from web, and paste the link.</li>
+            <li>On the iPhone, add it in Apple Calendar: Settings, Calendar, Accounts, Add Account, Other, Add Subscribed Calendar.</li>
+            {local && (
+              <li>This link is on this computer. The phone can use it after the same address is a public https link. Until then, open the file here and share it to the phone. That copy covers the next 30 days.</li>
+            )}
+          </ol>
+        </div>
+      )}
     </div>
   )
 }
@@ -496,7 +527,7 @@ export default function PanchangamTab({ chart = null }) {
 
       {/* ── Controls ── */}
       <div className="panch-controls mb-6">
-        <label className="panch-controls__field">
+        <label className="panch-controls__field panch-controls__field--date">
           <span className="panch-controls__label">Date</span>
           <input
             type="date" value={date}
@@ -520,12 +551,12 @@ export default function PanchangamTab({ chart = null }) {
           ))}
         </select>
         </label>
+        <CalendarSubscribe location={location} natalNak={Number.isInteger(chart?.moon_nakshatra_index) ? chart.moon_nakshatra_index : null} />
       </div>
 
       {panch && panch.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()) && (
         <DesktopLine panch={panch} />
       )}
-      <CalendarSubscribe location={location} natalNak={Number.isInteger(chart?.moon_nakshatra_index) ? chart.moon_nakshatra_index : null} />
 
       {/* ── Two-column layout: Panchangam left, Transit chart right ── */}
       <div className="panch-layout">

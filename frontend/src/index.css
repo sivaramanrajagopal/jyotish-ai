@@ -1245,9 +1245,14 @@ html[data-theme="dark"] .prashna-disclaimer {
 
 .panch-controls {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr auto;
   gap: 12px;
   max-width: 100%;
+  align-items: end;
+}
+
+.panch-controls__field--date {
+  grid-column: 1 / -1;
 }
 
 .panch-controls__field {
@@ -1287,10 +1292,54 @@ html[data-theme="dark"] .prashna-disclaimer {
   min-width: 0;
 }
 
+.panch-cal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.panch-cal__label {
+  visibility: hidden;
+}
+
+.panch-cal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--orange-dark);
+  cursor: pointer;
+}
+
+.panch-cal__btn[aria-expanded="true"] {
+  background: var(--orange);
+  color: var(--accent-dark);
+  border-color: var(--orange);
+}
+
+.panch-cal__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 1.5rem));
+  padding: 12px;
+}
+
 @media (min-width: 640px) {
   .panch-controls {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
     gap: 12px;
+  }
+
+  .panch-controls__field--date {
+    grid-column: auto;
   }
 }
 
