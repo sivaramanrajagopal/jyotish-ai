@@ -72,7 +72,7 @@ def refresh_dasha(natal_chart: dict, *, force: bool = True) -> dict:
     force=False: skip if mahadasha already present (legacy ensure_dasha behaviour).
     """
     dasha = natal_chart.get("dasha") or {}
-    if not force and dasha.get("mahadasha", {}).get("planet"):
+    if not force and dasha.get("mahadasha", {}).get("planet") and dasha.get("timeline"):
         if dasha.get("antardasha_sequence") and not dasha.get("bhukti_table_markdown"):
             try:
                 from dasha_core import format_bhukti_table, format_mahadasha_timeline_table, format_full_dasha_cycle_markdown

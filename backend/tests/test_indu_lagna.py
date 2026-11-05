@@ -75,14 +75,15 @@ def test_dasa_bhukti_matches_standard_vimshottari():
 
     out = compute_indu_lagna(chart, transit_years=1)
     timeline = out["dasa_bhukti_periods"]
-    assert len(timeline) == 36
+    # Born inside Mercury–Rahu: Mercury–Mercury and earlier bhuktis ran before birth.
+    assert len(timeline) == 30
     assert timeline[0] == {
         "maha_dasa": "Mercury",
-        "bukti": "Mercury",
+        "bukti": "Rahu",
         "start": "1978-09-18",
-        "end": "1979-10-09",
+        "end": "1981-03-23",
         "activation_tier": "primary",
-        "label": "Mercury–Mercury Dasa/Bhukti",
+        "label": "Mercury–Rahu Dasa/Bhukti",
     }
 
     # Cross-check a few windows against dasha_core directly

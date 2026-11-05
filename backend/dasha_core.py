@@ -80,63 +80,102 @@ def generate_dashas(moon_long: float, birth_date_str: str) -> list[dict]:
         full = float(DASA_DURATIONS[planet])
         years = full * (1.0 - portion_done) if i == 0 else full
         end = current + datetime.timedelta(days=years * 365.25)
+        # The birth Mahadasha began before birth: the Moon had already
+        # travelled portion_done of its nakshatra. Sub-periods are cut from
+        # the full span counted from that earlier start.
+        cycle_start = end - datetime.timedelta(days=full * 365.25)
         dashas.append({
             "planet": planet,
             "start": current,
             "end": end,
             "years": round(years, 2),
+            "full_years": full,
+            "cycle_start": cycle_start,
         })
         current = end
 
     return dashas
 
 
-def generate_bhuktis(dasha: dict) -> list[dict]:
-    """All 9 Bhukti sub-periods within one Mahadasha."""
+def _sub_periods(parent: dict, digits: int) -> list[dict]:
+    """
+    Nine sub-periods of one period, in Vimshottari order from the parent lord.
+    Each is (lord years / 120) of the parent's full span, counted from the
+    parent's cycle start. Pieces that end before the parent's visible start
+    (birth, for the first Mahadasha) are dropped and the first one is clipped.
+    """
     lords = list(DASA_DURATIONS.keys())
-    m_lord = dasha["planet"]
-    m_years = dasha["years"]
-    start_i = lords.index(m_lord)
-    current = dasha["start"]
-    bhuktis: list[dict] = []
+    span = float(parent.get("full_years") or parent["years"])
+    current = parent.get("cycle_start") or parent["start"]
+    visible_from = parent["start"]
+    start_i = lords.index(parent["planet"])
+    out: list[dict] = []
 
     for i in range(len(lords)):
-        b_lord = lords[(start_i + i) % len(lords)]
-        b_years = (DASA_DURATIONS[b_lord] / 120.0) * m_years
-        end = current + datetime.timedelta(days=b_years * 365.25)
-        bhuktis.append({
-            "planet": b_lord,
-            "start": current,
-            "end": end,
-            "years": round(b_years, 3),
-        })
+        lord = lords[(start_i + i) % len(lords)]
+        full = (DASA_DURATIONS[lord] / 120.0) * span
+        end = current + datetime.timedelta(days=full * 365.25)
+        if end > visible_from:
+            start = max(current, visible_from)
+            shown = (end - start).days / 365.25 if start > current else full
+            out.append({
+                "planet": lord,
+                "start": start,
+                "end": end,
+                "years": round(shown, digits),
+                "full_years": full,
+                "cycle_start": current,
+            })
         current = end
 
-    return bhuktis
+    return out
+
+
+def generate_bhuktis(dasha: dict) -> list[dict]:
+    """Bhukti sub-periods within one Mahadasha (only those after birth)."""
+    return _sub_periods(dasha, 3)
 
 
 def generate_pratyantars(bhukti: dict) -> list[dict]:
-    """All 9 Pratyantar sub-periods within one Antardasha (Bhukti)."""
-    lords = list(DASA_DURATIONS.keys())
-    ad_lord = bhukti["planet"]
-    ad_years = float(bhukti["years"])
-    start_i = lords.index(ad_lord)
-    current = bhukti["start"]
-    pratyantars: list[dict] = []
+    """Pratyantar sub-periods within one Antardasha (Bhukti)."""
+    return _sub_periods(bhukti, 4)
 
-    for i in range(len(lords)):
-        pd_lord = lords[(start_i + i) % len(lords)]
-        pd_years = (DASA_DURATIONS[pd_lord] / 120.0) * ad_years
-        end = current + datetime.timedelta(days=pd_years * 365.25)
-        pratyantars.append({
-            "planet": pd_lord,
-            "start": current,
-            "end": end,
-            "years": round(pd_years, 4),
+
+def build_dasha_timeline(
+    moon_long: float,
+    birth_date: str,
+    current_dt: Optional[datetime.datetime] = None,
+) -> list[dict]:
+    """
+    One full 120-year Vimshottari cycle from birth: nine Mahadashas, each with
+    its Bhuktis. Dates are ISO YYYY-MM-DD so every browser parses them.
+    """
+    if current_dt is None:
+        current_dt = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    birth_dt = datetime.datetime.strptime(birth_date, "%Y-%m-%d")
+    rows: list[dict] = []
+    for dasha in generate_dashas(moon_long, birth_date)[: len(DASA_DURATIONS)]:
+        bhuktis = [
+            {
+                "planet": b["planet"],
+                "start": b["start"].date().isoformat(),
+                "end": b["end"].date().isoformat(),
+                "current": b["start"] <= current_dt < b["end"],
+            }
+            for b in generate_bhuktis(dasha)
+        ]
+        rows.append({
+            "planet": dasha["planet"],
+            "start": dasha["start"].date().isoformat(),
+            "end": dasha["end"].date().isoformat(),
+            "years": dasha["years"],
+            "age_start": round((dasha["start"] - birth_dt).days / 365.25, 1),
+            "age_end": round((dasha["end"] - birth_dt).days / 365.25, 1),
+            "balance": dasha["start"] == birth_dt and dasha["years"] < dasha["full_years"],
+            "current": dasha["start"] <= current_dt < dasha["end"],
+            "bhuktis": bhuktis,
         })
-        current = end
-
-    return pratyantars
+    return rows
 
 
 def find_current_dasha_bhukti(

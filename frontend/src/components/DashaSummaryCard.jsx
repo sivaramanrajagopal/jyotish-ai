@@ -30,12 +30,24 @@ export default function DashaSummaryCard({ chart }) {
         padding: '16px 18px',
       }}
     >
-      <h3 style={{
-        fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)',
-        textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px',
-      }}>
-        ✦ Current Vimshottari Dasha
-      </h3>
+      <div className="flex items-center justify-between gap-2" style={{ margin: '0 0 12px' }}>
+        <h3 style={{
+          fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)',
+          textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0,
+        }}>
+          ✦ Current Vimshottari Dasha
+        </h3>
+        {Array.isArray(dasha.timeline) && dasha.timeline.length > 0 && (
+          <button
+            type="button"
+            className="flex-shrink-0 text-xs font-semibold bg-transparent border-0 cursor-pointer px-1"
+            style={{ color: 'var(--orange)', minHeight: 44 }}
+            onClick={() => document.getElementById('dasha-timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
+            Full timeline ↓
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Mahadasha */}

@@ -39,7 +39,7 @@ import DoshaRadarPanel from '../components/DoshaRadarPanel'
 import AvasthaPanel from '../components/AvasthaPanel'
 import HouseLinksPanel from '../components/HouseLinksPanel'
 import StaleChartBanner from '../components/StaleChartBanner'
-import DashaRoadmap from '../components/DashaRoadmap'
+import DashaTimeline from '../components/DashaTimeline'
 import DashaSummaryCard from '../components/DashaSummaryCard'
 import PeriodReadingCard from '../components/PeriodReadingCard'
 import JanmaEssentials from '../components/JanmaEssentials'
@@ -512,7 +512,10 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
       <div className="big-three-grid mb-6 sm:mb-8">
         {[
           { label: 'Ascendant (Lagna)', value: chart.ascendant.sign,
-            sub: `${chart.ascendant.nakshatra} P${chart.ascendant.pada}` },
+            sub: [
+              typeof chart.ascendant.degree_in_sign === 'number' ? `${chart.ascendant.degree_in_sign.toFixed(2)}°` : '',
+              `${chart.ascendant.nakshatra} P${chart.ascendant.pada}`,
+            ].filter(Boolean).join(' · ') },
           { label: 'Sun Sign', value: chart.planet_positions.Sun.sign,
             sub: chart.planet_positions.Sun.nakshatra },
           { label: 'Moon Sign', value: chart.planet_positions.Moon.sign,
@@ -532,17 +535,19 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
         {[
           { title: 'D1 — Rasi Chart (Janma Kundali)',
             sub: `${chart.birth_data.dob} · ${chart.birth_data.tob}`,
-            pos: chart.planet_positions, lagnaIdx: chart.ascendant.sign_index, nav: false },
+            pos: chart.planet_positions, lagnaIdx: chart.ascendant.sign_index,
+            lagnaDeg: chart.ascendant.degree_in_sign, nav: false },
           { title: 'D9 — Navamsa Chart',
             sub: `Lagna: ${chart.navamsa_ascendant?.sign}`,
-            pos: chart.navamsa_positions, lagnaIdx: chart.navamsa_ascendant?.sign_index, nav: true },
-        ].map(({ title, sub, pos, lagnaIdx, nav }) => (
+            pos: chart.navamsa_positions, lagnaIdx: chart.navamsa_ascendant?.sign_index,
+            lagnaDeg: chart.navamsa_ascendant?.degree_in_sign, nav: true },
+        ].map(({ title, sub, pos, lagnaIdx, lagnaDeg, nav }) => (
           <div key={title} className="rounded-xl p-3 sm:p-4"
             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--card-shadow)' }}>
             <h3 className="text-xs sm:text-sm font-semibold mb-3 text-center uppercase tracking-wide"
               style={{ color: 'var(--text-muted)' }}>{title}</h3>
             <SouthIndianChart title={nav ? 'D9' : 'D1'} subtitle={sub}
-              planetPositions={pos} lagnaSignIndex={lagnaIdx} navamsa={nav}
+              planetPositions={pos} lagnaSignIndex={lagnaIdx} lagnaDegree={lagnaDeg} navamsa={nav}
               variant="classic" showDetails={true} chartKind="natal" />
           </div>
         ))}
@@ -649,11 +654,11 @@ function MyChartTab({ chart, onGoHome, placeOfBirth, nativeName, userId, chartTa
         </div>
       </div>
 
-      {/* Dasha Roadmap */}
-      <div className="rounded-xl overflow-hidden mb-6 sm:mb-8"
+      {/* Full Dasha / Bhukti timeline */}
+      <div id="dasha-timeline" className="rounded-xl overflow-hidden mb-6 sm:mb-8 scroll-mt-20"
         style={{ background:'var(--card-bg)', border:'1px solid var(--card-border)', boxShadow:'var(--card-shadow)' }}>
         <div className="px-4 sm:px-5 py-4">
-          <DashaRoadmap chart={chart} />
+          <DashaTimeline chart={chart} />
         </div>
       </div>
     </div>
@@ -706,6 +711,8 @@ function HomeApp() {
   const [legalReady, setLegalReady] = useState(() => hasLegalConsent())
   const [legalDoc, setLegalDoc] = useState(null)
   const mobileNavRef = useRef(null)
+  const desktopNavRef = useRef(null)
+  const dashaBackfillRef = useRef('')
   const mobileNavWrapRef = useRef(null)
   const scrollTargetRef = useRef(scrollTarget)
   scrollTargetRef.current = scrollTarget
@@ -734,17 +741,16 @@ function HomeApp() {
     } catch {}
   }, [])
 
-  // Keep the chosen phone tab in the bar, and open each tab at the top of the page.
+  // Keep the chosen tab in view in both bars, and open each tab at the top of the page.
   useEffect(() => {
     const nav = mobileNavRef.current
     const wrap = mobileNavWrapRef.current
-    if (nav) {
-      const button = nav.querySelector(`[data-tab="${activeTab}"]`)
-      if (button) {
-        const left = button.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft
-        const target = left - (nav.clientWidth - button.offsetWidth) / 2
-        nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' })
-      }
+    for (const bar of [nav, desktopNavRef.current]) {
+      const button = bar?.querySelector(`[data-tab="${activeTab}"]`)
+      if (!button || bar.scrollWidth <= bar.clientWidth) continue
+      const left = button.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft
+      const target = left - (bar.clientWidth - button.offsetWidth) / 2
+      bar.scrollTo({ left: Math.max(0, target), behavior: 'smooth' })
     }
     if (!scrollTargetRef.current) window.scrollTo(0, 0)
 
@@ -820,6 +826,10 @@ function HomeApp() {
   // Backfill dasha on guest session charts (signed-in users use GET /natal-chart)
   useEffect(() => {
     if (userId || !chart || !chartNeedsDasha(chart)) return
+    const bd = chart.birth_data || {}
+    const birthKey = [bd.dob, bd.tob, bd.lat, bd.lon].join('|')
+    if (dashaBackfillRef.current === birthKey) return
+    dashaBackfillRef.current = birthKey
     setChartRefreshing(true)
     backfillChartDasha(chart)
       .then((data) => {
@@ -963,37 +973,39 @@ function HomeApp() {
 
       {/* ── Desktop top tab bar (hidden on mobile) ── */}
       <nav
-        className="hidden sm:flex border-b sticky top-0 z-30"
-        role="tablist"
+        className="hidden sm:flex items-stretch border-b sticky top-0 z-30"
         aria-label="Main navigation"
         style={{ background: 'var(--nav-tab-bg)', borderColor: 'var(--nav-tab-border)', boxShadow: 'var(--card-shadow)' }}
       >
+        <div ref={desktopNavRef} className="desktop-tabs flex flex-1 min-w-0 overflow-x-auto" role="tablist">
         {TABS.map(tab => (
           <button
             key={tab.key}
             type="button"
             role="tab"
+            data-tab={tab.key}
             id={`tab-${tab.key}`}
             aria-selected={activeTab === tab.key}
             aria-controls={`panel-${tab.key}`}
             onClick={() => setTab(tab.key)}
-            className="flex items-center gap-1.5 px-4 lg:px-5 py-3 text-sm font-semibold transition-all relative"
+            className="flex flex-shrink-0 items-center gap-1 px-2 2xl:px-3 py-3 text-sm font-semibold whitespace-nowrap transition-all relative"
             style={{
               color: activeTab === tab.key ? 'var(--nav-tab-active)' : 'var(--nav-tab-text)',
               borderBottom: activeTab === tab.key ? '3px solid var(--orange)' : '3px solid transparent',
             }}
           >
-            <span>{tab.icon}</span>
+            <span aria-hidden="true" className="hidden 2xl:inline">{tab.icon}</span>
             <span>{tab.label}</span>
             {chart && ['chart','reading','career','health','dosha-radar','avastha','house-links','gochar','nadi','chat','forecast','life-cycle'].includes(tab.key) && activeTab !== tab.key && (
               <span
-                className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full"
+                className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full"
                 style={{ background: 'var(--orange)' }}
               />
             )}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-2 px-3">
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2 px-3">
           {activeTab !== 'home' && <AuthPanel compact />}
           <DarkModeToggle small onDarkBg={false} />
         </div>

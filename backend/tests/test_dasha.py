@@ -66,8 +66,56 @@ def test_ensure_dasha_skips_when_present():
     chart = {
         "planet_positions": {"Moon": {"longitude": 100.0}},
         "birth_data": {"dob": "1990-06-15"},
-        "dasha": {"mahadasha": {"planet": "Venus"}},
+        "dasha": {"mahadasha": {"planet": "Venus"}, "timeline": [{"planet": "Venus"}]},
     }
     result = ensure_dasha(chart)
     assert result["dasha"]["mahadasha"]["planet"] == "Venus"
     assert result["dasha_available"] is True
+
+
+def test_ensure_dasha_adds_timeline_to_old_chart():
+    from chart_utils import ensure_dasha
+
+    chart = {
+        "planet_positions": {"Moon": {"longitude": 354.14}},
+        "birth_data": {"dob": "1978-09-18"},
+        "dasha": {"mahadasha": {"planet": "Venus"}},
+    }
+    result = ensure_dasha(chart)
+    assert len(result["dasha"]["timeline"]) == 9
+
+
+def test_birth_mahadasha_bhuktis_continue_from_before_birth():
+    from dasha_core import generate_bhuktis, generate_dashas
+
+    # Moon 354.14° is Revati (Mercury) with 56% already travelled, so the
+    # native is born inside Mercury–Rahu, not at the start of Mercury–Mercury.
+    first = generate_dashas(354.14, "1978-09-18")[0]
+    bhuktis = generate_bhuktis(first)
+    assert first["planet"] == "Mercury"
+    assert [b["planet"] for b in bhuktis] == ["Rahu", "Jupiter", "Saturn"]
+    assert bhuktis[0]["start"] == datetime.datetime(1978, 9, 18)
+    assert bhuktis[-1]["end"] == first["end"]
+    assert abs(bhuktis[0]["full_years"] - 18 / 120 * 17) < 1e-9
+    assert bhuktis[0]["years"] < bhuktis[0]["full_years"]
+    assert abs(bhuktis[1]["years"] - 16 / 120 * 17) < 1e-3
+
+
+def test_full_timeline_for_chart_a():
+    ref = datetime.datetime(2026, 11, 5)
+    timeline = get_personal_dasha(354.14, "1978-09-18", current_dt=ref)["timeline"]
+    assert [row["planet"] for row in timeline] == [
+        "Mercury", "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn",
+    ]
+    assert timeline[0]["balance"] is True
+    assert timeline[0]["start"] == "1978-09-18"
+    for prev, nxt in zip(timeline, timeline[1:]):
+        assert prev["end"] == nxt["start"]
+        assert nxt["bhuktis"][0]["planet"] == nxt["planet"]
+        assert nxt["bhuktis"][0]["start"] == nxt["start"]
+        assert nxt["bhuktis"][-1]["end"] == nxt["end"]
+    moon = next(row for row in timeline if row["planet"] == "Moon")
+    assert moon["current"] is True
+    current = [b for b in moon["bhuktis"] if b["current"]]
+    assert [b["planet"] for b in current] == ["Ketu"]
+    assert sum(row["current"] for row in timeline) == 1

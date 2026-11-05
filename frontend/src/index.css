@@ -322,6 +322,18 @@ input:focus, select:focus, textarea:focus {
   right: 0;
   background: linear-gradient(270deg, var(--nav-tab-bg) 15%, transparent);
 }
+/* Desktop tab strip scrolls on its own so the page never scrolls sideways. */
+.desktop-tabs {
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.desktop-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+.desktop-tabs::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
 .mobile-bottom-nav {
   overflow-x: auto;
   overscroll-behavior-x: contain;

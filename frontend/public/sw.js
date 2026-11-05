@@ -1,11 +1,11 @@
 /* Parashara Jyotish — service worker: offline shell + cosmic alert notifications */
 
-const CACHE_SHELL = 'jyotish-shell-v7'
+const CACHE_SHELL = 'jyotish-shell-v8'
 const SHELL_URLS = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg']
 
 const ALLOWED_TABS = new Set([
-  'home', 'chart', 'career', 'health', 'dosha-radar', 'avastha', 'house-links', 'gochar',
-  'panchangam', 'chat', 'forecast', 'prashna', 'life-cycle', 'admin',
+  'home', 'chart', 'reading', 'career', 'health', 'dosha-radar', 'avastha', 'house-links',
+  'gochar', 'nadi', 'panchangam', 'chat', 'forecast', 'prashna', 'life-cycle', 'admin',
 ])
 
 function offlineHtmlResponse() {

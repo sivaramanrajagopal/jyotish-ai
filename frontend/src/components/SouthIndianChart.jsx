@@ -11,6 +11,7 @@ import { formatNakshatraLine } from '../lib/chartFormat'
  *   title, subtitle       — centre cell text
  *   planetPositions       — { Planet: { sign_index, degree_in_sign, pada, retrograde, vargottama } }
  *   lagnaSignIndex        — 0-11, which sign has the ascendant marker
+ *   lagnaDegree           — optional degree of the lagna within its sign
  *   navamsa               — boolean, D9 centre label
  *   dasamsa               — boolean, D10 centre label
  *   drekkana              — boolean, D3 centre label
@@ -131,9 +132,10 @@ function PlanetBadgeClassic({ planet, retrograde, vargottama, degreeInSign, pada
 
 // ── Chart cell ───────────────────────────────────────────────────────────────
 function Cell({
-  signIdx, lagnaSignIdx, planetSignMap, retroSet, vargottamaSet, planetData,
+  signIdx, lagnaSignIdx, lagnaDegree, planetSignMap, retroSet, vargottamaSet, planetData,
   showDetails, variant, chartKind = 'natal', highlightBhavaHouses,
 }) {
+  const lagnaDeg = typeof lagnaDegree === 'number' ? `${lagnaDegree.toFixed(1)}°` : ''
   const planets = planetSignMap[signIdx] || []
   const isLagna = signIdx === lagnaSignIdx
   const isClassic = variant === 'classic'
@@ -167,7 +169,7 @@ function Cell({
           <div className="si-chart__classic-house">{houseNum}</div>
           <div className="si-chart__classic-rashi">{RASHI_TAMIL[signIdx]}</div>
           {showLagna && (
-            <span className="si-chart__lagna-badge">Lagna ↑</span>
+            <span className="si-chart__lagna-badge">Lagna ↑{lagnaDeg && ` ${lagnaDeg}`}</span>
           )}
         </>
       ) : (
@@ -175,7 +177,7 @@ function Cell({
           <span className={`si-chart__sign${isLagna ? ' si-chart__sign--lagna' : ''}`} aria-hidden="true">
             {SIGN_SYM[signIdx]} {SIGN_ABBR[signIdx]}
           </span>
-          {isLagna && <span className="si-chart__asc">Asc</span>}
+          {isLagna && <span className="si-chart__asc">Asc{lagnaDeg && ` ${lagnaDeg}`}</span>}
         </>
       )}
 
@@ -256,6 +258,7 @@ export default function SouthIndianChart({
   subtitle,
   planetPositions,
   lagnaSignIndex,
+  lagnaDegree,
   navamsa = false,
   dasamsa = false,
   drekkana = false,
@@ -282,6 +285,7 @@ export default function SouthIndianChart({
   const cellProps = (signIdx) => ({
     signIdx,
     lagnaSignIdx: lagnaSignIndex,
+    lagnaDegree,
     planetSignMap,
     retroSet,
     vargottamaSet,

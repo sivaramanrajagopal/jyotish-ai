@@ -794,22 +794,21 @@ def chart_ensure_dasha(
     req: EnsureDashaRequest,
     auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
 ):
-    """Backfill Vimshottari dasha on a saved chart without full recalculation."""
-    from chart_utils import ensure_dasha
+    """Recompute Vimshottari dasha (current period and full timeline) for today."""
+    from chart_utils import refresh_dasha
     from security import validate_client_natal_chart
 
     # Authenticated users: never trust client chart body for persistence — use server copy.
     if auth_user:
         stored = load_natal_chart(auth_user.id)
         if stored:
-            return stored
+            return refresh_dasha(stored)
 
     if not req.natal_chart:
         raise HTTPException(status_code=400, detail="natal_chart is required.")
 
     chart = validate_client_natal_chart(req.natal_chart, _sanitise)
-    chart = ensure_dasha(chart)
-    return chart
+    return refresh_dasha(chart)
 
 
 @app.get("/natal-chart")
@@ -818,13 +817,13 @@ def get_natal_chart(
     request: Request,
     auth_user: AuthUser = Depends(get_current_user),
 ):
-    """Return the authenticated user's saved natal chart from Supabase."""
-    from chart_utils import ensure_dasha
+    """Return the authenticated user's saved natal chart, with today's dasha."""
+    from chart_utils import refresh_dasha
 
     chart = load_natal_chart(auth_user.id)
     if not chart:
         raise HTTPException(status_code=404, detail="No saved chart found.")
-    return ensure_dasha(chart)
+    return refresh_dasha(chart)
 
 
 # ─────────────────────────────────────────────

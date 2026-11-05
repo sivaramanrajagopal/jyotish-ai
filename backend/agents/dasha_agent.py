@@ -14,6 +14,7 @@ from typing import Optional
 from dasha_core import (
     DASA_DURATIONS,
     NAKSHATRA_LORDS,
+    build_dasha_timeline,
     find_current_dasha_bhukti,
     fmt_period,
     fmt_period_day,
@@ -86,6 +87,8 @@ def get_personal_dasha(
             "planet": b["planet"],
             "start": fmt_period_day(b["start"]),
             "end": fmt_period_day(b["end"]),
+            "start_iso": b["start"].date().isoformat(),
+            "end_iso": b["end"].date().isoformat(),
             "years": b["years"],
         }
         for b in bhuktis
@@ -147,6 +150,7 @@ def get_personal_dasha(
         "antardasha_sequence": antardasha_sequence,
         "upcoming_bhuktis": upcoming,
         "next_dashas": next_dashas,
+        "timeline": build_dasha_timeline(moon_long, birth_date, current_dt),
     }
     result["bhukti_table_markdown"] = format_bhukti_table(result)
     result["mahadasha_timeline_markdown"] = format_mahadasha_timeline_table(result)
