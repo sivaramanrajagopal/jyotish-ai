@@ -2,11 +2,37 @@
 
 from __future__ import annotations
 
-from agents.bhavat_bhavam.core import lord_of_house, whole_sign_house, _lords_linked
+from agents.bhavat_bhavam.core import whole_sign_house, _lords_linked
+from agents.classical.facts import planet_natures
 from agents.house_connections.core import houses_owned_by, nakshatra_lord_for
 from agents.house_connections.themes import DUSTHANA
-from agents.natal_agent import SIGN_LORDS
-from agents.transit_score_agent import _planet_aspects
+
+PARIVARTANA_KINDS = {
+    "maha": ("Maha Parivartana", "மகா பரிவர்த்தனை"),
+    "khala": ("Khala Parivartana", "கல பரிவர்த்தனை"),
+    "dainya": ("Dainya Parivartana", "தைன்ய பரிவர்த்தனை"),
+}
+
+
+def parivartana_kind(h1: int, h2: int) -> str:
+    """Classical class of a sign exchange: dainya if a dusthana is involved, khala if the 3rd, else maha."""
+    if h1 in DUSTHANA or h2 in DUSTHANA:
+        return "dainya"
+    if 3 in (h1, h2):
+        return "khala"
+    return "maha"
+
+
+def exchanges(houses: dict[int, dict]) -> list[tuple[int, int]]:
+    """House pairs whose lords sit in each other's houses (Parivartana)."""
+    pairs = []
+    for h1 in range(1, 13):
+        for h2 in range(h1 + 1, 13):
+            if houses[h1]["lord"] == houses[h2]["lord"]:
+                continue
+            if houses[h1]["lord_house"] == h2 and houses[h2]["lord_house"] == h1:
+                pairs.append((h1, h2))
+    return pairs
 
 
 def _edge_id(kind: str, from_h: int, to_h: int, detail: str = "") -> str:
@@ -16,6 +42,7 @@ def _edge_id(kind: str, from_h: int, to_h: int, detail: str = "") -> str:
 def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
     asc_idx = (natal_chart.get("ascendant") or {}).get("sign_index", 0)
     pp = natal_chart.get("planet_positions") or {}
+    natures = planet_natures(pp)
     edges: list[dict] = []
     seen: set[str] = set()
 
@@ -42,7 +69,24 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                 "supportive": ha["position_type"] not in ("dusthana_from_own",),
             })
 
-    # 2. Lord-to-lord links (conjunction, aspect)
+    # 2. Parivartana: the two lords sit in each other's houses
+    for h1, h2 in exchanges(houses):
+        kind = parivartana_kind(h1, h2)
+        name_en, name_ta = PARIVARTANA_KINDS[kind]
+        l1, l2 = houses[h1]["lord"], houses[h2]["lord"]
+        add({
+            "kind": "exchange",
+            "from_house": h1,
+            "to_house": h2,
+            "label_en": f"{name_en}: H{h1} lord {l1} in H{h2}, H{h2} lord {l2} in H{h1}",
+            "label_ta": f"{name_ta}: H{h1} {l1} H{h2} இல், H{h2} {l2} H{h1} இல்",
+            "planets": [l1, l2],
+            "detail": kind,
+            "weight": 6,
+            "supportive": kind != "dainya",
+        })
+
+    # 3. Lord-to-lord links (conjunction, aspect)
     for h1 in range(1, 13):
         for h2 in range(h1 + 1, 13):
             l1 = houses[h1]["lord"]
@@ -77,7 +121,7 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                 "supportive": True,
             })
 
-    # 3. Planet in house → pada lord owns / sits
+    # 4. Planet in house → pada lord owns / sits
     for h, ha in houses.items():
         for planet in ha["planets_in_house"]:
             pdata = pp.get(planet) or {}
@@ -94,7 +138,7 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                     "label_ta": f"H{h} {planet} pada அதிபதி {pada_lord} (H{owned})",
                     "planets": [planet, pada_lord],
                     "weight": 2,
-                    "supportive": pada_lord not in ("Saturn", "Mars", "Rahu", "Ketu") or owned in DUSTHANA,
+                    "supportive": natures.get(pada_lord) == "benefic" or owned in DUSTHANA,
                 })
             if pl_house != h:
                 add({
@@ -104,26 +148,6 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                     "label_en": f"H{h} via {planet} pada lord {pada_lord} in H{pl_house}",
                     "label_ta": f"H{h} ← {pada_lord} pada வழி H{pl_house}",
                     "planets": [pada_lord],
-                    "weight": 2,
-                    "supportive": True,
-                })
-
-    # 4. Sign lord (dispositor) of house lord
-    for h, ha in houses.items():
-        sign = ha["sign"]
-        dispositor = SIGN_LORDS.get(sign, "")
-        if not dispositor or dispositor not in pp:
-            continue
-        disp_house = whole_sign_house(pp[dispositor]["sign_index"], asc_idx)
-        for owned in houses_owned_by(dispositor, asc_idx):
-            if owned != h:
-                add({
-                    "kind": "sign_lord",
-                    "from_house": owned,
-                    "to_house": h,
-                    "label_en": f"H{h} sign lord {dispositor} owns H{owned}",
-                    "label_ta": f"H{h} ராசி அதிபதி {dispositor} → H{owned}",
-                    "planets": [dispositor],
                     "weight": 2,
                     "supportive": True,
                 })
@@ -155,7 +179,7 @@ def build_edges(houses: dict[int, dict], natal_chart: dict) -> list[dict]:
                 "label_ta": f"{planet} H{ph} இலிருந்து H{h} பார்வை",
                 "planets": [planet],
                 "weight": 2,
-                "supportive": planet in ("Jupiter", "Venus", "Mercury", "Moon"),
+                "supportive": natures.get(planet) == "benefic",
             })
 
     return edges

@@ -59,9 +59,6 @@ TRIKONA = frozenset({1, 5, 9})
 UPACHAYA = frozenset({3, 6, 10, 11})
 DUSTHANA = frozenset({6, 8, 12})
 
-BENEFICS = frozenset({"Jupiter", "Venus", "Mercury", "Moon"})
-MALEFICS = frozenset({"Sun", "Mars", "Saturn", "Rahu", "Ketu"})
-
 DISCLAIMER_EN = (
     "House Links map structural channels in the natal chart for prediction awareness. "
     "Combine with Dasa, transits, and divisional charts — not standalone advice."

@@ -113,16 +113,16 @@ def _lords_linked(
 
     pa = planet_positions.get(lord_a) or {}
     pb = planet_positions.get(lord_b) or {}
-    if not pa.get("sign_index") or not pb.get("sign_index"):
+    # sign_index 0 is Aries, so test for None rather than falsiness.
+    if pa.get("sign_index") is None or pb.get("sign_index") is None:
         return links
 
     ha = whole_sign_house(pa["sign_index"], asc_sign_index)
     hb = whole_sign_house(pb["sign_index"], asc_sign_index)
 
-    if pa.get("sign") == pb.get("sign"):
-        links.append("conjunction")
+    # Whole-sign houses: sharing a sign is sharing a house.
     if ha == hb:
-        links.append("same house")
+        links.append("conjunction")
 
     asp_a = set(_planet_aspects(lord_a, ha))
     asp_b = set(_planet_aspects(lord_b, hb))

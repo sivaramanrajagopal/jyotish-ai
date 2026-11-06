@@ -51,10 +51,10 @@ def test_chennai_native_channels_after_bb_removal():
     assert h6["recovery_edges"][0]["to_house"] == 11
     assert h12["recovery_edges"][0]["to_house"] == 11
     assert h11["channels_in"] == [2, 6]
-    assert h12["channels_out"] == [1, 6, 7]
+    assert h12["channels_out"] == [1, 3, 4, 5, 6, 7]
     assert h6["top_blesser"]["planet"] == "Moon"
-    assert h6["top_blesser"]["score"] == 29.0
-    assert h11["top_blesser"]["score"] == 22.0
+    assert h6["top_blesser"]["score"] == 26.0
+    assert h11["top_blesser"]["score"] == 18.0
 
 
 def test_blessers_exclude_bb_edges():

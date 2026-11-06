@@ -228,6 +228,16 @@ def _remedy_line(lord: str, d1_dignity: str, d9_dignity: str) -> str:
     return ""
 
 
+def house_fruit(chart: dict, house: int) -> dict:
+    """The Reading verdict for a house: its lord's Navamsa dignity, as the fruit line words it."""
+    asc_idx = int((chart.get("ascendant") or {}).get("sign_index") or 0)
+    lord = lord_of_house(asc_idx, house)
+    nav = (chart.get("navamsa_positions") or {}).get(lord) or {}
+    dignity = classify_sign_dignity(lord, nav.get("sign") or "", float(nav.get("degree_in_sign") or 0))
+    vargottama = bool(nav.get("vargottama"))
+    return {"lord": lord, "dignity": dignity, "vargottama": vargottama, "fruit": _fruit(dignity, vargottama)}
+
+
 def house_giving(chart: dict, question_id: str, gender: str) -> dict:
     """Four lines, plus the Navamsa house for self, marriage, and the 9th."""
     house = QUESTION_HOUSE.get(question_id)

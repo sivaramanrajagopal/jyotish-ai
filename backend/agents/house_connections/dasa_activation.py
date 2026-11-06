@@ -111,7 +111,7 @@ def build_activation_chain(
     steps: list[dict] = []
     activated: set[int] = set()
 
-    if not pdata.get("sign_index") is None:
+    if pdata.get("sign_index") is not None:
         seat = whole_sign_house(pdata["sign_index"], asc_idx)
     else:
         seat = 0
