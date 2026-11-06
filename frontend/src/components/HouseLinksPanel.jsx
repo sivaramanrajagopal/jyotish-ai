@@ -110,71 +110,14 @@ function NowCard({ activation, rows, onOpen }) {
         <p className="hl-now__line hl-now__line--muted">
           Jupiter and Saturn also touch{' '}
           {sky.map(r => `the ${r.ordinal} (${r.theme_en.toLowerCase()})`).join(', ')}
-          , with no dasha link to it now.
+          . The running lords do not activate or share it.
         </p>
       )}
     </section>
   )
 }
 
-function windowText(windows) {
-  if (!windows?.length) return 'Jupiter and Saturn do not both touch it in this period'
-  return `Jupiter and Saturn both touch it ${windows.map(w => `${w.start} to ${w.end}`).join(', and ')}`
-}
-
-function NextStrip({ upcoming }) {
-  if (!upcoming?.periods?.length) return null
-  return (
-    <section className="hl-next" aria-label="Coming next">
-      <h3 className="hl-section-title">
-        <Bilingual en="Coming next" ta="அடுத்து வருவது" inline />
-      </h3>
-      <ol className="hl-next__list">
-        {upcoming.periods.map(p => (
-          <li key={`${p.mahadasha}-${p.bhukti}-${p.start}`} className="hl-next__item">
-            <p className="hl-next__head">
-              <strong>{p.bhukti} bhukti</strong>
-              <span className="hl-next__dates">{p.mahadasha} mahadasha · {p.start} to {p.end}</span>
-            </p>
-            {p.relation && (
-              <p className={`hl-now__line hl-now__line--${p.relation.tone}`}>
-                {p.relation.en}
-                <span className="hl-line__ta">{p.relation.ta}</span>
-              </p>
-            )}
-            <ul className="hl-next__houses">
-              {p.houses.map(h => (
-                <li key={h.house}>
-                  <strong>{h.ordinal} · {h.theme_en}</strong>
-                  <span className="hl-bi__ta"> · {h.theme_ta}</span>
-                  <span className={`hl-next__window${h.windows.length ? ' hl-next__window--on' : ''}`}>
-                    {windowText(h.windows)}.
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ol>
-      {upcoming.sign_changes?.length > 0 && (
-        <details className="hl-section">
-          <summary className="hl-section__summary">
-            <Bilingual en={`Jupiter and Saturn sign changes to ${upcoming.through}`} ta="குரு, சனி ராசி மாற்றங்கள்" inline />
-            <span className="hl-section__count">({upcoming.sign_changes.length})</span>
-          </summary>
-          <ul className="hl-next__changes">
-            {upcoming.sign_changes.map(s => (
-              <li key={`${s.planet}-${s.iso}`}>
-                {s.en}
-                <span className="hl-line__ta">{s.ta}</span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </section>
-  )
-}
+const LEVEL_LABEL = { main: 'Activated', shared: 'Shared', side: 'Connected' }
 
 function HouseTile({ row, view, marks, selected, onSelect }) {
   const t = row.transit || {}
@@ -205,7 +148,7 @@ function HouseTile({ row, view, marks, selected, onSelect }) {
               <StatusBadge status={row.status} />
             </span>
             <span className="hl-tile__tags">
-              {level && <span className="hl-badge">Dasha {level}</span>}
+              {level && <span className="hl-badge">{LEVEL_LABEL[level]}</span>}
               {t.jupiter && <span className="hl-badge">Jupiter</span>}
               {t.saturn && <span className="hl-badge">Saturn</span>}
             </span>
@@ -250,7 +193,12 @@ function HouseDetail({ row, view, classical }) {
           <p className="hl-detail__text"><StatusBadge status={row.status} /></p>
           <h5>Dasha</h5>
           {reasons.length ? (
-            <ul>{reasons.map(r => <Line key={r.en} en={`${r.en}${r.level === 'side' ? ' (side)' : ''}`} ta={r.ta} />)}</ul>
+            <>
+              {row.dasha.level === 'shared' && (
+                <p className="hl-detail__text">Both running lords reach this house, so it counts as on in this bhukti.</p>
+              )}
+              <ul>{reasons.map(r => <Line key={r.en} en={`${r.en}${r.level === 'side' ? ' (connected)' : ''}`} ta={r.ta} />)}</ul>
+            </>
           ) : (
             <p className="hl-detail__muted">The running lords do not touch this house.</p>
           )}
@@ -350,6 +298,20 @@ function NatalTable({ rows }) {
 
 const BOTH_SHOWN = 3
 
+const DASHA_NOTE = 'Activated (bold): houses the lord rules or sits in. Shared: houses both the mahadasha '
+  + 'and the bhukti lord reach. Both: dates when Jupiter and Saturn each touch an activated or shared '
+  + 'house or its lord. Tap Connected for the weaker links: aspects, planets sitting with the lord, and its star lord.'
+
+function ConnectedMore({ houses }) {
+  if (!houses?.length) return null
+  return (
+    <details className="hl-tbl__more">
+      <summary>Connected</summary>
+      <span>{houses.join(', ')}</span>
+    </details>
+  )
+}
+
 function DashaTable({ rows }) {
   if (!rows?.length) return null
   return (
@@ -358,14 +320,11 @@ function DashaTable({ rows }) {
         <Bilingual en="Dasha table" ta="தசை அட்டவணை" inline />
       </summary>
       <div className="hl-tbl-wrap">
-        <p className="hl-tbl-note">
-          Activated: houses the lord rules or sits in. Connected: houses it aspects, and houses its star lord rules or sits in.
-          Both: dates when Jupiter and Saturn each touch the house or its lord. Bold is an activated house.
-        </p>
+        <p className="hl-tbl-note">{DASHA_NOTE}</p>
         <table className="hl-tbl">
           <colgroup><col style={{ width: '31%' }} /><col style={{ width: '19%' }} /><col style={{ width: '19%' }} /><col /></colgroup>
           <thead>
-            <tr><th scope="col">Lord</th><th scope="col">Activated</th><th scope="col">Connected</th><th scope="col">Both</th></tr>
+            <tr><th scope="col">Lord</th><th scope="col">Activated</th><th scope="col">Shared</th><th scope="col">Both</th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
@@ -374,9 +333,13 @@ function DashaTable({ rows }) {
                   {r.planet}
                   <span className="hl-tbl__sub">{r.label}</span>
                   <span className="hl-tbl__sub">{r.when}</span>
+                  {r.relation && (
+                    <span className={`hl-tbl__sub hl-tbl__rel--${r.relation.tone}`}>{r.relation.en}</span>
+                  )}
+                  <ConnectedMore houses={r.connected} />
                 </th>
-                <td>{houseList(r.activated)}</td>
-                <td>{houseList(r.connected)}</td>
+                <td><strong>{houseList(r.activated)}</strong></td>
+                <td>{r.label === 'mahadasha' ? '' : houseList(r.shared)}</td>
                 <td>
                   {r.both.length ? (
                     <>
@@ -401,7 +364,90 @@ function DashaTable({ rows }) {
   )
 }
 
-function TransitTable({ rows }) {
+const NOW_SECTIONS = [
+  ['hl-sec-now', 'Active now'],
+  ['hl-sec-timeline', 'Life timeline'],
+  ['hl-sec-dasha', 'Dasha table'],
+  ['hl-sec-transit', 'Transit'],
+  ['hl-sec-houses', 'Houses'],
+]
+
+const NATAL_SECTIONS = [
+  ['hl-sec-houses', 'Houses'],
+  ['hl-sec-natal', 'Connections'],
+  ['hl-sec-timeline', 'Life timeline'],
+]
+
+function JumpNav({ items }) {
+  const go = id => {
+    const el = document.getElementById(id)
+    if (!el) return
+    const section = el.querySelector(':scope > details')
+    if (section) section.open = true
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  return (
+    <nav className="hl-jump" aria-label="Jump to section">
+      {items.map(([id, label]) => (
+        <button key={id} type="button" className="hl-jump__btn" onClick={() => go(id)}>{label}</button>
+      ))}
+    </nav>
+  )
+}
+
+function TimelineTable({ rows }) {
+  if (!rows?.length) return null
+  return (
+    <details className="hl-section">
+      <summary className="hl-section__summary">
+        <Bilingual en="Whole life dasha timeline" ta="வாழ்நாள் தசை கால அட்டவணை" inline />
+      </summary>
+      <div className="hl-tbl-wrap">
+        <p className="hl-tbl-note">
+          Every mahadasha from birth. Open one to see its bhuktis. Activated: houses the bhukti lord rules
+          or sits in. Shared: other houses both the mahadasha and the bhukti lord reach.
+        </p>
+        {rows.map(m => (
+          <details key={m.planet} className={`hl-tl hl-tl--${m.state}`} open={m.state === 'now'}>
+            <summary className="hl-tl__summary">
+              <span className="hl-tl__head">
+                <strong>{m.planet} mahadasha</strong>
+                {m.state === 'now' && <span className="hl-badge hl-badge--live">Running</span>}
+              </span>
+              <span className="hl-tbl__sub">{m.start} to {m.end}</span>
+              <span className="hl-tl__houses">
+                Activated <strong>{houseList(m.activated)}</strong>
+                {m.connected.length > 0 && ` · connected ${houseList(m.connected)}`}
+              </span>
+            </summary>
+            <table className="hl-tbl">
+              <colgroup><col style={{ width: '40%' }} /><col style={{ width: '30%' }} /><col /></colgroup>
+              <thead>
+                <tr><th scope="col">Bhukti</th><th scope="col">Activated</th><th scope="col">Shared</th></tr>
+              </thead>
+              <tbody>
+                {m.bhuktis.map(b => (
+                  <tr key={`${b.planet}-${b.start}`} className={b.state === 'now' ? 'hl-tbl__row--now' : b.state === 'past' ? 'hl-tbl__row--past' : ''}>
+                    <th scope="row">
+                      {b.planet}
+                      <span className="hl-tbl__sub">{b.start} to {b.end}</span>
+                      <ConnectedMore houses={b.connected} />
+                    </th>
+                    <td><strong>{houseList(b.activated)}</strong></td>
+                    <td>{houseList(b.shared)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function TransitTable({ rows, upcoming }) {
+  const changes = upcoming?.sign_changes || []
   if (!rows?.length) return null
   return (
     <details className="hl-section" open>
@@ -429,6 +475,19 @@ function TransitTable({ rows }) {
             ))}
           </tbody>
         </table>
+        {changes.length > 0 && (
+          <details className="hl-tbl__more hl-tbl__more--block">
+            <summary>Jupiter and Saturn sign changes to {upcoming.through} ({changes.length})</summary>
+            <ul className="hl-changes">
+              {changes.map(s => (
+                <li key={`${s.planet}-${s.iso}`}>
+                  {s.en}
+                  <span className="hl-line__ta">{s.ta}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
     </details>
   )
@@ -636,32 +695,41 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
         <p className="hl-error" role="alert">The house layer could not be built for this chart.</p>
       )}
 
-      {view === 'now' && activation && (
-        <NowCard activation={activation} rows={rows} onOpen={showHouse} />
-      )}
+      <JumpNav items={view === 'now' ? NOW_SECTIONS : NATAL_SECTIONS} />
 
-      {activation && (
-        <HouseGrid
-          rows={rows}
-          view={view}
-          marks={marks}
-          selected={selectedHouse}
-          onSelect={showHouse}
-          classical={classical.data}
-        />
+      {view === 'now' && activation && (
+        <div id="hl-sec-now" className="hl-anchor">
+          <NowCard activation={activation} rows={rows} onOpen={showHouse} />
+        </div>
       )}
 
       {view === 'now' && (
         <>
-          <DashaTable rows={data.tables?.dasha} />
-          <TransitTable rows={data.tables?.transit} />
-          <NextStrip upcoming={data.upcoming} />
+          <div id="hl-sec-timeline" className="hl-anchor"><TimelineTable rows={data.tables?.timeline} /></div>
+          <div id="hl-sec-dasha" className="hl-anchor"><DashaTable rows={data.tables?.dasha} /></div>
+          <div id="hl-sec-transit" className="hl-anchor">
+            <TransitTable rows={data.tables?.transit} upcoming={data.upcoming} />
+          </div>
         </>
+      )}
+
+      {activation && (
+        <div id="hl-sec-houses" className="hl-anchor">
+          <HouseGrid
+            rows={rows}
+            view={view}
+            marks={marks}
+            selected={selectedHouse}
+            onSelect={showHouse}
+            classical={classical.data}
+          />
+        </div>
       )}
 
       {view === 'natal' && (
         <>
-          <NatalTable rows={data.tables?.natal} />
+          <div id="hl-sec-natal" className="hl-anchor"><NatalTable rows={data.tables?.natal} /></div>
+          <div id="hl-sec-timeline" className="hl-anchor"><TimelineTable rows={data.tables?.timeline} /></div>
           <details className="hl-section" open>
             <summary className="hl-section__summary">
               <Bilingual en="Lord-link yogas" ta="அதிபதி யோகங்கள்" inline />

@@ -1,9 +1,11 @@
 """Which houses are active now: the dasha switches houses on, Jupiter and Saturn trigger them.
 
 Dasha (Parashari): a running lord gives the results of the houses it rules and occupies
-(main), and of the houses it aspects, and the houses its nakshatra lord rules and sits in (side).
-Rahu and Ketu rule no sign, so they act for the lord of the sign they occupy (main) and
-for the planets sitting with them (side). A node as star lord acts through its sign lord.
+(main), and of the houses it aspects, the houses ruled by planets sitting with it, and the
+houses its nakshatra lord rules and sits in (side). Rahu and Ketu rule no sign, so they act
+for the lord of the sign they occupy (main). A node as star lord acts through its sign lord.
+A house both running lords reach by any route is shared. Only main and shared houses can
+be live; a side house reached by one lord alone stays a connection.
 
 Transit (double transit, from the lagna, whole-sign): a house is triggered when Jupiter
 and Saturn each occupy or aspect the house or the sign holding its lord. Aspects come
@@ -33,7 +35,7 @@ ROLE = {
 }
 STATUS = {
     "live": ("Live now", "இப்போது செயலில்"),
-    "waiting": ("Dasha on, transit not yet", "தசை இயக்கம், கோசாரம் இன்னும் இல்லை"),
+    "waiting": ("Dasha on, transit not now", "தசை இயக்கம், கோசாரம் இப்போது இல்லை"),
     "sky": ("Transit only", "கோசாரம் மட்டும்"),
     "quiet": ("Quiet", "அமைதி"),
 }
@@ -110,9 +112,9 @@ def dasha_reasons(planet: str, role: str, pp: dict, asc: int) -> dict[int, list[
     if seat:
         for h in _planet_aspects(planet, seat):
             add(h, "side", f"{planet}, the {role_en}, aspects this house", f"{role_ta} {planet} பார்வை")
-    if planet in NODES and seat:
+    if seat:
         for other in ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"):
-            if _seat(pp, other, asc) != seat:
+            if other == planet or _seat(pp, other, asc) != seat:
                 continue
             for h in houses_owned_by(other, asc):
                 if h in out:
@@ -139,6 +141,11 @@ def dasha_reasons(planet: str, role: str, pp: dict, asc: int) -> dict[int, list[
             add(star_seat, "side", f"{planet}'s star lord {star_lord} sits here",
                 f"{planet} நட்சத்திர அதிபதி {star_lord} இங்கு அமர்வு")
     return out
+
+
+def shared_houses(maha: str, bhukti: str, pp: dict, asc: int) -> set[int]:
+    """Houses both the mahadasha lord and the bhukti lord reach, by any route."""
+    return set(dasha_reasons(maha, "maha", pp, asc)) & set(dasha_reasons(bhukti, "bhukti", pp, asc))
 
 
 def _transit_touch(planet: str, sign_index: int | None, asc: int, house: int, lord_seat: int) -> dict:
@@ -238,9 +245,11 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
 
     period = _period(chart, when)
     reasons: dict[int, list[dict]] = {}
+    shared: set[int] = set()
     relation = None
     if period:
         md, bh = period["mahadasha"]["planet"], period["bhukti"]["planet"]
+        shared = shared_houses(md, bh, pp, asc)
         for planet, role in ((md, "maha"), (bh, "bhukti")):
             for h, rows in dasha_reasons(planet, role, pp, asc).items():
                 reasons.setdefault(h, []).extend(rows)
@@ -275,10 +284,16 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
         sat = _transit_touch("Saturn", saturn_sign, asc, h, hrow["lord_house"])
         double = (jup["house"] or jup["lord"]) and (sat["house"] or sat["lord"])
         why = reasons.get(h, [])
-        level = "main" if any(r["level"] == "main" for r in why) else ("side" if why else "")
-        if level and double:
+        if any(r["level"] == "main" for r in why):
+            level = "main"
+        elif h in shared:
+            level = "shared"
+        else:
+            level = "side" if why else ""
+        strong = level in ("main", "shared")
+        if strong and double:
             status = "live"
-        elif level:
+        elif strong:
             status = "waiting"
         elif double:
             status = "sky"
@@ -310,7 +325,7 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
             "links": house_links(h, houses, yogas, pp, asc),
         })
 
-    active = [r for r in rows if r["dasha"]["level"]]
+    active = [r for r in rows if r["dasha"]["level"] in ("main", "shared")]
     active.sort(key=lambda r: (
         0 if r["dasha"]["level"] == "main" else 1,
         STATUS_ORDER[r["status"]["key"]],

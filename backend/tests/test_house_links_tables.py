@@ -58,6 +58,21 @@ def test_natal_star_lord_links():
     assert natal[1][2] == "N" and natal[1][11] == "N"
 
 
+def test_whole_life_timeline():
+    timeline = _tables()["timeline"]
+    assert [m["planet"] for m in timeline] == [
+        "Mercury", "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn",
+    ]
+    moon = timeline[4]
+    assert moon["state"] == "now" and moon["start"] == "9 Mar 2019" and moon["end"] == "8 Mar 2029"
+    assert len(moon["bhuktis"]) == 9
+    ketu = next(b for b in moon["bhuktis"] if b["planet"] == "Ketu")
+    assert ketu["state"] == "now" and ketu["shared"] == [6, 8] and ketu["connected"] == [4, 12]
+    venus = next(b for b in moon["bhuktis"] if b["planet"] == "Venus")
+    assert venus["state"] == "future" and venus["shared"] == [5, 8] and venus["connected"] == [3, 10]
+    assert timeline[0]["state"] == "past" and len(timeline[0]["bhuktis"]) == 3
+
+
 def _brief(both: list[dict]) -> list[tuple]:
     return [(b["house"], b["level"], b["start"], b["end"], b["now"]) for b in both]
 
@@ -66,26 +81,28 @@ def test_dasha_rows_current_and_next():
     rows = _tables()["dasha"]
     assert [(r["planet"], r["current"]) for r in rows[:3]] == [("Moon", True), ("Ketu", True), ("Venus", False)]
     ketu = rows[1]
-    assert ketu["activated"] == [2, 11] and ketu["connected"] == [4, 6, 8, 12]
+    assert ketu["activated"] == [2, 11] and ketu["shared"] == [6, 8] and ketu["connected"] == [4, 12]
+    assert ketu["relation"]["tone"] == "neutral"
     assert _brief(ketu["both"]) == [
         (11, "main", "6 Nov 2026", "7 Jan 2027", True),
-        (8, "side", "6 Nov 2026", "7 Jan 2027", True),
+        (8, "shared", "6 Nov 2026", "7 Jan 2027", True),
     ]
     venus = rows[2]
-    assert venus["activated"] == [4, 9] and venus["connected"] == [3, 5, 8]
+    assert venus["activated"] == [4, 9] and venus["shared"] == [5, 8] and venus["connected"] == [3, 10]
+    assert venus["relation"]["tone"] == "uneasy"
     assert (4, "main", "27 Nov 2027", "28 Feb 2028", False) in _brief(venus["both"])
+    assert all(b["level"] in ("main", "shared") for r in rows for b in r["both"])
 
 
 def test_live_until_dates():
     assert _tables()["live_until"] == {7: "24 Jan 2027", 8: "24 Jan 2027", 11: "2 Jun 2027"}
 
 
-def test_live_now_ends_when_jupiter_turns_back():
+def test_moon_mahadasha_windows_cover_its_own_houses():
     moon = _tables()["dasha"][0]
-    assert moon["connected"] == [5, 7, 8]
-    assert _brief(moon["both"])[:4] == [
-        (7, "side", "6 Nov 2026", "24 Jan 2027", True),
-        (8, "side", "6 Nov 2026", "24 Jan 2027", True),
+    assert moon["connected"] == [5, 7, 8] and moon["shared"] == []
+    # Jupiter back in Cancer from 25 Jan 2027 brings the Moon's own 2nd and 6th.
+    assert _brief(moon["both"])[:2] == [
         (2, "main", "25 Jan 2027", "2 Jun 2027", False),
         (6, "main", "25 Jan 2027", "2 Jun 2027", False),
     ]

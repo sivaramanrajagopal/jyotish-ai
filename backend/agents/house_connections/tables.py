@@ -10,7 +10,8 @@ Natal codes, one per way two houses are tied through their lords:
   N  one lord sits in the other lord's star (a node star lord acts through its sign lord)
   S  one planet rules both houses
 
-Dasha "both" windows use the double-transit rule from activation.py, day by day.
+Dasha "both" windows use the double-transit rule from activation.py, day by day, for
+activated and shared houses only.
 """
 
 from __future__ import annotations
@@ -18,13 +19,14 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from agents.bhavat_bhavam.core import _lords_linked
-from agents.house_connections.activation import dasha_reasons
+from agents.house_connections.activation import dasha_reasons, shared_houses
 from agents.house_connections.core import nakshatra_lord_for
 from agents.house_connections.edges import exchanges
 from agents.natal_agent import SIGN_LORDS
 from agents.house_connections.upcoming import MAX_YEARS, double_runs, sign_changes, sky_segments
 from agents.nadi_agent import _fmt
 from agents.transit_score_agent import _planet_aspects
+from dasha_core import DASA_DURATIONS, generate_bhuktis, generate_dashas
 
 CODE_ORDER = "LHXCMANS"
 SKY_ORDER = ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
@@ -101,9 +103,9 @@ def _split(planet: str, role: str, pp: dict, asc: int) -> tuple[list[int], list[
     return main, side
 
 
-def _both(segments, start: date, end: date, as_of: date, houses, asc, main, side) -> list[dict]:
+def _both(segments, start: date, end: date, as_of: date, houses, asc, main, shared) -> list[dict]:
     out = []
-    for level, group in (("main", main), ("side", side)):
+    for level, group in (("main", main), ("shared", shared)):
         for h in group:
             for lo, hi in double_runs(segments, start, end, asc, h, houses[h]["lord_house"]):
                 out.append({
@@ -132,21 +134,26 @@ def dasha_table(
     rows: list[dict] = []
     period = (activation or {}).get("period")
     if period:
-        for key in ("mahadasha", "bhukti"):
+        md, bh = period["mahadasha"]["planet"], period["bhukti"]["planet"]
+        for key, planet, role in (("mahadasha", md, "maha"), ("bhukti", bh, "bhukti")):
             span = period[key]
-            main, side = _split(span["planet"], "maha" if key == "mahadasha" else "bhukti", pp, asc)
+            main, side = _split(planet, role, pp, asc)
+            shared = _shared(md, bh, pp, asc, main) if role == "bhukti" else []
             end = min(date.fromisoformat(span["end_iso"]), horizon)
             rows.append({
-                "planet": span["planet"],
+                "planet": planet,
                 "label": key,
                 "when": f"to {span['end']}",
                 "current": True,
                 "activated": main,
-                "connected": side,
-                "both": _both(segments, as_of, end, as_of, houses, asc, main, side),
+                "connected": [h for h in side if h not in shared],
+                "shared": shared,
+                "relation": activation.get("relation") if role == "bhukti" else None,
+                "both": _both(segments, as_of, end, as_of, houses, asc, main, shared),
             })
     for p in (upcoming or {}).get("periods") or []:
         main, side = _split(p["bhukti"], "bhukti", pp, asc)
+        shared = _shared(p["mahadasha"], p["bhukti"], pp, asc, main)
         start = date.fromisoformat(p["start_iso"])
         end = min(date.fromisoformat(p["end_iso"]), horizon)
         rows.append({
@@ -155,10 +162,67 @@ def dasha_table(
             "when": f"{p['start']} to {p['end']}",
             "current": False,
             "activated": main,
-            "connected": side,
-            "both": _both(segments, start, end, as_of, houses, asc, main, side) if start <= horizon else [],
+            "connected": [h for h in side if h not in shared],
+            "shared": shared,
+            "relation": p.get("relation"),
+            "both": _both(segments, start, end, as_of, houses, asc, main, shared) if start <= horizon else [],
         })
     return rows
+
+
+def _shared(maha: str, bhukti: str, pp: dict, asc: int, main: list[int]) -> list[int]:
+    """Shared houses that the bhukti lord does not already rule or sit in."""
+    return sorted(shared_houses(maha, bhukti, pp, asc) - set(main))
+
+
+def timeline_table(chart: dict, as_of: date) -> list[dict]:
+    """All nine mahadashas from birth, each with its bhuktis and the houses they reach."""
+    pp = chart.get("planet_positions") or {}
+    asc = int((chart.get("ascendant") or {}).get("sign_index") or 0)
+    dob = str((chart.get("birth_data") or {}).get("dob") or "")
+    moon = (pp.get("Moon") or {}).get("longitude")
+    if not dob or moon is None:
+        return []
+    cache: dict[tuple[str, str], tuple[list[int], list[int]]] = {}
+
+    def reach(planet: str, role: str) -> tuple[list[int], list[int]]:
+        if (planet, role) not in cache:
+            cache[(planet, role)] = _split(planet, role, pp, asc)
+        return cache[(planet, role)]
+
+    def state(start: date, end: date) -> str:
+        if end < as_of:
+            return "past"
+        return "now" if start <= as_of else "future"
+
+    out = []
+    for maha in generate_dashas(float(moon), dob)[:len(DASA_DURATIONS)]:
+        m_main, m_side = reach(maha["planet"], "maha")
+        m_all = set(m_main) | set(m_side)
+        bhuktis = []
+        for b in generate_bhuktis(maha):
+            b_main, b_side = reach(b["planet"], "bhukti")
+            start, end = b["start"].date(), b["end"].date()
+            bhuktis.append({
+                "planet": b["planet"],
+                "start": _fmt(start),
+                "end": _fmt(end),
+                "state": state(start, end),
+                "activated": b_main,
+                "connected": sorted(set(b_side) - m_all),
+                "shared": sorted(m_all & set(b_side)),
+            })
+        start, end = maha["start"].date(), maha["end"].date()
+        out.append({
+            "planet": maha["planet"],
+            "start": _fmt(start),
+            "end": _fmt(end),
+            "state": state(start, end),
+            "activated": m_main,
+            "connected": m_side,
+            "bhuktis": bhuktis,
+        })
+    return out
 
 
 def transit_table(houses: dict[int, dict], activation: dict | None, changes: list[dict]) -> list[dict]:
@@ -210,4 +274,5 @@ def compute_tables(
         "natal": natal_table(houses, chart),
         "dasha": dasha_table(chart, houses, activation, upcoming, when, segments, horizon),
         "transit": transit_table(houses, activation, sign_changes(segments, asc)),
+        "timeline": timeline_table(chart, when),
     }

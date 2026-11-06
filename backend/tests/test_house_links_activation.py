@@ -55,6 +55,14 @@ def test_ketu_also_gives_the_moon_it_sits_with():
     assert "sits with Moon" in reasons[6][0]["en"]
 
 
+def test_venus_gives_the_mars_it_sits_with():
+    chart = _chart()
+    reasons = dasha_reasons("Venus", "bhukti", chart["planet_positions"], chart["ascendant"]["sign_index"])
+    # Venus and Mars together in Libra (9th); Mars rules the 3rd and 10th
+    assert reasons[10][0]["level"] == "side"
+    assert "sits with Mars" in reasons[10][0]["en"]
+
+
 def test_node_star_lord_acts_through_its_sign_lord():
     chart = _chart()
     reasons = dasha_reasons("Venus", "bhukti", chart["planet_positions"], chart["ascendant"]["sign_index"])
@@ -69,9 +77,11 @@ def test_double_transit_chart_a():
     # Jupiter in Leo (7th) aspects 11, 1, 3; Saturn in Pisces (2nd) aspects 4, 8, 11.
     assert rows[11]["transit"]["double"] and rows[11]["status"]["key"] == "live"
     assert rows[8]["status"]["key"] == "live"
-    # The 7th is live through the Moon's star lord Mercury, who sits there.
-    assert rows[7]["status"]["key"] == "live"
+    # The 7th is reached only by the Moon's star lord Mercury: connected, never live.
+    assert rows[7]["dasha"]["level"] == "side" and rows[7]["status"]["key"] == "sky"
     assert any("star lord Mercury sits here" in r["en"] for r in rows[7]["dasha"]["reasons"])
+    # The 8th is reached by both the Moon and Ketu: shared, so it can be live.
+    assert rows[8]["dasha"]["level"] == "shared"
     assert rows[2]["status"]["key"] == "waiting"
     assert rows[10]["status"]["key"] == "quiet"
 
