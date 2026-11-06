@@ -1,7 +1,7 @@
 """Which houses are active now: the dasha switches houses on, Jupiter and Saturn trigger them.
 
 Dasha (Parashari): a running lord gives the results of the houses it rules and occupies
-(main), and of the houses it aspects or reaches through its nakshatra lord (side).
+(main), and of the houses it aspects, and the houses its nakshatra lord rules and sits in (side).
 Rahu and Ketu rule no sign, so they act for the lord of the sign they occupy (main) and
 for the planets sitting with them (side). A node as star lord acts through its sign lord.
 
@@ -134,6 +134,10 @@ def dasha_reasons(planet: str, role: str, pp: dict, asc: int) -> dict[int, list[
                 en = f"{planet}'s star lord {star_lord} acts for its sign lord {acting}, who rules this house"
                 ta = f"{planet} நட்சத்திர அதிபதி {star_lord}, ராசி அதிபதி {acting} வழியாக இந்த வீடு"
             add(h, "side", en, ta)
+        star_seat = _seat(pp, star_lord, asc)
+        if star_seat and star_seat not in out:
+            add(star_seat, "side", f"{planet}'s star lord {star_lord} sits here",
+                f"{planet} நட்சத்திர அதிபதி {star_lord} இங்கு அமர்வு")
     return out
 
 

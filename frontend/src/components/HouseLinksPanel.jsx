@@ -301,6 +301,7 @@ const CODES = [
   ['C', 'lords sit together', 'அதிபதிகள் இணைவு'],
   ['M', 'lords aspect each other', 'பரஸ்பர பார்வை'],
   ['A', 'one lord aspects the other, one way', 'ஒரு பக்க பார்வை'],
+  ['N', "one lord sits in the other lord's star", 'நட்சத்திர (சார) தொடர்பு'],
   ['S', 'one planet rules both', 'ஒரே அதிபதி'],
 ]
 
@@ -358,7 +359,7 @@ function DashaTable({ rows }) {
       </summary>
       <div className="hl-tbl-wrap">
         <p className="hl-tbl-note">
-          Activated: houses the lord rules or sits in. Connected: houses it aspects or reaches through its star lord.
+          Activated: houses the lord rules or sits in. Connected: houses it aspects, and houses its star lord rules or sits in.
           Both: dates when Jupiter and Saturn each touch the house or its lord. Bold is an activated house.
         </p>
         <table className="hl-tbl">

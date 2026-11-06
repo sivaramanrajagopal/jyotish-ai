@@ -7,6 +7,7 @@ Natal codes, one per way two houses are tied through their lords:
   C  the two lords sit together
   M  the two lords aspect each other
   A  one lord aspects the other, one way
+  N  one lord sits in the other lord's star (a node star lord acts through its sign lord)
   S  one planet rules both houses
 
 Dasha "both" windows use the double-transit rule from activation.py, day by day.
@@ -18,13 +19,25 @@ from datetime import date, timedelta
 
 from agents.bhavat_bhavam.core import _lords_linked
 from agents.house_connections.activation import dasha_reasons
+from agents.house_connections.core import nakshatra_lord_for
 from agents.house_connections.edges import exchanges
+from agents.natal_agent import SIGN_LORDS
 from agents.house_connections.upcoming import MAX_YEARS, double_runs, sign_changes, sky_segments
 from agents.nadi_agent import _fmt
 from agents.transit_score_agent import _planet_aspects
 
-CODE_ORDER = "LHXCMAS"
+CODE_ORDER = "LHXCMANS"
 SKY_ORDER = ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
+
+
+def _star_lords(planet: str, pp: dict) -> set[str]:
+    """The planet's star lord; a node star lord acts through its sign lord."""
+    star = nakshatra_lord_for(pp.get(planet) or {})
+    if not star or star == planet:
+        return set()
+    if star in ("Rahu", "Ketu"):
+        return {SIGN_LORDS.get((pp.get(star) or {}).get("sign", ""), "")} - {"", planet}
+    return {star}
 
 
 def natal_table(houses: dict[int, dict], chart: dict) -> list[dict]:
@@ -62,6 +75,9 @@ def natal_table(houses: dict[int, dict], chart: dict) -> list[dict]:
                 code = "M" if one and other else "A"
                 tie(a, b, code)
                 tie(b, a, code)
+            if la in _star_lords(lb, pp) or lb in _star_lords(la, pp):
+                tie(a, b, "N")
+                tie(b, a, "N")
 
     rows = []
     for h in range(1, 13):

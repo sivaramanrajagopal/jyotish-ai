@@ -69,7 +69,9 @@ def test_double_transit_chart_a():
     # Jupiter in Leo (7th) aspects 11, 1, 3; Saturn in Pisces (2nd) aspects 4, 8, 11.
     assert rows[11]["transit"]["double"] and rows[11]["status"]["key"] == "live"
     assert rows[8]["status"]["key"] == "live"
-    assert rows[7]["status"]["key"] == "sky"
+    # The 7th is live through the Moon's star lord Mercury, who sits there.
+    assert rows[7]["status"]["key"] == "live"
+    assert any("star lord Mercury sits here" in r["en"] for r in rows[7]["dasha"]["reasons"])
     assert rows[2]["status"]["key"] == "waiting"
     assert rows[10]["status"]["key"] == "quiet"
 
