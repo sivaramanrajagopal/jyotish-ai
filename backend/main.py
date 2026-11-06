@@ -291,6 +291,10 @@ app.include_router(build_classical_router(_sanitise))
 # Helper: fetch from cache or calculate
 # ─────────────────────────────────────────────
 
+# UTC. Rows calculated before this moment may use the old noon anchor; recompute them.
+PANCHANGAM_CALC_SINCE = "2026-11-07T06:00:00"
+
+
 def _get_panchangam(date_str: str, location: str) -> dict:
     """Check Supabase cache first; compute and store on miss."""
     if location not in LOCATIONS:
@@ -312,7 +316,7 @@ def _get_panchangam(date_str: str, location: str) -> dict:
                 .maybe_single()
                 .execute()
             )
-            if cached and cached.data:
+            if cached and cached.data and str(cached.data.get("calculated_at") or "") >= PANCHANGAM_CALC_SINCE:
                 return cached.data
         except Exception as e:
             print(f"[supabase cache miss] {e}")
@@ -327,7 +331,7 @@ def _get_panchangam(date_str: str, location: str) -> dict:
     if SUPABASE_ENABLED:
         try:
             sb = get_supabase()
-            sb.table("panchangam_daily").upsert(db_row).execute()
+            sb.table("panchangam_daily").upsert(db_row, on_conflict="date,location_name").execute()
         except Exception as e:
             print(f"[supabase write error] {e}")
 

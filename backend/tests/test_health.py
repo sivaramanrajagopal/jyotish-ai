@@ -1,6 +1,6 @@
 """Health D3 analysis tests."""
 
-from agents.health.body_map import body_part_for_d3_house, drekkana_section
+from agents.health.body_map import BODY_PARTS, body_part_for_house, drekkana_section
 from agents.health.d3 import build_drekkana_from_natal, d1_to_d3_sign_index
 from agents.health_agent import compute_health_analysis, health_context_for_narrator
 from agents.natal_agent import calculate_natal_chart
@@ -32,6 +32,8 @@ def test_drekkana_section_boundaries():
     assert drekkana_section(5.0) == "first"
     assert drekkana_section(15.0) == "second"
     assert drekkana_section(25.0) == "third"
+    assert drekkana_section(10.0) == "second"
+    assert drekkana_section(20.0) == "third"
 
 
 def test_d3_sign_decan_rules():
@@ -41,9 +43,48 @@ def test_d3_sign_decan_rules():
 
 
 def test_body_part_mapping_house1():
-    part = body_part_for_d3_house(1, 5.0)
+    part = body_part_for_house(1, 5.0)
     assert part["en"] == "Head"
     assert part["ta"] == "தலை"
+
+
+def test_body_map_follows_classical_order():
+    # Brihat Jataka 5.25, houses 1, 2, 3, 4, 5, 6, 7 per decan (right side for 2–6).
+    def column(section):
+        return [BODY_PARTS[h][section]["en"] for h in range(1, 8)]
+
+    assert column("first") == [
+        "Head", "Right eye", "Right ear", "Right nostril", "Right cheek", "Right jaw", "Mouth",
+    ]
+    assert column("second") == [
+        "Neck", "Right shoulder", "Right arm", "Right flank", "Right heart region",
+        "Right belly", "Navel",
+    ]
+    assert column("third") == [
+        "Bladder / lower pelvis", "Right genitals / anus", "Right testicle", "Right thigh",
+        "Right knee", "Right calf", "Feet",
+    ]
+    # Houses 2–6 are the right side, 8–12 the mirrored left side.
+    for h in range(2, 7):
+        for s in ("first", "second", "third"):
+            right, left = BODY_PARTS[h][s]["en"], BODY_PARTS[14 - h][s]["en"]
+            assert right.startswith("Right") and left == right.replace("Right", "Left")
+
+
+def test_lagna_body_uses_lagna_decan():
+    chart = _chart()
+    deg = float(chart["ascendant"]["degree_in_sign"])
+    expected = {"first": "Head", "second": "Neck", "third": "Bladder / lower pelvis"}[drekkana_section(deg)]
+    assert compute_health_analysis(chart)["summary"]["lagna_body_en"] == expected
+
+
+def test_rising_decan_sets_section_for_every_house():
+    chart = _chart()
+    out = compute_health_analysis(chart)
+    lagna_section = drekkana_section(float(chart["ascendant"]["degree_in_sign"]))
+    assert {r["drekkana_section"] for r in out["planet_rows"]} == {lagna_section}
+    for row in out["planet_rows"]:
+        assert row["body_part_en"] == BODY_PARTS[row["d1_house"]][lagna_section]["en"]
 
 
 def test_drekkana_positions_shape():

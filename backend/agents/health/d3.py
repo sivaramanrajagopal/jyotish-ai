@@ -30,7 +30,7 @@ def d3_degree_in_sign(degree_in_sign: float) -> float:
         offset = d - 10.0
     else:
         offset = d - 20.0
-    return max(0.0, min(30.0, offset * 3.0))
+    return max(0.0, min(29.9999, offset * 3.0))
 
 
 def build_drekkana_from_natal(natal_chart: dict) -> tuple[dict, dict]:

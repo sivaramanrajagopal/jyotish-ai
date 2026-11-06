@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from agents.health.body_map import body_part_for_d3_house, drekkana_section_label
+from agents.health.body_map import body_part_for_house, drekkana_section_label
 from agents.natal_agent import SIGN_LORDS, SIGNS
 
 PLANETS = [
@@ -45,6 +45,7 @@ def _risk_label(score: float) -> str:
 def build_planet_rows(
     *,
     d1_asc_idx: int,
+    d1_asc_deg: float,
     d1_positions: dict,
     d3_asc_idx: int,
     d3_positions: dict,
@@ -57,10 +58,11 @@ def build_planet_rows(
         d3p = d3_positions[planet]
         d1_deg = float(d1p.get("degree_in_sign", 0))
         d3_house = int(d3p.get("house", 0))
-        body = body_part_for_d3_house(d3_house, d1_deg)
+        d1_house = int(d1p.get("house") or _whole_sign_house(d1p.get("sign_index", 0), d1_asc_idx))
+        body = body_part_for_house(d1_house, d1_asc_deg)
         rows.append({
             "planet": planet,
-            "d1_house": int(d1p.get("house", 0)),
+            "d1_house": d1_house,
             "d3_house": d3_house,
             "d1_degree_in_sign": round(d1_deg, 2),
             "drekkana_section": body["section"],
@@ -72,7 +74,7 @@ def build_planet_rows(
             "retrograde": bool(d1p.get("retrograde")),
             "malefic": planet in MALEFICS,
             "health_house_d3": d3_house in HEALTH_HOUSES,
-            "health_house_d1": int(d1p.get("house", 0)) in HEALTH_HOUSES,
+            "health_house_d1": d1_house in HEALTH_HOUSES,
         })
     return rows
 
@@ -132,6 +134,7 @@ def apply_transit_scores(
     d3_positions: dict,
     d3_asc_idx: int,
     d1_asc_idx: int,
+    d1_asc_deg: float,
 ) -> list[dict]:
     """Transit factors with D1 + D3 house context and Tamil labels."""
     items: list[dict] = []
@@ -147,10 +150,9 @@ def apply_transit_scores(
         sign = tdata.get("sign", "")
         sign_ta = SIGN_TA.get(sign, sign)
         sign_idx = int(tdata["sign_index"])
-        deg = float(tdata.get("degree_in_sign", 0))
         house_d1 = _whole_sign_house(sign_idx, d1_asc_idx)
         house_d3 = _whole_sign_house(sign_idx, d3_asc_idx)
-        body = body_part_for_d3_house(house_d3, deg)
+        body = body_part_for_house(house_d1, d1_asc_deg)
 
         if house_d3 in HEALTH_HOUSES:
             boost = 2.5 if tplanet == "Saturn" else 2.0
@@ -222,6 +224,7 @@ def build_transit_today(
     transit_positions: dict,
     *,
     d1_asc_idx: int,
+    d1_asc_deg: float,
     d3_asc_idx: int,
 ) -> list[dict]:
     """Full sky snapshot for today with D1/D3 houses."""
@@ -235,7 +238,7 @@ def build_transit_today(
         deg = float(tdata.get("degree_in_sign", 0))
         house_d1 = _whole_sign_house(sign_idx, d1_asc_idx)
         house_d3 = _whole_sign_house(sign_idx, d3_asc_idx)
-        body = body_part_for_d3_house(house_d3, deg)
+        body = body_part_for_house(house_d1, d1_asc_deg)
         sensitive = house_d1 in HEALTH_HOUSES or house_d3 in HEALTH_HOUSES
         out.append({
             "planet": planet,

@@ -1,13 +1,13 @@
-"""D3 house → body part mapping (from d3-calculator / Tamil drekkana tradition)."""
+"""Drekkana body map: house from the D1 lagna + rising decan → Kalapurusha limb."""
 
 from __future__ import annotations
 
-# Drekkana section from degree in sign (0–30)
+# Drekkana section from degree in sign (0–30); 10° and 20° open the next decan.
 def drekkana_section(degree_in_sign: float) -> str:
     d = float(degree_in_sign) % 30.0
-    if d <= 10.0:
+    if d < 10.0:
         return "first"
-    if d <= 20.0:
+    if d < 20.0:
         return "second"
     return "third"
 
@@ -26,67 +26,72 @@ def drekkana_section_label(section: str, lang: str = "en") -> str:
     }.get(section, "")
 
 
-# Kalapurusha: D3 house N → rasi N body parts (1=Aries … 12=Pisces)
+# Kalapurusha limbs by house from the D1 lagna (Brihat Jataka 5.25):
+#   1st decan: head, eyes, ears, nose, cheeks, jaws, mouth
+#   2nd decan: neck, shoulders, arms, sides, heart, kroda (belly), navel
+#   3rd decan: basti, genitals/anus, testicles, thighs, knees, calves, feet
+# for houses 1, 2/12, 3/11, 4/10, 5/9, 6/8, 7. The decan rising at the lagna
+# picks the column for every house. Houses 2–6 are the right side, 8–12 the left.
 BODY_PARTS: dict[int, dict[str, dict[str, str]]] = {
     1: {
         "first": {"ta": "தலை", "en": "Head"},
-        "second": {"ta": "இடது மார்பு", "en": "Left chest"},
-        "third": {"ta": "வலது முழங்கால்", "en": "Right knee"},
+        "second": {"ta": "கழுத்து", "en": "Neck"},
+        "third": {"ta": "சிறுநீர்ப்பை / அடிவயிறு", "en": "Bladder / lower pelvis"},
     },
     2: {
         "first": {"ta": "வலது கண்", "en": "Right eye"},
-        "second": {"ta": "இடது விலா", "en": "Left ribs"},
-        "third": {"ta": "வலது கண்ணுக்கால", "en": "Right ankle"},
+        "second": {"ta": "வலது தோள்பட்டை", "en": "Right shoulder"},
+        "third": {"ta": "வலது பிறப்புறுப்பு / ஆசனவாய்", "en": "Right genitals / anus"},
     },
     3: {
         "first": {"ta": "வலது காது", "en": "Right ear"},
-        "second": {"ta": "இடது கை", "en": "Left hand"},
-        "third": {"ta": "பாதம்", "en": "Feet"},
+        "second": {"ta": "வலது புஜம்", "en": "Right arm"},
+        "third": {"ta": "வலது விரை", "en": "Right testicle"},
     },
     4: {
         "first": {"ta": "வலது நாசி", "en": "Right nostril"},
-        "second": {"ta": "இடது தோள்ப்பட்டை", "en": "Left shoulder"},
-        "third": {"ta": "இடது கண்ணுக்கால", "en": "Left ankle"},
+        "second": {"ta": "வலது விலாப்புறம்", "en": "Right flank"},
+        "third": {"ta": "வலது தொடை", "en": "Right thigh"},
     },
     5: {
         "first": {"ta": "வலது கன்னம்", "en": "Right cheek"},
-        "second": {"ta": "கழுத்து", "en": "Neck"},
-        "third": {"ta": "இடது முழங்கால்", "en": "Left knee"},
+        "second": {"ta": "வலது இதயப் பகுதி", "en": "Right heart region"},
+        "third": {"ta": "வலது முழங்கால்", "en": "Right knee"},
     },
     6: {
         "first": {"ta": "வலது தாடை", "en": "Right jaw"},
-        "second": {"ta": "வலது தோள்பட்டை", "en": "Right shoulder"},
-        "third": {"ta": "இடது தொடை", "en": "Left thigh"},
+        "second": {"ta": "வலது பக்க வயிறு", "en": "Right belly"},
+        "third": {"ta": "வலது கெண்டைக்கால்", "en": "Right calf"},
     },
     7: {
-        "first": {"ta": "முகம்", "en": "Face"},
-        "second": {"ta": "வலது கை", "en": "Right hand"},
-        "third": {"ta": "இடது விறைப்பை", "en": "Left spleen"},
+        "first": {"ta": "வாய்", "en": "Mouth"},
+        "second": {"ta": "தொப்புள்", "en": "Navel"},
+        "third": {"ta": "பாதம்", "en": "Feet"},
     },
     8: {
         "first": {"ta": "இடது தாடை", "en": "Left jaw"},
-        "second": {"ta": "வலது விலா", "en": "Right ribs"},
-        "third": {"ta": "இடது பக்க இனப்பெருக்க உறுப்பு", "en": "Left reproductive area"},
+        "second": {"ta": "இடது பக்க வயிறு", "en": "Left belly"},
+        "third": {"ta": "இடது கெண்டைக்கால்", "en": "Left calf"},
     },
     9: {
         "first": {"ta": "இடது கன்னம்", "en": "Left cheek"},
-        "second": {"ta": "வலது மார்பு", "en": "Right chest"},
-        "third": {"ta": "இனப்பெருக்க உறுப்பு மேல் பகுதி", "en": "Upper reproductive area"},
+        "second": {"ta": "இடது இதயப் பகுதி", "en": "Left heart region"},
+        "third": {"ta": "இடது முழங்கால்", "en": "Left knee"},
     },
     10: {
         "first": {"ta": "இடது நாசி", "en": "Left nostril"},
-        "second": {"ta": "வலது பக்க வயிறு", "en": "Right abdomen"},
-        "third": {"ta": "வலது பக்க இனப்பெருக்க உறுப்பு", "en": "Right reproductive area"},
+        "second": {"ta": "இடது விலாப்புறம்", "en": "Left flank"},
+        "third": {"ta": "இடது தொடை", "en": "Left thigh"},
     },
     11: {
         "first": {"ta": "இடது காது", "en": "Left ear"},
-        "second": {"ta": "தொப்புள்", "en": "Navel / abdomen centre"},
-        "third": {"ta": "வலது விரைப்பை", "en": "Right spleen"},
+        "second": {"ta": "இடது புஜம்", "en": "Left arm"},
+        "third": {"ta": "இடது விரை", "en": "Left testicle"},
     },
     12: {
         "first": {"ta": "இடது கண்", "en": "Left eye"},
-        "second": {"ta": "இடது பக்க வயிறு", "en": "Left abdomen"},
-        "third": {"ta": "வலது தொடை", "en": "Right thigh"},
+        "second": {"ta": "இடது தோள்பட்டை", "en": "Left shoulder"},
+        "third": {"ta": "இடது பிறப்புறுப்பு / ஆசனவாய்", "en": "Left genitals / anus"},
     },
 }
 
@@ -95,7 +100,7 @@ BODY_PART_ZONE: dict[str, str] = {
     "Head": "head",
     "Right eye": "head",
     "Left eye": "head",
-    "Face": "head",
+    "Mouth": "head",
     "Right cheek": "head",
     "Left cheek": "head",
     "Right jaw": "head",
@@ -105,36 +110,36 @@ BODY_PART_ZONE: dict[str, str] = {
     "Right nostril": "head",
     "Left nostril": "head",
     "Neck": "neck",
-    "Left chest": "chest",
-    "Right chest": "chest",
-    "Left ribs": "torso",
-    "Right ribs": "torso",
+    "Left heart region": "chest",
+    "Right heart region": "chest",
+    "Left flank": "torso",
+    "Right flank": "torso",
     "Left shoulder": "arms",
     "Right shoulder": "arms",
-    "Left hand": "arms",
-    "Right hand": "arms",
-    "Right abdomen": "abdomen",
-    "Left abdomen": "abdomen",
-    "Navel / abdomen centre": "abdomen",
-    "Left spleen": "abdomen",
-    "Right spleen": "abdomen",
+    "Left arm": "arms",
+    "Right arm": "arms",
+    "Right belly": "abdomen",
+    "Left belly": "abdomen",
+    "Navel": "abdomen",
+    "Bladder / lower pelvis": "pelvis",
+    "Left genitals / anus": "pelvis",
+    "Right genitals / anus": "pelvis",
+    "Left testicle": "pelvis",
+    "Right testicle": "pelvis",
     "Left thigh": "legs",
     "Right thigh": "legs",
     "Left knee": "legs",
     "Right knee": "legs",
-    "Left ankle": "legs",
-    "Right ankle": "legs",
+    "Left calf": "legs",
+    "Right calf": "legs",
     "Feet": "legs",
-    "Left reproductive area": "pelvis",
-    "Right reproductive area": "pelvis",
-    "Upper reproductive area": "pelvis",
 }
 
 
-def body_part_for_d3_house(d3_house: int, degree_in_sign: float) -> dict[str, str]:
-    """Map D3 whole-sign house + D1 degree drekkana slice → body part labels."""
-    house = ((int(d3_house) - 1) % 12) + 1
-    section = drekkana_section(degree_in_sign)
+def body_part_for_house(house_from_lagna: int, lagna_degree_in_sign: float) -> dict[str, str]:
+    """Body part from the D1 house (from lagna) in the section set by the rising decan."""
+    house = ((int(house_from_lagna) - 1) % 12) + 1
+    section = drekkana_section(lagna_degree_in_sign)
     part = BODY_PARTS.get(house, {}).get(section, {"ta": "—", "en": "—"})
     zone = BODY_PART_ZONE.get(part["en"], "torso")
     return {
@@ -142,5 +147,5 @@ def body_part_for_d3_house(d3_house: int, degree_in_sign: float) -> dict[str, st
         "en": part["en"],
         "zone": zone,
         "section": section,
-        "d3_house_for_map": house,
+        "house_for_map": house,
     }

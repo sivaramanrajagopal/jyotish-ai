@@ -8,7 +8,7 @@ import datetime
 from time_utils import today_ist
 
 from agents.bhavat_bhavam.slices import compute_health_bhavat_bhavam
-from agents.health.body_map import body_part_for_d3_house
+from agents.health.body_map import body_part_for_house
 from agents.health.d3 import build_drekkana_from_natal
 from agents.health.warnings import (
     apply_dasa_scores,
@@ -61,10 +61,11 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     d3_asc_idx = d3_asc.get("sign_index", 0)
 
     asc_deg = float(asc.get("degree_in_sign", 0))
-    lagna_body = body_part_for_d3_house(1, asc_deg)
+    lagna_body = body_part_for_house(1, asc_deg)
 
     rows = build_planet_rows(
         d1_asc_idx=d1_asc_idx,
+        d1_asc_deg=asc_deg,
         d1_positions=pp,
         d3_asc_idx=d3_asc_idx,
         d3_positions=d3_pos,
@@ -92,6 +93,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         d3_positions=d3_pos,
         d3_asc_idx=d3_asc_idx,
         d1_asc_idx=d1_asc_idx,
+        d1_asc_deg=asc_deg,
     )
 
     body_regions = build_body_regions(zone_scores)
@@ -112,6 +114,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     transit_today = build_transit_today(
         transit_pp,
         d1_asc_idx=d1_asc_idx,
+        d1_asc_deg=asc_deg,
         d3_asc_idx=d3_asc_idx,
     )
 

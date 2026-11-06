@@ -150,7 +150,7 @@ D3 body-part map (Parasara drekkana decans), awareness factors from D3 houses 6/
 ```
 backend/agents/health_agent.py
 backend/agents/health/d3.py              # D1 degree → D3 sign (decans)
-backend/agents/health/body_map.py      # D3 house + decan → body part EN/TA
+backend/agents/health/body_map.py      # D1 house from lagna + rising decan → body part EN/TA (Brihat Jataka 5.25)
 backend/agents/health/warnings.py      # scoring, factor_groups, transit_today
 frontend/src/components/HealthPanel.jsx
 frontend/src/components/BodyMapSvg.jsx
@@ -220,7 +220,7 @@ Rate: 30/min
 |---------|--------|
 | Factors show (0) | Backend not deployed; API missing `factor_groups` (pre-7ecfd53) |
 | Empty transits | Missing lat/lon in `birth_data` |
-| Red head vs “Right knee” lagna | Lagna body = D3 sign mapping; red zone = scored region — see `rationale_en` |
+| Lagna body differs from red zone | Lagna body = house 1 in the rising decan's section; red zone = scored region — see `rationale_en` |
 | `duplicate key` in Render logs | `ashtama_agent` upsert — fixed with `on_conflict=user_id,date` |
 
 ---

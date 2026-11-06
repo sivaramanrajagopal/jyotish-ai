@@ -91,7 +91,7 @@ def process_one(date_str: str, location: str, dry_run: bool) -> dict:
         if not dry_run and SUPABASE_ENABLED:
             db_row = {k: v for k, v in result.items() if k not in DB_EXCLUDE}
             sb = get_supabase()
-            sb.table("panchangam_daily").upsert(db_row).execute()
+            sb.table("panchangam_daily").upsert(db_row, on_conflict="date,location_name").execute()
 
         return {"date": date_str, "location": location, "status": "ok"}
     except Exception as e:

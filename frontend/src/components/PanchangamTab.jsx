@@ -49,23 +49,29 @@ const S = {
 
 // ── Utility formatters ────────────────────────────────────────────────────────
 
-function fmtTime(iso) {
+function fmtTime(iso, timeZone = 'Asia/Kolkata') {
   if (!iso) return '—'
   try {
     return new Date(iso).toLocaleTimeString('en-IN', {
-      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+      hour: '2-digit', minute: '2-digit', hour12: true, timeZone,
     })
   } catch { return iso }
 }
 
-function fmtDate(iso) {
+function fmtDate(iso, timeZone = 'Asia/Kolkata') {
   if (!iso) return '—'
   try {
     return new Date(iso).toLocaleString('en-IN', {
       day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-      hour12: true, timeZone: 'Asia/Kolkata',
+      hour12: true, timeZone,
     })
   } catch { return iso }
+}
+
+/** The next tithi is kshaya when it begins and ends before the next sunrise (about 24 h on). */
+function nextTithiIsKshaya(data) {
+  if (!data?.next_tithi_end || !data?.sunrise) return false
+  return new Date(data.next_tithi_end) - new Date(data.sunrise) < 24 * 60 * 60 * 1000
 }
 
 function isNow(startIso, endIso) {
@@ -83,15 +89,17 @@ function SectionLabel({ children }) {
 }
 
 function PanchangamLimbs({ data }) {
+  const tz          = data.timezone || 'Asia/Kolkata'
   const special     = SPECIAL_TITHIS[data.tithi_name]
   const specialNext = !special ? SPECIAL_TITHIS[data.next_tithi_name] : null
+  const kshaya      = nextTithiIsKshaya(data)
 
   return (
     <div className="space-y-3">
       {/* Sunrise / Sunset */}
       <div className="flex justify-between text-xs px-1" style={S.sub}>
-        <span>☀ Sunrise: {fmtTime(data.sunrise)}</span>
-        <span>🌆 Sunset: {fmtTime(data.sunset)}</span>
+        <span>☀ Sunrise: {fmtTime(data.sunrise, tz)}</span>
+        <span>🌆 Sunset: {fmtTime(data.sunset, tz)}</span>
       </div>
 
       {/* Purnima / Amavasya banner */}
@@ -105,9 +113,14 @@ function PanchangamLimbs({ data }) {
         <div className="rounded-xl px-4 py-2 flex items-center justify-between" style={specialNext.style}>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold">{specialNext.label}</span>
-            <span className="text-xs" style={S.sub}>begins after {fmtTime(data.tithi_end_time)}</span>
+            <span className="text-xs" style={S.sub}>begins after {fmtTime(data.tithi_end_time, tz)}</span>
           </div>
-          <span className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Kshaya Tithi</span>
+          {kshaya && <span className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Kshaya Tithi</span>}
+        </div>
+      )}
+      {kshaya && !specialNext && (
+        <div className="text-xs px-1" style={S.sub}>
+          Kshaya tithi: {data.next_tithi_name} begins and ends before the next sunrise.
         </div>
       )}
 
@@ -128,7 +141,7 @@ function PanchangamLimbs({ data }) {
             {data.tithi_paksha} {data.tithi_name}
           </div>
           <div className="text-xs mt-0.5" style={S.sub}>
-            Ends {fmtDate(data.tithi_end_time)}
+            Ends {fmtDate(data.tithi_end_time, tz)}
             {data.next_tithi_name && ` → ${data.next_tithi_name}`}
           </div>
         </div>
@@ -141,7 +154,7 @@ function PanchangamLimbs({ data }) {
             <span style={S.sub}>P{data.nakshatra_pada}</span>
           </div>
           <div className="text-xs mt-0.5" style={S.sub}>
-            Lord: {data.nakshatra_lord} · Ends {fmtDate(data.nakshatra_end_time)}
+            Lord: {data.nakshatra_lord} · Ends {fmtDate(data.nakshatra_end_time, tz)}
           </div>
         </div>
 
@@ -149,9 +162,10 @@ function PanchangamLimbs({ data }) {
         <div>
           <SectionLabel>Yogam</SectionLabel>
           <div className="font-semibold text-sm" style={S.value}>{data.yogam_name}</div>
-          {data.next_yogam_name && (
-            <div className="text-xs mt-0.5" style={S.sub}>Next: {data.next_yogam_name}</div>
-          )}
+          <div className="text-xs mt-0.5" style={S.sub}>
+            Ends {fmtDate(data.yogam_end_time, tz)}
+            {data.next_yogam_name && ` → ${data.next_yogam_name}`}
+          </div>
         </div>
 
         {/* Karanam */}
@@ -159,7 +173,7 @@ function PanchangamLimbs({ data }) {
           <SectionLabel>Karanam</SectionLabel>
           <div className="font-semibold text-sm" style={S.value}>{data.karanam_name}</div>
           <div className="text-xs mt-0.5" style={S.sub}>
-            Ends {fmtDate(data.karanam_end_time)}
+            Ends {fmtDate(data.karanam_end_time, tz)}
             {data.next_karanam_name && ` → ${data.next_karanam_name}`}
           </div>
         </div>
@@ -188,7 +202,7 @@ function PanchangamLimbs({ data }) {
                   </span>
                 </div>
                 <span className="text-xs tabular-nums" style={S.sub}>
-                  {fmtTime(data[start])} – {fmtTime(data[end])}
+                  {fmtTime(data[start], tz)} – {fmtTime(data[end], tz)}
                 </span>
               </div>
             )
@@ -358,8 +372,8 @@ function DesktopLine({ panch }) {
   const rahuStart = panch.rahu_kalam_start ? new Date(panch.rahu_kalam_start) : null
   const rahuOpen = rahuStart && rahuEnd && now >= rahuStart && now <= rahuEnd
   const rahuLabel = rahuOpen
-    ? `Rahu until ${fmtTime(panch.rahu_kalam_end)}`
-    : `Rahu ${fmtTime(panch.rahu_kalam_start)}–${fmtTime(panch.rahu_kalam_end)}`
+    ? `Rahu until ${fmtTime(panch.rahu_kalam_end, zone)}`
+    : `Rahu ${fmtTime(panch.rahu_kalam_start, zone)}–${fmtTime(panch.rahu_kalam_end, zone)}`
 
   return (
     <div className="rounded-xl mb-4 px-3 py-3" style={S.card}>

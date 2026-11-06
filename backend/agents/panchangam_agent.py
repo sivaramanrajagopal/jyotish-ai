@@ -159,11 +159,17 @@ def _binary_search_end(
     """
     Find the JD when value_fn(jd) / arc_size changes from current_index
     to current_index + 1.  Returns None if change not found within limit.
+
+    Moon, Moon−Sun and Moon+Sun only move forward and cover far less than 360°
+    in the search window, so progress is measured as the forward arc from the
+    start value. That stays correct across the 360°→0° wrap (Amavasya, Revati,
+    Vaidhriti, Naga).
     """
-    target = (current_index + 1) * arc_size   # degrees at boundary
+    start_val = value_fn(jd_start)
+    remaining = ((current_index + 1) * arc_size - start_val) % 360
 
     def exceeds(jd: float) -> bool:
-        return value_fn(jd) >= target
+        return (value_fn(jd) - start_val) % 360 >= remaining
 
     # Quick check: does it change at all before limit?
     if not exceeds(jd_end_limit):
@@ -281,21 +287,20 @@ def calculate_panchangam(date_str: str, location: str) -> dict:
     lat    = loc["lat"]
     lon    = loc["lon"]
 
-    # Parse date, get local noon as anchor
     d = date.fromisoformat(date_str)
     local_noon  = datetime(d.year, d.month, d.day, 12, 0, 0, tzinfo=tz)
     jd_noon     = _to_jd(local_noon)
 
-    # Limit binary searches to end of local day
-    local_eod   = datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=tz)
-    jd_eod      = _to_jd(local_eod)
-
-    # Start of day JD (midnight local)
-    local_sod   = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=tz)
-    jd_sod      = _to_jd(local_sod)
-
     # ── Sunrise / Sunset ──────────────────────────────────────
     sunrise, sunset = _get_sunrise_sunset(jd_noon, lat, lon, tz)
+
+    # The Hindu day runs sunrise to sunrise: each limb is the one prevailing at
+    # sunrise, and its end is searched until the next sunrise (a limb that ends
+    # after midnight still belongs to this day). Without a sunrise, use 06:00.
+    anchor_dt   = sunrise or datetime(d.year, d.month, d.day, 6, 0, 0, tzinfo=tz)
+    jd_sod      = _to_jd(anchor_dt)
+    # A limb can outlast the next sunrise (vriddhi); look far enough to find its end.
+    jd_end_cap  = jd_sod + 1.6
 
     # ── Vaaram ───────────────────────────────────────────────
     weekday = d.weekday()  # Mon=0 … Sun=6
@@ -303,84 +308,78 @@ def calculate_panchangam(date_str: str, location: str) -> dict:
     vaaram_lord  = VAARAM_LORDS[weekday]
 
     # ── Tithi ────────────────────────────────────────────────
-    diff_noon = _moon_sun_diff(jd_noon)
-    tithi_raw  = int(diff_noon / 12)       # 0–29
+    diff_rise = _moon_sun_diff(jd_sod)
+    tithi_raw  = int(diff_rise / 12)       # 0–29
     tithi_idx  = tithi_raw                  # 0-based
     tithi_name = TITHIS[tithi_idx]
     tithi_paksha = "Shukla" if tithi_idx < 15 else "Krishna"
     tithi_1based = (tithi_idx % 15) + 1    # 1–15
 
     tithi_end_jd = _binary_search_end(
-        _moon_sun_diff, tithi_idx, 12.0, jd_sod, jd_eod
+        _moon_sun_diff, tithi_idx, 12.0, jd_sod, jd_end_cap
     )
     tithi_end_dt  = _from_jd(tithi_end_jd, tz) if tithi_end_jd else None
     next_tithi_idx = (tithi_idx + 1) % 30
     next_tithi_name = TITHIS[next_tithi_idx]
 
-    # Next tithi's end (look 36 hours ahead)
-    jd_36h = jd_sod + 1.5
     next_tithi_end_jd = _binary_search_end(
-        _moon_sun_diff, next_tithi_idx, 12.0,
-        tithi_end_jd if tithi_end_jd else jd_eod, jd_36h
+        _moon_sun_diff, next_tithi_idx, 12.0, tithi_end_jd, tithi_end_jd + 1.3
     ) if tithi_end_jd else None
     next_tithi_end_dt = _from_jd(next_tithi_end_jd, tz) if next_tithi_end_jd else None
 
     # ── Nakshatra ────────────────────────────────────────────
-    moon_noon   = _moon_lon(jd_noon)
-    naks_raw    = moon_noon / (360 / 27)   # 0.0 – 26.999
+    moon_rise   = _moon_lon(jd_sod)
+    naks_raw    = moon_rise / (360 / 27)   # 0.0 – 26.999
     naks_idx    = int(naks_raw)             # 0-based (0=Ashwini)
     naks_name   = NAKSHATRAS[naks_idx]
     naks_lord   = NAKSHATRA_LORDS[naks_idx]
     naks_pada   = int((naks_raw - naks_idx) * 4) + 1  # 1–4
 
     naks_end_jd = _binary_search_end(
-        _moon_lon, naks_idx, 360 / 27, jd_sod, jd_eod
+        _moon_lon, naks_idx, 360 / 27, jd_sod, jd_end_cap
     )
     naks_end_dt  = _from_jd(naks_end_jd, tz) if naks_end_jd else None
     next_naks_idx  = (naks_idx + 1) % 27
     next_naks_name = NAKSHATRAS[next_naks_idx]
 
     next_naks_end_jd = _binary_search_end(
-        _moon_lon, next_naks_idx, 360 / 27,
-        naks_end_jd if naks_end_jd else jd_eod, jd_eod + 1.0
+        _moon_lon, next_naks_idx, 360 / 27, naks_end_jd, naks_end_jd + 1.3
     ) if naks_end_jd else None
     next_naks_end_dt = _from_jd(next_naks_end_jd, tz) if next_naks_end_jd else None
 
     # ── Yogam ────────────────────────────────────────────────
-    sum_noon  = _moon_sun_sum(jd_noon)
-    yoga_raw  = sum_noon / (360 / 27)
+    sum_rise  = _moon_sun_sum(jd_sod)
+    yoga_raw  = sum_rise / (360 / 27)
     yoga_idx  = int(yoga_raw)   # 0-based
     yoga_name = YOGAS[yoga_idx]
 
     yoga_end_jd = _binary_search_end(
-        _moon_sun_sum, yoga_idx, 360 / 27, jd_sod, jd_eod
+        _moon_sun_sum, yoga_idx, 360 / 27, jd_sod, jd_end_cap
     )
     yoga_end_dt  = _from_jd(yoga_end_jd, tz) if yoga_end_jd else None
     next_yoga_idx  = (yoga_idx + 1) % 27
     next_yoga_name = YOGAS[next_yoga_idx]
 
     next_yoga_end_jd = _binary_search_end(
-        _moon_sun_sum, next_yoga_idx, 360 / 27,
-        yoga_end_jd if yoga_end_jd else jd_eod, jd_eod + 1.0
+        _moon_sun_sum, next_yoga_idx, 360 / 27, yoga_end_jd, yoga_end_jd + 1.3
     ) if yoga_end_jd else None
     next_yoga_end_dt = _from_jd(next_yoga_end_jd, tz) if next_yoga_end_jd else None
 
     # ── Karanam ──────────────────────────────────────────────
     # Each karanam = 6° of Moon-Sun diff → half a tithi
-    karan_raw_f = diff_noon / 6          # float position in month (0–59.9)
+    karan_raw_f = diff_rise / 6          # float position in month (0–59.9)
     karan_raw   = int(karan_raw_f)        # 0-based raw index
     karan_1based, karan_name = _karanam_index_and_name(karan_raw)
 
     karan_end_jd = _binary_search_end(
-        _moon_sun_diff, karan_raw, 6.0, jd_sod, jd_eod
+        _moon_sun_diff, karan_raw, 6.0, jd_sod, jd_end_cap
     )
     karan_end_dt  = _from_jd(karan_end_jd, tz) if karan_end_jd else None
     next_karan_raw = karan_raw + 1
     next_karan_1based, next_karan_name = _karanam_index_and_name(next_karan_raw % 60)
 
     next_karan_end_jd = _binary_search_end(
-        _moon_sun_diff, next_karan_raw % 60, 6.0,
-        karan_end_jd if karan_end_jd else jd_eod, jd_eod + 1.0
+        _moon_sun_diff, next_karan_raw % 60, 6.0, karan_end_jd, karan_end_jd + 1.0
     ) if karan_end_jd else None
     next_karan_end_dt = _from_jd(next_karan_end_jd, tz) if next_karan_end_jd else None
 
