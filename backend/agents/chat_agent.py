@@ -33,7 +33,7 @@ from agents.health_agent import health_context_for_narrator
 from agents.dosha_radar_agent import dosha_radar_context_for_narrator
 from agents.house_connections_agent import house_connections_context_for_narrator
 from agents.bhavat_bhavam_agent import bhavat_bhavam_context_for_narrator
-from agents.prediction_simulator import life_cycle_context_for_narrator
+from agents.life_cycle import life_cycle_context_for_narrator
 from dasha_core import (
     format_bhukti_table,
     format_full_dasha_cycle_markdown,
@@ -437,7 +437,7 @@ def _build_gochara_block(natal_chart: dict, dasha: dict, user_message: str = "")
     except Exception:
         house_ctx = ""
 
-    # Life Cycle is ~1.2s to compute, so gate it to timing-related questions only.
+    # The Life Cycle block is long, so attach it only for timing-related questions.
     life_cycle_ctx = ""
     if _wants_life_cycle(user_message):
         try:

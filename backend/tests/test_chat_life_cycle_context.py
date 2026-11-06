@@ -25,8 +25,8 @@ def test_life_cycle_block_attached_for_timing_question():
     chart = _golden_chart()
     block = _build_gochara_block(chart, {}, user_message="best period in the next 5 years?")
     assert _HEADER in block
-    assert "Strongest activation windows" in block
-    assert "Event themes" in block
+    assert "Themes (status now" in block
+    assert "Saturn from the Moon:" in block
     # Anti-hallucination guard-rail must be present in the grounded block.
     assert "never invent timing" in block.lower()
 

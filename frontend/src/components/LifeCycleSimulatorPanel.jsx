@@ -1,608 +1,335 @@
 /**
- * LifeCycleSimulatorPanel — Phase 2 Parasara timeline:
- * event themes, D9 overlay, rule + optional AI narration, mobile-first layout.
+ * LifeCycleSimulatorPanel — the next ten years theme by theme, on the House Links rules:
+ * dasha switches a house on, Jupiter + Saturn make it live, Saturn is also read from the Moon.
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import api from '../api/client'
 import { chartFingerprint, chartPayload } from '../lib/chartPayload'
-import SouthIndianChart from './SouthIndianChart'
 
 const SIM_TIMEOUT_MS = 90_000
-
-const RAG_CLASS = {
-  strong: 'lcs-rag--strong',
-  moderate: 'lcs-rag--moderate',
-  weak: 'lcs-rag--weak',
-}
-
-const VERDICT_CLASS = {
-  highly_active: 'lcs-verdict--high',
-  active: 'lcs-verdict--active',
-  moderate: 'lcs-verdict--mod',
-  quiet: 'lcs-verdict--quiet',
-}
-
-const VERDICT_LABEL = {
-  highly_active: 'Highly active',
-  active: 'Active',
-  moderate: 'Moderate',
-  quiet: 'Quiet',
-}
+const MARRIED_KEY = 'lc-married:'
 
 const THEME_ICONS = {
-  marriage: '💍',
   career: '💼',
-  health: '🏥',
+  wealth: '💰',
+  marriage: '💍',
+  children: '👶',
   property: '🏠',
+  health: '🏥',
   foreign: '✈️',
   education: '📚',
 }
 
-const PLANET_COLOURS = {
-  Sun: '#E47911', Moon: '#5B8DD9', Mars: '#D13212', Mercury: '#27ae60',
-  Jupiter: '#8B6914', Venus: '#C471D4', Saturn: '#667788', Rahu: '#555555',
+function Badge({ status }) {
+  if (!status) return null
+  return <span className={`hl-badge hl-badge--${status.key}`}>{status.en}</span>
 }
 
-function formatRange(start, end) {
-  if (!start || !end) return '—'
-  const s = new Date(start + 'T12:00:00')
-  const e = new Date(end + 'T12:00:00')
-  const opts = { month: 'short', year: 'numeric' }
-  return `${s.toLocaleDateString('en-IN', opts)} – ${e.toLocaleDateString('en-IN', opts)}`
-}
-
-function DasaTimelineBar({ segments, selected, onSelect }) {
-  if (!segments?.length) return null
-  const startMs = new Date(segments[0].start + 'T12:00:00').getTime()
-  const endMs = new Date(segments[segments.length - 1].end + 'T12:00:00').getTime()
-  const total = endMs - startMs || 1
-
+function FruitLine({ fruit }) {
   return (
-    <div className="lcs-timeline" role="list" aria-label="Vimshottari timeline">
-      {segments.map(seg => {
-        const s = new Date(seg.start + 'T12:00:00').getTime()
-        const e = new Date(seg.end + 'T12:00:00').getTime()
-        const left = ((s - startMs) / total) * 100
-        const width = Math.max(((e - s) / total) * 100, 1.5)
-        const key = `${seg.mahadasha}-${seg.antardasha}-${seg.start}`
-        const isSel = selected?.start === seg.start && selected?.antardasha === seg.antardasha
-        const col = PLANET_COLOURS[seg.antardasha] || '#888'
-        return (
-          <button
-            key={key}
-            type="button"
-            role="listitem"
-            className={`lcs-timeline__seg${isSel ? ' lcs-timeline__seg--sel' : ''}${seg.is_current ? ' lcs-timeline__seg--current' : ''}`}
-            style={{ left: `${left}%`, width: `${width}%`, background: col }}
-            title={`${seg.mahadasha} MD / ${seg.antardasha} AD`}
-            onClick={() => onSelect(seg)}
-          >
-            <span className="lcs-timeline__seg-label">{seg.antardasha}</span>
-          </button>
-        )
-      })}
-    </div>
+    <li>
+      <span className={`hl-badge hl-badge--fruit-${fruit.tone}`}>{fruit.ordinal}</span>{' '}
+      {fruit.lord}: {fruit.en}
+      <span className="hl-line__ta">{fruit.ta}</span>
+    </li>
   )
 }
 
-function DasaSegmentList({ segments, selected, onSelect }) {
-  if (!segments?.length) return null
-  return (
-    <ul className="lcs-seg-list">
-      {segments.map(seg => {
-        const key = `${seg.mahadasha}-${seg.antardasha}-${seg.start}`
-        const isSel = selected?.start === seg.start && selected?.antardasha === seg.antardasha
-        return (
-          <li key={key}>
-            <button
-              type="button"
-              className={`lcs-seg-list__btn${isSel ? ' lcs-seg-list__btn--sel' : ''}${seg.is_current ? ' lcs-seg-list__btn--current' : ''}`}
-              onClick={() => onSelect(seg)}
-            >
-              <span className="lcs-seg-list__dasa">{seg.mahadasha}–{seg.antardasha}</span>
-              <span className="lcs-seg-list__range">{formatRange(seg.start, seg.end)}</span>
-              {seg.is_current && <span className="lcs-seg-list__now">Now</span>}
-            </button>
-          </li>
-        )
-      })}
-    </ul>
-  )
+function readMarried(fp) {
+  try {
+    const v = localStorage.getItem(MARRIED_KEY + fp)
+    return v === null ? null : v === '1'
+  } catch {
+    return null
+  }
 }
 
-function ThemeChipStrip({ themes, selectedKey, onSelect }) {
-  if (!themes?.length) return null
+function NowCard({ now }) {
+  if (!now) return null
   return (
-    <div className="lcs-theme-scroll" role="tablist" aria-label="Life event themes">
-      {themes.map(t => (
-        <button
-          key={t.key}
-          type="button"
-          role="tab"
-          aria-selected={selectedKey === t.key}
-          className={`lcs-theme-chip${selectedKey === t.key ? ' lcs-theme-chip--sel' : ''}`}
-          onClick={() => onSelect(t.key)}
-        >
-          <span className="lcs-theme-chip__icon">{THEME_ICONS[t.key] || '◆'}</span>
-          <span className="lcs-theme-chip__label">{t.label.split(' ')[0]}</span>
-          <span className={`lcs-verdict lcs-verdict--sm ${VERDICT_CLASS[t.verdict] || ''}`}>
-            {VERDICT_LABEL[t.verdict] || t.verdict}
-          </span>
-          {t.has_caution && <span className="lcs-verdict lcs-verdict--sm lcs-verdict--caution">Caution</span>}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function ThemeDetailCard({ theme }) {
-  if (!theme) return null
-  const d9 = theme.d9_overlay || {}
-  const sav = theme.sav || {}
-  return (
-    <article className="lcs-theme-detail">
-      <header className="lcs-theme-detail__head">
-        <h3 className="lcs-theme-detail__title">
-          {THEME_ICONS[theme.key]} {theme.label}
-        </h3>
-        <span className={`lcs-verdict ${VERDICT_CLASS[theme.verdict] || ''}`}>
-          {VERDICT_LABEL[theme.verdict]}
-        </span>
-        {theme.has_caution && (
-          <span className="lcs-verdict lcs-verdict--caution">Caution</span>
-        )}
-      </header>
-      <div className="lcs-theme-detail__scores">
-        <span>Natal {theme.natal_promise_score}</span>
-        <span>Act {Math.round(theme.activation_score)}</span>
-        <span>D9 {theme.d9_support}</span>
-        {sav.average != null && (
-          <span className={`lcs-sav lcs-sav--${(sav.label || '').toLowerCase()}`}>
-            SAV {sav.average} · {sav.label}
-          </span>
-        )}
-      </div>
-      {sav.by_house?.length > 0 && (
-        <div className="lcs-sav-row">
-          {sav.by_house.map(h => (
-            <span key={h.house} className="lcs-sav-chip">
-              H{h.house} {h.points}
-            </span>
-          ))}
-        </div>
-      )}
-      {theme.peak_window && (
-        <p className="lcs-theme-detail__peak">
-          <strong>Peak:</strong> {theme.peak_window.summary}
-          {theme.peak_window.theme_houses?.length > 0 && (
-            <> · H{theme.peak_window.theme_houses.join(', H')}</>
-          )}
-          {' · '}{formatRange(theme.peak_window.start, theme.peak_window.end)}
-        </p>
-      )}
-      {theme.pratyantar_windows?.length > 0 && (
-        <div className="lcs-pd-block">
-          <p className="lcs-pd-block__title">Pratyantar (finer timing)</p>
-          <ul className="lcs-pd-list">
-            {theme.pratyantar_windows.slice(0, 4).map((pd, i) => (
-              <li key={i} className={pd.is_current ? 'lcs-pd-list__item--now' : ''}>
-                <strong>{pd.pratyantar}</strong> PD
-                {' · '}{formatRange(pd.start, pd.end)}
-                {pd.theme_houses?.length > 0 && <> · H{pd.theme_houses.join(', H')}</>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {theme.yogas?.length > 0 && (
-        <p className="lcs-theme-detail__yoga">Yoga: {theme.yogas.join(', ')}</p>
-      )}
-      {d9.house_lords?.length > 0 && (
-        <ul className="lcs-d9-list">
-          {d9.house_lords.map(hl => (
-            <li key={hl.house}>
-              H{hl.house} lord {hl.lord}: D1 H{hl.d1_house} → D9 {hl.d9_sign}
-              {hl.vargottama ? ' · Vg' : ''}
-            </li>
-          ))}
-        </ul>
-      )}
-      {theme.caution_windows?.length > 0 && (
-        <div className="lcs-theme-detail__caution">
-          {theme.caution_windows.slice(0, 2).map((c, i) => (
-            <p key={i}>⚠ {c.summary}</p>
-          ))}
-        </div>
-      )}
-    </article>
-  )
-}
-
-function TransitCards({ hits }) {
-  if (!hits?.length) return <p className="td-card__hint">No transit hits in this period.</p>
-  return (
-    <ul className="lcs-transit-cards">
-      {hits.slice(0, 20).map((h, i) => (
-        <li key={i} className={`lcs-transit-card${h.currently_active ? ' lcs-transit-card--active' : ''}`}>
-          <div className="lcs-transit-card__head">
-            <strong>{h.planet}</strong>
-            {h.currently_active && <span className="lcs-transit-card__badge">Active</span>}
-          </div>
-          <p className="lcs-transit-card__target">{h.target}</p>
-          <p className="lcs-transit-card__meta">{formatRange(h.start, h.end)} · {h.duration_days}d</p>
+    <section className="td-card lc-card" aria-label="Current period">
+      <h3 className="td-card__title">Now</h3>
+      <p className="lc-now__dasa">
+        <strong>{now.mahadasha}</strong> mahadasha · <strong>{now.bhukti}</strong> bhukti
+      </p>
+      <p className="td-card__hint">{now.start} to {now.end}</p>
+      <ul className="lc-list">
+        <li>
+          Houses on: {now.on.map(r => `${r.ordinal} (by ${r.by_en})`).join(', ') || 'none'}
         </li>
-      ))}
-    </ul>
+        {now.live.length > 0 && (
+          <li>Live with transit: {now.live.map(r => `${r.ordinal} until ${r.until}`).join(', ')}</li>
+        )}
+        {now.relation && <li>{now.relation.en}</li>}
+      </ul>
+    </section>
+  )
+}
+
+function SaturnCard({ saturn }) {
+  if (!saturn?.length) return null
+  return (
+    <section className="td-card lc-card" aria-label="Saturn from the Moon">
+      <h3 className="td-card__title">Saturn from your Moon</h3>
+      <ul className="lc-saturn">
+        {saturn.map(s => (
+          <li key={s.start_iso} className={`lc-saturn__item${s.now ? ' lc-saturn__item--now' : ''}`}>
+            <p className="lc-saturn__head">
+              <strong>{s.en}</strong> · {s.start} to {s.end}
+              {s.now && <span className="hl-badge hl-badge--waiting">Now</span>}
+            </p>
+            <p className="lc-saturn__text">
+              {s.meaning_en}
+              <span className="hl-line__ta">{s.ta}: {s.meaning_ta}</span>
+            </p>
+            {s.phases.length > 1 && (
+              <ul className="lc-list lc-list--sub">
+                {s.phases.map(p => (
+                  <li key={p.start} className={p.now ? 'lc-now-row' : ''}>
+                    {p.en}: {p.start} to {p.end}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function WindowRow({ w }) {
+  return (
+    <li className={`lc-win${w.now ? ' lc-win--now' : ''}`}>
+      <p className="lc-win__head">
+        <strong>{w.bhukti} bhukti</strong> in {w.mahadasha} · {w.start} to {w.end}
+        {w.now && <span className="hl-badge hl-badge--waiting">Now</span>}
+      </p>
+      <ul className="lc-win__houses">
+        {w.houses.map(h => (
+          <li key={h.house}>
+            {h.ordinal} on by {h.by_en}.{' '}
+            {h.live.length
+              ? <>Jupiter and Saturn join: <strong>{h.live.map(r => `${r.start} to ${r.end}`).join('; ')}</strong>.</>
+              : 'No double transit in this bhukti.'}
+          </li>
+        ))}
+      </ul>
+      {w.saturn.length > 0 && <p className="lc-win__note">Alongside: {w.saturn.join(', ')}.</p>}
+      {w.relation?.tone === 'uneasy' && <p className="lc-win__note">{w.relation.en}</p>}
+    </li>
+  )
+}
+
+function ThemeCard({ theme, open, onToggle }) {
+  const next = theme.next_live
+  return (
+    <details className="lc-theme" open={open} onToggle={e => onToggle(theme.key, e.currentTarget.open)}>
+      <summary className="lc-theme__summary">
+        <span className="lc-theme__icon" aria-hidden="true">{THEME_ICONS[theme.key] || '◆'}</span>
+        <span className="lc-theme__label">
+          {theme.label_en}
+          <span className="lc-theme__houses"> · {theme.key_houses.map(h => `H${h}`).join(', ')}</span>
+          <span className="hl-line__ta">{theme.label_ta}</span>
+        </span>
+        <span className="lc-theme__status">
+          <Badge status={theme.status} />
+          {theme.live_now && <span className="lc-theme__when">until {theme.live_now.end}</span>}
+          {!theme.live_now && next && <span className="lc-theme__when">next {next.start}</span>}
+        </span>
+      </summary>
+      <div className="lc-theme__body">
+        {theme.notes.map(n => (
+          <p key={n.en} className="lc-theme__note">
+            {n.en}
+            <span className="hl-line__ta">{n.ta}</span>
+          </p>
+        ))}
+        <h4 className="lc-h">Natal promise</h4>
+        <ul className="lc-list">
+          {theme.fruit.map(f => <FruitLine key={f.house} fruit={f} />)}
+        </ul>
+        {theme.support.length > 0 && (
+          <p className="lc-muted">Supporting houses: {theme.support.map(h => `H${h}`).join(', ')}.</p>
+        )}
+        <h4 className="lc-h">When it is on</h4>
+        {theme.windows.length ? (
+          <ul className="lc-wins">{theme.windows.map(w => <WindowRow key={w.start_iso} w={w} />)}</ul>
+        ) : (
+          <p className="lc-muted">No bhukti in these years switches this theme on.</p>
+        )}
+        {theme.more_windows > 0 && (
+          <p className="lc-muted">{theme.more_windows} more later in the horizon; see the timeline below.</p>
+        )}
+        {theme.remedies.map(r => (
+          <div key={r.lord} className="lc-remedy">
+            <h4 className="lc-h">Remedy for {r.lord}</h4>
+            <p className="lc-muted">{r.why_en}</p>
+            <ul className="lc-list">
+              <li>
+                <strong>Mantra</strong> ({r.count} times): {r.mantra}
+                <span className="hl-line__ta">{r.mantra_ta}</span>
+              </li>
+              <li><strong>Deity</strong>: {r.deity} · <strong>Day</strong>: {r.day}</li>
+              <li><strong>Charity</strong>: {r.charity.join(', ')}</li>
+              {r.when?.length > 0 && (
+                <li>
+                  <strong>Best in</strong>:{' '}
+                  {r.when.map(p => (p.now ? `${p.label}, now to ${p.end}` : `${p.label}, ${p.start} to ${p.end}`)).join('; ')}
+                </li>
+              )}
+            </ul>
+            <p className="lc-muted">{r.note_en}</p>
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function Timeline({ rows, themes }) {
+  const label = useMemo(() => Object.fromEntries(themes.map(t => [t.key, t.label_en.split(' ')[0]])), [themes])
+  if (!rows?.length) return null
+  return (
+    <details className="td-card lc-card lc-timeline">
+      <summary className="lc-timeline__summary">Bhukti timeline ({rows.length})</summary>
+      <div className="hl-tbl-wrap">
+        <table className="hl-tbl lc-tbl">
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col">Houses on</th>
+              <th scope="col">Themes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={`${r.mahadasha}-${r.bhukti}-${r.start}`} className={r.now ? 'lc-tbl__now' : ''}>
+                <th scope="row">
+                  {r.mahadasha}–{r.bhukti}
+                  <span className="lc-tbl__dates">{r.start} to {r.end}</span>
+                </th>
+                <td>
+                  {r.on.map(h => (
+                    <span key={h} className={r.live.includes(h) ? 'lc-tbl__live' : ''}>{h} </span>
+                  ))}
+                </td>
+                <td>{r.themes.map(k => label[k]).filter(Boolean).join(', ') || '–'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="hl-tbl-note">Bold house numbers have a Jupiter and Saturn double transit inside the bhukti.</p>
+      </div>
+    </details>
   )
 }
 
 export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [selectedSeg, setSelectedSeg] = useState(null)
-  const [highlightHouses, setHighlightHouses] = useState([])
-  const [selectedThemeKey, setSelectedThemeKey] = useState(null)
-  const [chartView, setChartView] = useState('d1')
-  const [impactOpen, setImpactOpen] = useState(false)
-  const abortRef = useRef(null)
   const fingerprint = useMemo(() => chartFingerprint(chart), [chart])
+  const [marriedPick, setMarriedPick] = useState({ fp: null, value: null })
+  const married = marriedPick.fp === fingerprint ? marriedPick.value : readMarried(fingerprint)
+  const [nonce, setNonce] = useState(0)
+  const [result, setResult] = useState({ key: null, data: null, error: '' })
+  const [openKey, setOpenKey] = useState(undefined)
+  const chartRef = useRef(chart)
 
-  const fetchSim = useCallback(async (includeAi = false) => {
-    if (!chart || !enabled) return
-    if (abortRef.current) abortRef.current.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-    const timer = setTimeout(() => controller.abort(), SIM_TIMEOUT_MS)
+  const requestKey = `${fingerprint}|${userId || ''}|${married}|${nonce}`
 
-    if (includeAi) setAiLoading(true)
-    else setLoading(true)
-    setError(null)
-    try {
-      const res = await api.post(
-        '/prediction/simulate',
-        chartPayload(chart, userId, { horizon_years: 10, include_ai: includeAi }),
-        { signal: controller.signal, timeout: SIM_TIMEOUT_MS },
-      )
-      if (controller.signal.aborted) return
-      setData(prev => {
-        const next = includeAi && prev
-          ? { ...prev, ai_reading: res.data.ai_reading, meta: { ...prev.meta, ...res.data.meta } }
-          : res.data
-        return next
-      })
-      if (includeAi && !res.data?.ai_reading) {
-        setError(res.data?.meta?.ai_error || 'AI narration unavailable — showing rule-based reading.')
-      }
-      if (!includeAi) {
-        const current = res.data?.current_period || res.data?.dasha_timeline?.[0]
-        setSelectedSeg(current || null)
-        setHighlightHouses(current?.focus_houses || [])
-        const topTheme = res.data?.event_themes?.[0]
-        setSelectedThemeKey(topTheme?.key || null)
-      }
-    } catch (e) {
-      if (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError') {
-        return
-      }
-      const timedOut = e.code === 'ECONNABORTED' || /timeout/i.test(e.message || '')
-      const detail = e.response?.data?.detail
-      const msg = timedOut
-        ? 'Life cycle calculation timed out. Please try again.'
-        : (typeof detail === 'string' ? detail : (detail?.msg || e.message || 'Simulation failed'))
-      console.error('[LifeCycle]', msg, e)
-      setError(msg)
-      if (!includeAi) setData(null)
-    } finally {
-      clearTimeout(timer)
-      if (abortRef.current === controller) abortRef.current = null
-      setLoading(false)
-      setAiLoading(false)
-    }
-  }, [chart, userId, enabled])
+  useEffect(() => { chartRef.current = chart }, [chart])
 
   useEffect(() => {
-    if (!enabled || !chart) return undefined
-    fetchSim(false)
-    return () => {
-      if (abortRef.current) abortRef.current.abort()
-    }
-    // fingerprint (not chart object identity) avoids refetch storms on parent re-renders
-  }, [enabled, fingerprint, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!enabled || !chartRef.current) return undefined
+    const controller = new AbortController()
+    api.post(
+      '/prediction/simulate',
+      chartPayload(chartRef.current, userId, { horizon_years: 10, married }),
+      { signal: controller.signal, timeout: SIM_TIMEOUT_MS },
+    )
+      .then(res => setResult({ key: requestKey, data: res.data, error: '' }))
+      .catch(e => {
+        if (e.code === 'ERR_CANCELED' || e.name === 'CanceledError' || e.name === 'AbortError') return
+        const timedOut = e.code === 'ECONNABORTED' || /timeout/i.test(e.message || '')
+        const detail = e.response?.data?.detail
+        setResult({
+          key: requestKey,
+          data: null,
+          error: timedOut
+            ? 'Life cycle calculation timed out. Please try again.'
+            : (typeof detail === 'string' ? detail : (detail?.msg || e.message || 'Life cycle failed')),
+        })
+      })
+    return () => controller.abort()
+  }, [enabled, requestKey, userId, married])
 
-  const selectedTheme = useMemo(
-    () => data?.event_themes?.find(t => t.key === selectedThemeKey) || data?.event_themes?.[0],
-    [data, selectedThemeKey],
-  )
+  const current = result.key === requestKey
+  const data = result.data
+  const error = current ? result.error : ''
+  const loading = Boolean(chart && enabled && !current)
+  const shownKey = openKey === undefined ? data?.themes?.[0]?.key : openKey
 
-  const themeHighlightHouses = useMemo(() => {
-    if (selectedTheme?.houses?.length) return selectedTheme.houses
-    return highlightHouses
-  }, [selectedTheme, highlightHouses])
+  const toggleMarried = () => {
+    const next = !married
+    setMarriedPick({ fp: fingerprint, value: next })
+    try { localStorage.setItem(MARRIED_KEY + fingerprint, next ? '1' : '0') } catch { /* private mode */ }
+  }
 
-  const filteredHits = useMemo(() => {
-    if (!data?.transit_hits) return []
-    let hits = data.transit_hits
-    if (selectedSeg) {
-      hits = hits.filter(h => h.start <= selectedSeg.end && h.end >= selectedSeg.start)
-    }
-    if (selectedTheme?.houses?.length) {
-      const th = new Set(selectedTheme.houses)
-      const filtered = hits.filter(h =>
-        h.matched_houses?.some(mh => th.has(mh)) ||
-        selectedTheme.karakas?.includes(h.planet),
-      )
-      if (filtered.length) hits = filtered
-    }
-    return hits
-  }, [data, selectedSeg, selectedTheme])
-
-  const selectSeg = useCallback(seg => {
-    setSelectedSeg(seg)
-    setHighlightHouses(seg.focus_houses || [])
+  const onToggle = useCallback((key, isOpen) => {
+    setOpenKey(prev => {
+      if (isOpen) return key
+      return prev === key || prev === undefined ? null : prev
+    })
   }, [])
 
   if (!enabled) return null
+  const meta = data?.meta
+  const fetchLife = () => setNonce(n => n + 1)
 
   return (
-    <div className="lcs-panel">
-      <header className="lcs-hero td-card">
-        <h2 className="lcs-hero__title">Life Cycle Simulator</h2>
-        <p className="lcs-hero__sub">
-          Parasara: Bhava → SAV → D9 → MD/AD/PD → Gochara (10 years)
-        </p>
-        {data?.meta && (
-          <p className="lcs-hero__meta">
-            {data.meta.lagna} lagna · D9 {data.meta.navamsa_lagna} · Moon {data.meta.moon_sign}
-            {' · '}{data.meta.start_date} → {data.meta.end_date}
+    <div className="lc-panel">
+      <header className="td-card lc-card lc-hero">
+        <h2 className="lc-hero__title">Life Cycle</h2>
+        <p className="lc-hero__sub">The next ten years, theme by theme, on the House Links rules.</p>
+        {meta && (
+          <p className="lc-hero__meta">
+            {meta.lagna} lagna · Moon {meta.moon_sign}{meta.age != null ? ` · age ${meta.age}` : ''} · {meta.start} to {meta.end}
           </p>
         )}
-        <p className="lcs-hero__disc">{data?.meta?.disclaimer}</p>
+        <label className="lc-married">
+          <input type="checkbox" checked={!!married} onChange={toggleMarried} />
+          <span>Already married</span>
+        </label>
       </header>
 
-      {loading && !data && (
-        <p className="lcs-loading" role="status">Calculating 10-year life cycle…</p>
-      )}
-      {loading && data && (
-        <p className="lcs-loading" role="status">Refreshing life cycle…</p>
-      )}
+      {loading && !data && <p className="lc-status" role="status">Working out the next ten years…</p>}
+      {loading && data && <p className="lc-status" role="status">Refreshing…</p>}
       {error && (
-        <p className="lcs-error" role="alert">
+        <p className="lc-error" role="alert">
           {error}{' '}
-          <button type="button" className="lcs-ai-btn" onClick={() => fetchSim(false)}>
-            Retry
-          </button>
+          <button type="button" className="lc-retry" onClick={fetchLife}>Retry</button>
         </p>
       )}
 
       {data && (
         <>
-          {/* Narration */}
-          {data.narration && (
-            <section className="td-card lcs-narration">
-              <h3 className="td-card__title">Life-cycle reading</h3>
-              <p className="lcs-narration__headline">{data.narration.headline}</p>
-              {data.current_period && (
-                <p className="lcs-narration__body">{data.narration.current_period}</p>
-              )}
-              {data.ai_reading ? (
-                <p className="lcs-narration__ai">{data.ai_reading}</p>
-              ) : (
-                <ul className="lcs-narration__themes">
-                  {data.narration.theme_summaries?.slice(0, 3).map(t => (
-                    <li key={t.key}>{t.text}</li>
-                  ))}
-                </ul>
-              )}
-              {!data.ai_reading && (
-                <button
-                  type="button"
-                  className="lcs-ai-btn"
-                  disabled={aiLoading}
-                  onClick={() => fetchSim(true)}
-                >
-                  {aiLoading ? 'Generating…' : 'Short AI reading'}
-                </button>
-              )}
-              {data.narration.caution && (
-                <p className="lcs-narration__caution">{data.narration.caution}</p>
-              )}
-            </section>
-          )}
-
-          {/* Event themes */}
-          {data.event_themes?.length > 0 && (
-            <section className="td-card lcs-themes-section">
-              <h3 className="td-card__title">Event themes</h3>
-              <p className="td-card__hint">Tap a theme for SAV, Pratyantar peaks, and chart filter.</p>
-              <ThemeChipStrip
-                themes={data.event_themes}
-                selectedKey={selectedThemeKey || data.event_themes[0]?.key}
-                onSelect={setSelectedThemeKey}
-              />
-              <ThemeDetailCard theme={selectedTheme} />
-            </section>
-          )}
-
-          {/* Current period */}
-          {data.current_period && (
-            <section className="td-card lcs-current">
-              <h3 className="td-card__title">Current period</h3>
-              <p className="lcs-current__dasa">
-                <strong>{data.current_period.mahadasha}</strong> MD ·{' '}
-                <strong>{data.current_period.antardasha}</strong> AD
-                {data.current_period.pratyantar && (
-                  <> · <strong>{data.current_period.pratyantar}</strong> PD</>
-                )}
-              </p>
-              <p className="td-card__hint">
-                {formatRange(data.current_period.start, data.current_period.end)}
-                {data.current_period.pratyantar_start && (
-                  <> · PD {formatRange(data.current_period.pratyantar_start, data.current_period.pratyantar_end)}</>
-                )}
-              </p>
-              {data.current_period.life_themes?.length > 0 && (
-                <p className="lcs-tags">
-                  {data.current_period.life_themes.map(t => (
-                    <span key={t} className="lcs-tag">{t}</span>
-                  ))}
-                </p>
-              )}
-            </section>
-          )}
-
-          {/* Dasa timeline */}
-          <section className="td-card">
-            <h3 className="td-card__title">Vimshottari timeline</h3>
-            <p className="td-card__hint">Select a segment to filter transits.</p>
-            <div className="lcs-timeline-desktop">
-              <DasaTimelineBar
-                segments={data.dasha_timeline}
-                selected={selectedSeg}
-                onSelect={selectSeg}
-              />
-            </div>
-            <DasaSegmentList
-              segments={data.dasha_timeline}
-              selected={selectedSeg}
-              onSelect={selectSeg}
-            />
-            {selectedSeg && (
-              <div className="lcs-seg-detail">
-                <strong>{selectedSeg.mahadasha}–{selectedSeg.antardasha}</strong>
-                {' · '}{formatRange(selectedSeg.start, selectedSeg.end)}
-                {' · H'}{selectedSeg.focus_houses?.join(', H')}
-              </div>
-            )}
-          </section>
-
-          {/* D1 / D9 charts */}
-          <section className="td-card">
-            <div className="lcs-chart-tabs" role="tablist">
-              {['d1', 'd9'].map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  role="tab"
-                  aria-selected={chartView === v}
-                  className={`lcs-chart-tab${chartView === v ? ' lcs-chart-tab--sel' : ''}`}
-                  onClick={() => setChartView(v)}
-                >
-                  {v === 'd1' ? 'D1 Rasi' : 'D9 Navamsa'}
-                </button>
+          <NowCard now={data.now} />
+          <section className="td-card lc-card" aria-label="Life themes">
+            <h3 className="td-card__title">Themes</h3>
+            <p className="td-card__hint">
+              On now first, then by the next window. A theme is on when the dasha reaches its key house;
+              it is live when Jupiter and Saturn also touch that house or its lord.
+            </p>
+            <div className="lc-themes">
+              {data.themes.map(t => (
+                <ThemeCard key={t.key} theme={t} open={shownKey === t.key} onToggle={onToggle} />
               ))}
             </div>
-            {chartView === 'd1' ? (
-              <SouthIndianChart
-                title="D1 Rasi"
-                subtitle={themeHighlightHouses.length
-                  ? `Theme houses: H${themeHighlightHouses.join(', H')}`
-                  : 'Select a theme or Dasa segment'}
-                planetPositions={chart.planet_positions}
-                lagnaSignIndex={chart.ascendant?.sign_index}
-                highlightBhavaHouses={themeHighlightHouses}
-              />
-            ) : (
-              <SouthIndianChart
-                title="D9 Navamsa"
-                subtitle={selectedTheme
-                  ? `${selectedTheme.label} — lords in D9`
-                  : `Navamsa lagna ${data.meta?.navamsa_lagna || ''}`}
-                planetPositions={chart.navamsa_positions}
-                lagnaSignIndex={chart.navamsa_ascendant?.sign_index}
-                highlightBhavaHouses={themeHighlightHouses}
-                navamsa
-              />
-            )}
           </section>
-
-          {/* Top windows */}
-          {data.top_windows?.length > 0 && (
-            <section className="td-card">
-              <h3 className="td-card__title">Strongest activation windows</h3>
-              <ul className="lcs-windows">
-                {data.top_windows.slice(0, 6).map((w, i) => (
-                  <li key={i} className="lcs-windows__item">
-                    <span className="lcs-windows__score">{Math.round(w.score)}</span>
-                    <div>
-                      <p className="lcs-windows__summary">{w.summary}</p>
-                      {w.themes?.length > 0 && (
-                        <p className="lcs-windows__themes">{w.themes.join(' · ')}</p>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Transit hits — cards on mobile, table on desktop */}
-          <section className="td-card">
-            <h3 className="td-card__title">
-              Transit hits
-              {selectedSeg ? ` · ${selectedSeg.antardasha} AD` : ''}
-              {selectedTheme ? ` · ${selectedTheme.label.split(' ')[0]}` : ''}
-            </h3>
-            <div className="lcs-transit-cards-wrap">
-              <TransitCards hits={filteredHits} />
-            </div>
-            <div className="cr-table-wrap lcs-transit-table-wrap">
-              <table className="cr-table lcs-table">
-                <thead>
-                  <tr>
-                    <th>Planet</th>
-                    <th>Target</th>
-                    <th>Period</th>
-                    <th>Days</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHits.slice(0, 25).map((h, i) => (
-                    <tr key={i} className={h.currently_active ? 'lcs-table__active' : ''}>
-                      <td><strong>{h.planet}</strong></td>
-                      <td className="lcs-table__target">{h.target}</td>
-                      <td>{formatRange(h.start, h.end)}</td>
-                      <td>{h.duration_days}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Impact areas — collapsible */}
-          <section className="td-card">
-            <button
-              type="button"
-              className="td-section__toggle lcs-impact-toggle"
-              onClick={() => setImpactOpen(o => !o)}
-            >
-              <span>Impact areas (natal + drishti)</span>
-              <span aria-hidden="true">{impactOpen ? '▾' : '▸'}</span>
-            </button>
-            {impactOpen && (
-              <div className="lcs-impact-grid">
-                {data.impact_areas?.map(a => (
-                  <article key={a.house} className="lcs-impact">
-                    <header className="lcs-impact__head">
-                      <span className="lcs-impact__h">H{a.house}</span>
-                      <span className={`lcs-rag ${RAG_CLASS[a.rag] || ''}`}>{a.strength}</span>
-                    </header>
-                    <p className="lcs-impact__theme">{a.theme}</p>
-                    <p className="lcs-impact__lord">Lord: {a.lord} in H{a.lord_house}</p>
-                    {a.planets_aspecting?.length > 0 && (
-                      <p className="lcs-impact__asp">Drishti: {a.planets_aspecting.join(', ')}</p>
-                    )}
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <p className="lcs-footnote">
-            {data.meta?.drishti_rules}
-            {data.narration?.d9_note ? ` · ${data.narration.d9_note}` : ''}
+          <SaturnCard saturn={data.saturn} />
+          <Timeline rows={data.timeline} themes={data.themes} />
+          <p className="lc-footnote">
+            {meta?.method_en} {meta?.disclaimer_en}
+            <span className="hl-line__ta">{meta?.disclaimer_ta}</span>
           </p>
         </>
       )}

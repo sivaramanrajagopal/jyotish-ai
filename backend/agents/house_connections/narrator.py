@@ -1,21 +1,26 @@
-"""House Connections — chat narrator context (compact default, detail on demand)."""
+"""House Links — chat narrator context, on the same rules as the House Links tab.
+
+Compact by default (status of all 12 houses, exchanges, remedies, the coming bhuktis);
+full reasons for the houses the user asks about. No scores.
+"""
 
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta
 
-from agents.house_connections.blessers import rank_blessers
+from agents.house_connections.activation import compute_activation
 from agents.house_connections.core import analyze_all_houses
-from agents.house_connections.dasa_activation import compute_dasa_life_areas
-from agents.house_connections.edges import build_edges
-from agents.house_connections.inference import build_prediction_card
+from agents.house_connections.guidance import exchange_meanings, house_remedies
+from agents.house_connections.tables import CODE_ORDER, natal_table, timeline_table
+from agents.house_connections.upcoming import compute_upcoming, double_runs, sky_segments
 from agents.house_connections.themes import DISCLAIMER_EN
 from agents.house_connections.yogas import detect_yogas
-from dasha_core import find_current_dasha_bhukti
+from agents.nadi_agent import TZ, _fmt
 
 _HOUSE_LINKS_RE = re.compile(
-    r"house\s*links?|house\s*connections?|lord\s*links?|blesser\s*planet?|"
-    r"channels?\s*(in|out)|prediction\s*map|raja\s*yoga.*lord|dharma-karma",
+    r"house\s*links?|house\s*connections?|lord\s*links?|"
+    r"prediction\s*map|raja\s*yoga.*lord|dharma-karma|exchange|parivartana",
     re.I,
 )
 _HOUSE_NUM_RE = re.compile(
@@ -34,24 +39,18 @@ _THEME_HOUSES = {
     "loss": 12, "expense": 12, "foreign": 12,
     "self": 1, "personality": 1, "lagna": 1,
 }
+CODE_WORDS = {
+    "L": "this lord sits there", "H": "that lord sits here", "X": "exchange",
+    "C": "lords together", "M": "mutual aspect", "A": "one-way aspect",
+    "N": "star-lord link", "S": "same lord",
+}
 
-EXPLANATION_GUIDE = """HOW TO EXPLAIN HOUSE LINKS (when user asks about a specific house):
-1. Open with lord, seat, from-own placement, strength (Strong/Moderate/Weak).
-2. Channels IN — cite each IN bullet from the house card below.
-3. Channels OUT — cite each OUT bullet.
-4. Name primary blesser and score; note if ACTIVE in Mahadasha/Bhukti.
-5. Strong house + STRESS links: strength is real; some ties use dusthana-from-own lords — caution, not contradiction.
-6. Bhavat Bhavam recovery only when listed on the card (H6/H8/H12). Never invent links."""
-
-
-def _dasa_lords(natal_chart: dict) -> tuple[str, str]:
-    bd = natal_chart.get("birth_data") or {}
-    pp = natal_chart.get("planet_positions") or {}
-    if not bd.get("dob"):
-        return "", ""
-    moon_lon = (pp.get("Moon") or {}).get("longitude", 0.0)
-    _, cur_d, _, cur_b = find_current_dasha_bhukti(moon_lon, bd["dob"])
-    return cur_d["planet"], cur_b["planet"]
+EXPLANATION_GUIDE = """HOW TO EXPLAIN A HOUSE (same rules as the House Links tab):
+1. Lord and seat, then the fruit line (how well the house gives; from the lord's Navamsa sign).
+2. Status now: Live (dasha on and Jupiter + Saturn on the house or its lord), Dasha on, Transit only, or Quiet.
+3. Why the dasha reaches it: quote the dasha reasons below. "connected" reasons alone do not make it live.
+4. Natal ties: quote the links and the connection codes.
+5. If a remedy is listed, offer it as optional, with its timing. Never invent links, dates or scores."""
 
 
 def _houses_from_message(message: str) -> set[int]:
@@ -60,10 +59,8 @@ def _houses_from_message(message: str) -> set[int]:
         return found
     for m in _HOUSE_NUM_RE.finditer(message):
         for g in m.groups():
-            if g:
-                n = int(g)
-                if 1 <= n <= 12:
-                    found.add(n)
+            if g and 1 <= int(g) <= 12:
+                found.add(int(g))
     lower = message.lower()
     for word, h in _THEME_HOUSES.items():
         if word in lower:
@@ -74,189 +71,135 @@ def _houses_from_message(message: str) -> set[int]:
 def _wants_detail(message: str) -> bool:
     if not message:
         return False
-    if _HOUSE_LINKS_RE.search(message):
-        return True
-    if _houses_from_message(message):
-        return True
-    if re.search(r"explain\s+h\d|channels?\s+in|channels?\s+out", message, re.I):
-        return True
-    return False
+    return bool(_HOUSE_LINKS_RE.search(message) or _houses_from_message(message))
 
 
-def _format_house_card(
-    pred: dict,
-    house_row: dict,
-    outgoing_edges: list[dict],
-) -> str:
-    st = pred["structure"]
-    rag = st["rag"]
+def _hs(houses) -> str:
+    return ", ".join(f"H{h}" for h in houses) or "none"
+
+
+def _card(row: dict, natal_row: dict, remedy: dict | None) -> list[str]:
+    h = row["house"]
     lines = [
-        f"--- H{pred['house']} {pred['theme_en']} ({pred['theme_ta']}) ---",
-        (
-            f"Lord {st['lord']} in H{st['lord_house']} · {st['position_en']} · "
-            f"Strength {st['strength']}/100 ({rag['label_en']})"
-        ),
+        f"--- H{h} {row['theme_en']} ({row['theme_ta']}) ---",
+        f"{row['sign']} · lord {row['lord']} in H{row['lord_house']} · {row['fruit']['en']}",
+        f"Status now: {row['status']['en']}"
+        + (f" (until {row['transit']['double_until']})" if row["transit"].get("double_until") else ""),
     ]
-    if house_row.get("planets_in_house"):
-        lines.append(f"Planets in house: {', '.join(house_row['planets_in_house'])}")
-    if house_row.get("planets_aspecting"):
-        lines.append(f"Planets aspecting: {', '.join(house_row['planets_aspecting'])}")
-
-    cin = pred.get("channels_in") or []
-    if cin:
+    for r in row["dasha"]["reasons"]:
+        tag = " (connected)" if r["level"] == "side" else ""
+        lines.append(f"  dasha · {r['en']}{tag}")
+    for t in row["transit"]["lines"]:
+        lines.append(f"  transit · {t['en']}")
+    for link in row["links"]:
+        lines.append(f"  natal · {link['en']}")
+    ties = [
+        f"H{c['house']} {c['codes']} ({', '.join(CODE_WORDS[x] for x in c['codes'] if x in CODE_ORDER)})"
+        for c in natal_row["connected"]
+    ]
+    if ties:
+        lines.append("  connections · " + "; ".join(ties))
+    if remedy:
+        when = "; ".join(
+            f"{p['label']} ({'now' if p['now'] else p['start']} to {p['end']})" for p in remedy["when"]
+        ) or "any time"
         lines.append(
-            f"Channels IN (feeding H{pred['house']}): {', '.join(f'H{x}' for x in cin)}"
+            f"  remedy · {remedy['why_en']} {remedy['mantra']} ×{remedy['count']}, {remedy['day']}, "
+            f"deity {remedy['deity']}, charity {', '.join(remedy['charity'])}. Best in: {when}."
         )
-        for e in pred.get("incoming_edges") or []:
-            lines.append(f"  IN · {e['label_en']}")
-    else:
-        lines.append("Channels IN: none")
-
-    cout = pred.get("channels_out") or []
-    if cout:
-        lines.append(
-            f"Channels OUT (from H{pred['house']}): {', '.join(f'H{x}' for x in cout)}"
-        )
-        for e in outgoing_edges[:8]:
-            lines.append(f"  OUT · {e['label_en']}")
-    else:
-        lines.append("Channels OUT: none")
-
-    for e in (pred.get("stress_edges") or [])[:5]:
-        lines.append(f"  STRESS · {e['label_en']}")
-
-    for e in pred.get("recovery_edges") or []:
-        lines.append(f"Bhavat Bhavam recovery: {e['label_en']}")
-
-    top = pred.get("top_blesser")
-    if top:
-        active = []
-        if top.get("active_maha"):
-            active.append("Mahadasha")
-        if top.get("active_bhukti"):
-            active.append("Bhukti")
-        act = f" · ACTIVE in {'/'.join(active)}" if active else ""
-        lines.append(f"Primary blesser: {top['planet']} (score {top['score']}){act}")
-
-    blessers = pred.get("blessers") or []
-    if len(blessers) > 1:
-        lines.append(
-            "Other blessers: "
-            + ", ".join(f"{b['planet']} ({b['score']})" for b in blessers[1:4])
-        )
-
-    return "\n".join(lines)
+    return lines
 
 
-def _format_compact_line(pred: dict) -> str:
-    st = pred["structure"]
-    cin = ", ".join(f"H{x}" for x in (pred.get("channels_in") or [])) or "—"
-    cout = ", ".join(f"H{x}" for x in (pred.get("channels_out") or [])) or "—"
-    bless = pred.get("top_blesser") or {}
-    bname = bless.get("planet", "—")
-    bscore = bless.get("score", "")
-    return (
-        f"  H{pred['house']} {pred['theme_en']}: lord {st['lord']} H{st['lord_house']} · "
-        f"{st['strength']}/100 ({st['rag']['label_en']}) · "
-        f"in [{cin}] out [{cout}] · blesser {bname} ({bscore})"
-    )
-
-
-def _build_data(natal_chart: dict) -> dict | None:
+def house_connections_context_for_narrator(natal_chart: dict, user_message: str = "") -> str:
     try:
-        maha, bhukti = _dasa_lords(natal_chart)
-        houses_map = analyze_all_houses(natal_chart)
-        edges = build_edges(houses_map, natal_chart)
-        yogas = detect_yogas(houses_map, natal_chart)
-        dasa_life_areas = compute_dasa_life_areas(natal_chart, maha, bhukti)
-        predictions = {}
-        for h in range(1, 13):
-            bl = rank_blessers(h, houses_map, edges, natal_chart, maha, bhukti)
-            predictions[h] = build_prediction_card(h, houses_map, edges, bl, maha, bhukti)
-        strong = sorted(houses_map.values(), key=lambda x: x["strength"], reverse=True)[:3]
-        weak = sorted(houses_map.values(), key=lambda x: x["strength"])[:3]
-        return {
-            "maha": maha,
-            "bhukti": bhukti,
-            "houses_map": houses_map,
-            "edges": edges,
-            "yogas": yogas,
-            "dasa_life_areas": dasa_life_areas,
-            "predictions": predictions,
-            "strong": strong,
-            "weak": weak,
-        }
+        today = datetime.now(TZ).date()
+        houses = analyze_all_houses(natal_chart)
+        yogas = detect_yogas(houses, natal_chart)
+        act = compute_activation(natal_chart, houses, yogas, today)
+        timeline = timeline_table(natal_chart, today)
+        remedies = house_remedies(natal_chart, timeline)
+        swaps = exchange_meanings(houses, timeline)
+        natal = {r["house"]: r for r in natal_table(houses, natal_chart)}
+        upcoming = compute_upcoming(natal_chart, houses, today)
     except Exception:
-        return None
-
-
-def house_connections_context_for_narrator(
-    natal_chart: dict,
-    user_message: str = "",
-) -> str:
-    data = _build_data(natal_chart)
-    if not data:
         return ""
 
-    maha = data["maha"]
-    bhukti = data["bhukti"]
-    predictions = data["predictions"]
-    houses_map = data["houses_map"]
-    edges = data["edges"]
-    detail = _wants_detail(user_message)
-    focus_houses = _houses_from_message(user_message)
+    asc = int((natal_chart.get("ascendant") or {}).get("sign_index") or 0)
+    rows = {r["house"]: r for r in act["rows"]}
+    period = act.get("period")
+    if period:
+        end = datetime.fromisoformat(period["bhukti"]["end_iso"]).date()
+        segments = sky_segments(today, end + timedelta(days=1))
+        for h, r in rows.items():
+            if r["status"]["key"] == "live":
+                runs = double_runs(segments, today, end, asc, h, houses[h]["lord_house"])
+                if runs:
+                    r["transit"]["double_until"] = _fmt(runs[0][1])
 
-    if detail and not focus_houses:
-        focus_houses = {7, 9, 10}
+    by_status: dict[str, list[int]] = {}
+    for h, r in rows.items():
+        by_status.setdefault(r["status"]["key"], []).append(h)
 
     lines = [
-        "=== HOUSE CONNECTIONS (prediction map) ===",
+        "=== HOUSE CONNECTIONS (House Links tab rules) ===",
         f"DISCLAIMER: {DISCLAIMER_EN}",
-        f"Current Dasa: {maha} Mahadasha · {bhukti} Bhukti",
-        "",
-        "STRONGEST HOUSES:",
+        "Rules: a running lord switches on the houses it rules and sits in (main); a house both lords "
+        "reach is shared. Live = main or shared AND Jupiter and Saturn each on the house or its lord's "
+        "sign. Fruit = the house lord's Navamsa sign. There are no scores; never quote one.",
     ]
-    for h in data["strong"]:
-        lines.append(f"  H{h['house']} {h['theme_en']} — {h['strength']}/100 ({h['rag']['label_en']})")
-    lines.append("WEAKEST HOUSES:")
-    for h in data["weak"]:
-        lines.append(f"  H{h['house']} {h['theme_en']} — {h['strength']}/100 ({h['rag']['label_en']})")
+    if period:
+        lines.append(
+            f"Now: {period['mahadasha']['planet']} mahadasha (to {period['mahadasha']['end']}) / "
+            f"{period['bhukti']['planet']} bhukti (to {period['bhukti']['end']})."
+        )
+        if act.get("relation"):
+            lines.append(f"  {act['relation']['en']}")
+    lines.append(
+        "  Live: " + (", ".join(
+            f"H{h}" + (f" until {rows[h]['transit']['double_until']}" if rows[h]["transit"].get("double_until") else "")
+            for h in by_status.get("live", [])
+        ) or "none")
+    )
+    lines.append(f"  Dasha on, transit not now: {_hs(by_status.get('waiting', []))}")
+    lines.append(f"  Transit only: {_hs(by_status.get('sky', []))}")
 
-    yogas = data["yogas"]
-    if yogas:
-        lines.extend(["", "KEY YOGAS:"])
-        for y in yogas[:4]:
-            lines.append(f"  • {y['name']}: {y['detail_en']}")
+    lines.extend(["", "ALL HOUSES (lord · seat · fruit · status):"])
+    for h in range(1, 13):
+        r = rows[h]
+        lines.append(f"  H{h} {r['theme_en']}: lord {r['lord']} in H{r['lord_house']} · {r['fruit']['en']} · {r['status']['en']}")
 
-    combined = (data["dasa_life_areas"].get("combined") or {})
-    if combined.get("focus_houses"):
-        lines.extend([
-            "",
-            "DASA LIFE AREAS:",
-            f"  Focus: {', '.join(f'H{x}' for x in combined['focus_houses'])}",
-            f"  Background: {', '.join(f'H{x}' for x in combined.get('background_houses', []))}",
-        ])
+    if swaps:
+        lines.extend(["", "SIGN EXCHANGES:"])
+        for s in swaps:
+            a, b = s["houses"]
+            active = "; ".join(f"{p['label']} ({'now' if p['now'] else p['start']} to {p['end']})" for p in s["active"])
+            lines.append(f"  {s['name_en']} H{a}–H{b}: {s['meaning_en']} Active in: {active or 'none ahead'}.")
 
-    if detail:
-        lines.extend(["", EXPLANATION_GUIDE, ""])
-        if focus_houses:
-            lines.append(
-                f"DETAIL for {', '.join(f'H{h}' for h in sorted(focus_houses))} (cite exactly):"
-            )
-            for h in sorted(focus_houses):
-                outgoing = [e for e in edges if e["from_house"] == h and e["to_house"] != h]
-                lines.append(_format_house_card(predictions[h], houses_map[h], outgoing))
-        else:
-            lines.append("DETAIL (all houses):")
-            for h in range(1, 13):
-                outgoing = [e for e in edges if e["from_house"] == h and e["to_house"] != h]
-                lines.append(_format_house_card(predictions[h], houses_map[h], outgoing))
+    if remedies:
+        lines.extend(["", "REMEDIES (houses whose fruit is thinner or weak; optional, one per lord):"])
+        seen: set[str] = set()
+        for h, r in sorted(remedies.items()):
+            if r["lord"] in seen:
+                continue
+            seen.add(r["lord"])
+            owned = [x for x, rr in remedies.items() if rr["lord"] == r["lord"]]
+            lines.append(f"  {r['lord']} (for {_hs(sorted(owned))}): {r['mantra']} ×{r['count']}, {r['day']}, "
+                         f"charity {', '.join(r['charity'])}")
+
+    if upcoming:
+        lines.extend(["", "COMING BHUKTIS (main houses · double-transit windows):"])
+        for p in upcoming["periods"]:
+            parts = []
+            for hr in p["houses"]:
+                win = ", ".join(f"{w['start']}–{w['end']}" for w in hr["windows"]) or "no window"
+                parts.append(f"H{hr['house']} [{win}]")
+            lines.append(f"  {p['bhukti']} bhukti in {p['mahadasha']} ({p['start']} to {p['end']}): " + "; ".join(parts))
+
+    if _wants_detail(user_message):
+        focus = _houses_from_message(user_message) or {7, 9, 10}
+        lines.extend(["", EXPLANATION_GUIDE, "", f"DETAIL for {_hs(sorted(focus))} (cite exactly):"])
+        for h in sorted(focus):
+            lines.extend(_card(rows[h], natal[h], remedies.get(h)))
     else:
-        lines.extend([
-            "",
-            "COMPACT SUMMARY (ask about a specific house for full Channels IN/OUT detail):",
-        ])
-        for h in range(1, 13):
-            lines.append(_format_compact_line(predictions[h]))
-
+        lines.extend(["", "Ask about a specific house for its full reasons and connections."])
     return "\n".join(lines)

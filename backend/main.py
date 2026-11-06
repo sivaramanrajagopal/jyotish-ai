@@ -100,7 +100,7 @@ from agents.janma_panchanga import build_janma_panchanga
 from agents.shadbala_agent import compute_shadbala_for_chart
 from agents.period_reading import compute_period_reading
 from agents.house_connections_agent import compute_house_connections
-from agents.prediction_simulator import compute_life_cycle_simulation
+from agents.life_cycle import compute_life_cycle
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
@@ -1951,9 +1951,7 @@ def house_connections_analyze_endpoint(
 class PredictionSimulateRequest(BaseModel):
     natal_chart: Optional[dict] = None
     horizon_years: int = 10
-    start_date: Optional[str] = None
-    include_ai: bool = False
-    language: str = "english"
+    married: Optional[bool] = None
     model_config = {"str_strip_whitespace": True}
 
 
@@ -1964,31 +1962,14 @@ def prediction_simulate_endpoint(
     req: PredictionSimulateRequest,
     auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
 ):
-    """10-year Parasara life-cycle simulator: Dasa timeline + transit hits + event themes."""
+    """Life Cycle: theme windows for the next years on the House Links rules, plus Saturn from the Moon."""
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     chart = ensure_dasha(chart)
     years = max(1, min(int(req.horizon_years or 10), 15))
-    if req.include_ai:
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        if not api_key:
-            raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
-        check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
     try:
-        result = compute_life_cycle_simulation(
-            chart,
-            horizon_years=years,
-            start_date=req.start_date,
-            include_ai=bool(req.include_ai),
-            language=req.language or "english",
-        )
-        if req.include_ai and not result.get("ai_reading"):
-            result.setdefault("meta", {})["ai_narration"] = False
-            result["meta"]["ai_error"] = "AI narration unavailable — rule-based reading only."
-        track_event("prediction_simulate", properties={
-            "horizon_years": years,
-            "include_ai": bool(req.include_ai),
-        })
+        result = compute_life_cycle(chart, horizon_years=years, married=req.married)
+        track_event("prediction_simulate", properties={"horizon_years": years})
         return result
     except Exception as exc:
         import logging, traceback
