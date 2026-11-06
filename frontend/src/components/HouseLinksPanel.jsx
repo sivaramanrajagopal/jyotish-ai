@@ -159,7 +159,7 @@ function HouseTile({ row, view, marks, selected, onSelect }) {
   )
 }
 
-function HouseDetail({ row, view, classical }) {
+function HouseDetail({ row, view, classical, remedy }) {
   if (!row) return null
   const t = row.transit || {}
   const reasons = row.dasha?.reasons || []
@@ -214,11 +214,51 @@ function HouseDetail({ row, view, classical }) {
           </p>
         </>
       )}
+      <RemedyBlock remedy={remedy} />
     </article>
   )
 }
 
-function HouseGrid({ rows, view, marks, selected, onSelect, classical }) {
+function periodText(p) {
+  return p.now ? `${p.label}, now to ${p.end}` : `${p.label}, ${p.start} to ${p.end}`
+}
+
+function RemedyBlock({ remedy }) {
+  if (!remedy) return null
+  return (
+    <details className="hl-remedy">
+      <summary className="hl-remedy__summary">Remedy for {remedy.lord}</summary>
+      <p className="hl-detail__text">{remedy.why_en}</p>
+      <ul className="hl-remedy__list">
+        <li>
+          <strong>Mantra</strong> ({remedy.count} times): {remedy.mantra}
+          <span className="hl-line__ta">{remedy.mantra_ta}</span>
+        </li>
+        <li>
+          <strong>Deity</strong>: {remedy.deity}
+          <span className="hl-line__ta">{remedy.deity_ta}</span>
+        </li>
+        <li>
+          <strong>Day</strong>: {remedy.day}
+          <span className="hl-line__ta">{remedy.day_ta}</span>
+        </li>
+        <li>
+          <strong>Charity</strong>: {remedy.charity.join(', ')}
+          <span className="hl-line__ta">{remedy.charity_ta.join(', ')}</span>
+        </li>
+        {remedy.when?.length > 0 && (
+          <li><strong>Best in</strong>: {remedy.when.map(periodText).join('; ')}</li>
+        )}
+      </ul>
+      <p className="hl-detail__muted">
+        {remedy.note_en} The full set, with the planet&apos;s avastha, is on the Avastha tab.
+        <span className="hl-line__ta">{remedy.note_ta}</span>
+      </p>
+    </details>
+  )
+}
+
+function HouseGrid({ rows, view, marks, selected, onSelect, classical, remedies }) {
   const list = Object.values(rows)
   return (
     <section aria-label="All 12 houses">
@@ -237,7 +277,12 @@ function HouseGrid({ rows, view, marks, selected, onSelect, classical }) {
           />
         ))}
       </ul>
-      <HouseDetail row={rows[selected]} view={view} classical={classicalForHouse(classical, selected)} />
+      <HouseDetail
+        row={rows[selected]}
+        view={view}
+        classical={classicalForHouse(classical, selected)}
+        remedy={remedies?.[selected]}
+      />
     </section>
   )
 }
@@ -493,20 +538,28 @@ function TransitTable({ rows, upcoming }) {
   )
 }
 
-function ExchangeList({ edges }) {
-  const swaps = (edges || []).filter(e => e.kind === 'exchange')
-  if (!swaps.length) return <p className="hl-muted">No sign exchanges between house lords.</p>
+function ExchangeList({ exchanges }) {
+  if (!exchanges?.length) return <p className="hl-muted">No sign exchanges between house lords.</p>
   return (
     <ul className="hl-yoga-list">
-      {swaps.map(e => {
-        const [a, b] = e.planets
+      {exchanges.map(e => {
+        const [a, b] = e.houses
+        const [la, lb] = e.lords
         return (
-          <li key={e.id} className="hl-yoga-list__item">
-            <strong>{e.label_en.split(':')[0]}</strong>
+          <li key={`${a}-${b}`} className="hl-yoga-list__item">
+            <strong>{e.name_en}: the {a}{ordSuffix(a)} and the {b}{ordSuffix(b)}</strong>
+            <span className="hl-line__ta">{e.name_ta}</span>
             <p>
-              {a}, lord of the {e.from_house}{ordSuffix(e.from_house)}, sits in the {e.to_house}{ordSuffix(e.to_house)}.
-              {' '}{b}, lord of the {e.to_house}{ordSuffix(e.to_house)}, sits in the {e.from_house}{ordSuffix(e.from_house)}.
+              {la}, lord of the {a}{ordSuffix(a)}, sits in the {b}{ordSuffix(b)}.
+              {' '}{lb}, lord of the {b}{ordSuffix(b)}, sits in the {a}{ordSuffix(a)}.
             </p>
+            <p>
+              {e.meaning_en}
+              <span className="hl-line__ta">{e.meaning_ta}</span>
+            </p>
+            {e.active?.length > 0 && (
+              <p className="hl-detail__muted">Active in: {e.active.map(periodText).join('; ')}.</p>
+            )}
           </li>
         )
       })}
@@ -722,6 +775,7 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
             selected={selectedHouse}
             onSelect={showHouse}
             classical={classical.data}
+            remedies={data.tables?.remedies}
           />
         </div>
       )}
@@ -740,9 +794,9 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
           <details className="hl-section">
             <summary className="hl-section__summary">
               <Bilingual en="Sign exchanges" ta="பரிவர்த்தனை" inline />
-              <span className="hl-section__count">({(data.edges || []).filter(e => e.kind === 'exchange').length})</span>
+              <span className="hl-section__count">({(data.tables?.exchanges || []).length})</span>
             </summary>
-            <ExchangeList edges={data.edges} />
+            <ExchangeList exchanges={data.tables?.exchanges} />
           </details>
           <button
             type="button"
