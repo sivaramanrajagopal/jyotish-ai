@@ -75,7 +75,7 @@ function SaturnCard({ saturn }) {
         {saturn.map(s => (
           <li key={s.start_iso} className={`lc-saturn__item${s.now ? ' lc-saturn__item--now' : ''}`}>
             <p className="lc-saturn__head">
-              <strong>{s.en}</strong> · {s.start} to {s.end}
+              <strong>{s.phases.length === 1 ? s.phases[0].en : s.en}</strong> · {s.start} to {s.end}
               {s.now && <span className="hl-badge hl-badge--waiting">Now</span>}
             </p>
             <p className="lc-saturn__text">
@@ -234,7 +234,11 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
   const [openKey, setOpenKey] = useState(undefined)
   const chartRef = useRef(chart)
 
-  const requestKey = `${fingerprint}|${userId || ''}|${married}|${nonce}`
+  const birth = chart?.birth_data || {}
+  const moonLon = chart?.planet_positions?.Moon?.longitude
+  const requestKey = [
+    fingerprint, birth.dob, birth.tob, moonLon, userId || '', married, nonce,
+  ].join('|')
 
   useEffect(() => { chartRef.current = chart }, [chart])
 

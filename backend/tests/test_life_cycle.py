@@ -71,6 +71,22 @@ def test_next_window_can_fall_inside_the_running_bhukti(chart):
             assert t["next_live"]["start_iso"] > "2027-01-10"
 
 
+def test_marriage_windows_start_at_eighteen():
+    young = calculate_natal_chart("2010-03-12", "08:10", 13.08, 80.27, "Asia/Kolkata")
+    lc = compute_life_cycle(young, as_of=AS_OF)
+    marriage = _theme(lc, "marriage")
+    assert marriage["next_live"]["start_iso"] >= "2028-03-12"
+    for w in marriage["windows"]:
+        for h in w["houses"]:
+            for r in h["live"]:
+                assert date.fromisoformat(_iso(r["start"])) >= date(2028, 3, 12)
+
+
+def _iso(text):
+    from datetime import datetime
+    return datetime.strptime(text, "%d %b %Y").date().isoformat()
+
+
 def test_theme_remedies_one_per_lord(lc):
     wealth = _theme(lc, "wealth")
     assert [r["lord"] for r in wealth["remedies"]] == ["Jupiter"]

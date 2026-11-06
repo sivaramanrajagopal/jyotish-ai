@@ -136,16 +136,31 @@ def _fruit(chart: dict, h: int) -> dict:
     return {"house": h, "ordinal": ordinal(h), "lord": verdict["lord"], "en": verdict["fruit"], "ta": ta, "tone": tone}
 
 
+def _birthday(born: date, years: int) -> date:
+    try:
+        return born.replace(year=born.year + years)
+    except ValueError:
+        return born.replace(year=born.year + years, day=28)
+
+
+def _clip(runs: list, after: date | None) -> list[list[date]]:
+    if not after:
+        return [list(r) for r in runs]
+    return [[max(a, after), b] for a, b in runs if b >= after]
+
+
 def _theme_windows(theme: dict, periods: list[dict], born: date | None, saturn: list[dict]) -> list[dict]:
     windows = []
+    adult = _birthday(born, theme["min_age"]) if born and theme.get("min_age") else None
     for p in periods:
         hits = {h: p["on"][h] for h in theme["key_houses"] if h in p["on"]}
         if not hits:
             continue
-        if born and theme.get("min_age") and _age(born.isoformat(), p["end"]) < theme["min_age"]:
+        if adult and p["end"] < adult:
             continue
         if born and theme.get("max_age") and _age(born.isoformat(), p["start"]) > theme["max_age"]:
             continue
+        hits = {h: {**v, "runs": _clip(v["runs"], adult)} for h, v in hits.items()}
         runs = _merge([list(r) for v in hits.values() for r in v["runs"]])
         strongest = "both" if any(v["by"] == "both" for v in hits.values()) else (
             "bhukti" if any(v["by"] == "bhukti" for v in hits.values()) else "maha"
