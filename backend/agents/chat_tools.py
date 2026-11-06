@@ -58,7 +58,85 @@ TOOLS = [
 ]
 
 
-def run_chart_tool(name: str, chart: dict, location: str = "Chennai") -> dict:
+CLASSICAL_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "classical_rules",
+        "description": (
+            "BPHS chapter 24 rules matched to this chart: where each house lord sits and "
+            "what the text says. Call when the question asks what the classics or BPHS say, "
+            "or about the results of a house. Optionally narrow to one house or topic."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "house": {"type": "integer", "minimum": 1, "maximum": 12},
+                "topic": {
+                    "type": "string",
+                    "enum": [
+                        "career", "wealth", "income", "marriage", "children", "health",
+                        "foreign", "home", "father", "mother", "siblings", "education",
+                    ],
+                },
+            },
+            "additionalProperties": False,
+        },
+    },
+}
+
+CLASSICAL_GUIDE = (
+    "When the question asks what the classical texts say, or about the results of a house, "
+    "call classical_rules. Put each rule's cite (for example BPHS 24.7) beside what it says, "
+    "and use only the rules the tool returns. These rules back up the house judgment and "
+    "sit under it. Where a rule says to leave something out of a client reading, follow that.\n"
+)
+
+
+def active_tools() -> list[dict]:
+    from agents.classical import classical_enabled
+
+    return [*TOOLS, CLASSICAL_TOOL] if classical_enabled() else TOOLS
+
+
+def _classical_rules(chart: dict, house: int | None = None, topic: str | None = None) -> dict:
+    from agents.classical import classical_for_chart
+
+    result = classical_for_chart(chart)
+    rows = result["matches"]
+    if house:
+        rows = [m for m in rows if house in (m["lord_of"], m["in_house"])]
+    if topic:
+        rows = [m for m in rows if topic in m["topics"]]
+    return {
+        "source": "BPHS chapter 24, house lords placed in houses",
+        "rules": [
+            {
+                "cite": m["source"]["cite"],
+                "lord": m["lord"],
+                "lord_of": m["lord_of"],
+                "in_house": m["in_house"],
+                "tone": m["tone"],
+                "effect": m["strength_label"],
+                "summary": m["summary"],
+                "why": m["why"],
+            }
+            for m in rows
+        ],
+        "dual_lordship": [
+            n["note"] for n in result["dual_lordship"]
+            if not house or house in n["houses"]
+        ],
+    }
+
+
+def run_chart_tool(name: str, chart: dict, location: str = "Chennai", args: dict | None = None) -> dict:
+    if name == "classical_rules":
+        from agents.classical import classical_enabled
+
+        if not classical_enabled():
+            return {"error": "Classical rules are switched off."}
+        args = args or {}
+        return _classical_rules(chart, args.get("house"), args.get("topic"))
     if name == "period_reading":
         reading = compute_period_reading(chart)
         return {
@@ -133,9 +211,15 @@ def run_chart_tool(name: str, chart: dict, location: str = "Chennai") -> dict:
     return {"error": f"Unknown tool {name}"}
 
 
-def tool_result_json(name: str, chart: dict, location: str = "Chennai") -> str:
+def tool_result_json(name: str, chart: dict, location: str = "Chennai", arguments: str = "") -> str:
     try:
-        payload = run_chart_tool(name, chart, location)
+        args = json.loads(arguments) if arguments else {}
+    except ValueError:
+        args = {}
+    try:
+        payload = run_chart_tool(name, chart, location, args if isinstance(args, dict) else {})
     except Exception as exc:
         payload = {"error": str(exc)}
-    return json.dumps(payload, default=str)[:6000]
+    # All twelve classical rules with their reasons can run past the usual cap.
+    limit = 14000 if name == "classical_rules" else 6000
+    return json.dumps(payload, default=str)[:limit]

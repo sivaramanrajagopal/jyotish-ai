@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import { getNativeNote, saveNativeNote } from '../lib/nativeNote'
+import { classicalForHouse, useClassicalRules } from '../hooks/useClassicalRules'
+import ClassicalCard, { ToneBadge } from './ClassicalCard'
 
 function Movement({ index, title, children }) {
   return (
@@ -123,6 +125,18 @@ function VoiceTable({ rows }) {
   )
 }
 
+function ClassicalSupport({ match }) {
+  if (!match) return null
+  return (
+    <p className="text-sm m-0 pt-1" style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>
+      <span className="font-semibold">Classical support: </span>
+      {match.source.cite} <ToneBadge tone={match.tone} />
+      {match.strength_label ? ` · ${match.strength_label}. ` : ' '}
+      {match.summary}
+    </p>
+  )
+}
+
 const NOTES = [
   { id: '', label: 'No note' },
   { id: 'married', label: 'Already married' },
@@ -158,6 +172,7 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
   const [loading, setLoading] = useState(false)
   const [openIds, setOpenIds] = useState([])
   const [note, setNote] = useState(getNativeNote)
+  const classical = useClassicalRules(chart, userId, enabled)
 
   useEffect(() => {
     if (!chart || !enabled) return undefined
@@ -306,6 +321,7 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
                             {row.house.lines.map((line) => (
                               <Said key={line}>{line}</Said>
                             ))}
+                            <ClassicalSupport match={classicalForHouse(classical.data, row.house.house)} />
                           </div>
                         )}
                       </div>
@@ -334,6 +350,8 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
           </Movement>
         </div>
       )}
+
+      {data && <ClassicalCard data={classical.data} error={classical.error} />}
     </section>
   )
 }

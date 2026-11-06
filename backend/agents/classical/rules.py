@@ -25,6 +25,16 @@ HOUSE_TOPICS: dict[int, list[str]] = {
     12: ["expenses", "foreign"],
 }
 
+# A summary can speak to a topic outside its two houses ("happy living abroad").
+SUMMARY_TOPICS: dict[str, tuple[str, ...]] = {
+    "foreign": ("abroad", "foreign", "travel", "outside one's own culture"),
+    "career": ("work", "business", "government", "office", "service", "authorit"),
+    "wealth": ("wealth", "money", "gains", "earn"),
+    "marriage": ("spouse", "marriage", "partner"),
+    "children": ("child",),
+    "health": ("health", "illness", "disorder", "ailment"),
+}
+
 _STRENGTH_SHARE = {"full": "full effect", "half": "half effect", "quarter": "quarter effect"}
 
 _DIGNITY_PHRASE = {
@@ -57,6 +67,13 @@ def load_verses() -> dict:
 def load_rules() -> list[dict]:
     data = json.loads((DATA_DIR / "bphs_ch24_rules.json").read_text(encoding="utf-8"))
     return data["rules"]
+
+
+def _topics(lord_of: int, in_house: int, summary: str) -> list[str]:
+    topics = set(HOUSE_TOPICS[lord_of] + HOUSE_TOPICS[in_house])
+    text = summary.lower()
+    topics.update(topic for topic, words in SUMMARY_TOPICS.items() if any(w in text for w in words))
+    return sorted(topics)
 
 
 def _pick_variant(rule: dict, checks: dict) -> dict | None:
@@ -134,7 +151,7 @@ def match_rules(chart: dict, shadbala: dict | None = None) -> dict:
             "why": why_line(fact),
             "strength": fact["strength"],
             "strength_label": _STRENGTH_SHARE.get(fact["strength"] or ""),
-            "topics": sorted(set(HOUSE_TOPICS[fact["house"]] + HOUSE_TOPICS[fact["lord_house"]])),
+            "topics": _topics(fact["house"], fact["lord_house"], variant["summary"]),
             "status": rule.get("status", "draft"),
             "source": {
                 "text": "BPHS",

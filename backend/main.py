@@ -104,6 +104,7 @@ from agents.prediction_simulator import compute_life_cycle_simulation
 from agents.sky_today_agent import build_sky_today
 from agents.prashna import analyze_prashna
 from admin_router import router as admin_router
+from agents.classical.router import build_classical_router
 from geopy.geocoders import Photon
 from pydantic import BaseModel
 
@@ -280,6 +281,9 @@ def _sanitise(text: str, max_len: int = 200) -> str:
     # Remove non-printable control chars except newline/tab
     text = "".join(c for c in text if c.isprintable() or c in "\n\t")
     return text[:max_len].strip()
+
+
+app.include_router(build_classical_router(_sanitise))
 
 
 # ─────────────────────────────────────────────
