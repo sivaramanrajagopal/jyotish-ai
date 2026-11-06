@@ -6208,6 +6208,18 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .hl-row__body li { margin-bottom: 0.2rem; }
 .hl-row__muted { color: var(--text-muted); margin: 0.2rem 0 0; }
 .hl-row__classical { margin: 0; }
+.hl-next { margin-bottom: 1rem; overflow-wrap: anywhere; }
+.hl-next__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+@media (min-width: 768px) { .hl-next__list { grid-template-columns: repeat(3, 1fr); } }
+.hl-next__item { padding: 0.6rem 0.7rem; border-radius: 0.45rem; border: 1px solid var(--card-border); background: var(--card-bg); }
+.hl-next__head { margin: 0 0 0.3rem; display: grid; gap: 0.1rem; font-size: 0.88rem; }
+.hl-next__dates { font-size: 0.75rem; color: var(--text-muted); }
+.hl-next__houses { list-style: none; margin: 0.3rem 0 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.8rem; }
+.hl-next__window { display: block; color: var(--text-muted); }
+.hl-next__window--on { color: var(--rag-green-text); }
+.hl-next__changes { margin: 0; padding: 0 0.75rem 0.7rem 1.75rem; font-size: 0.8rem; line-height: 1.45; }
+.hl-next__changes li { margin-bottom: 0.3rem; }
+.hl-section__summary { min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; }
 .hl-map-toggle { margin-top: 0.75rem; min-height: 44px; padding: 0.5rem 1rem; border-radius: 0.4rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text-primary); font-weight: 600; cursor: pointer; }
 .hl-map { margin-top: 0.75rem; }
 .hl-map__detail { font-size: 0.8rem; overflow-wrap: anywhere; }

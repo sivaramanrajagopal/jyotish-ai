@@ -113,6 +113,65 @@ function NowCard({ activation, rows, onOpen }) {
   )
 }
 
+function windowText(windows) {
+  if (!windows?.length) return 'Jupiter and Saturn do not both touch it in this period'
+  return `Jupiter and Saturn both touch it ${windows.map(w => `${w.start} to ${w.end}`).join(', and ')}`
+}
+
+function NextStrip({ upcoming }) {
+  if (!upcoming?.periods?.length) return null
+  return (
+    <section className="hl-next" aria-label="Coming next">
+      <h3 className="hl-section-title">
+        <Bilingual en="Coming next" ta="அடுத்து வருவது" inline />
+      </h3>
+      <ol className="hl-next__list">
+        {upcoming.periods.map(p => (
+          <li key={`${p.mahadasha}-${p.bhukti}-${p.start}`} className="hl-next__item">
+            <p className="hl-next__head">
+              <strong>{p.bhukti} bhukti</strong>
+              <span className="hl-next__dates">{p.mahadasha} mahadasha · {p.start} to {p.end}</span>
+            </p>
+            {p.relation && (
+              <p className={`hl-now__line hl-now__line--${p.relation.tone}`}>
+                {p.relation.en}
+                <span className="hl-line__ta">{p.relation.ta}</span>
+              </p>
+            )}
+            <ul className="hl-next__houses">
+              {p.houses.map(h => (
+                <li key={h.house}>
+                  <strong>{h.ordinal} · {h.theme_en}</strong>
+                  <span className="hl-bi__ta"> · {h.theme_ta}</span>
+                  <span className={`hl-next__window${h.windows.length ? ' hl-next__window--on' : ''}`}>
+                    {windowText(h.windows)}.
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
+      {upcoming.sign_changes?.length > 0 && (
+        <details className="hl-section">
+          <summary className="hl-section__summary">
+            <Bilingual en={`Jupiter and Saturn sign changes to ${upcoming.through}`} ta="குரு, சனி ராசி மாற்றங்கள்" inline />
+            <span className="hl-section__count">({upcoming.sign_changes.length})</span>
+          </summary>
+          <ul className="hl-next__changes">
+            {upcoming.sign_changes.map(s => (
+              <li key={`${s.planet}-${s.iso}`}>
+                {s.en}
+                <span className="hl-line__ta">{s.ta}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  )
+}
+
 function HouseRow({ row, classical, open, onToggle }) {
   const t = row.transit || {}
   const reasons = row.dasha?.reasons || []
@@ -318,6 +377,8 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
       ) : (
         <p className="hl-error" role="alert">The dasha and transit layer could not be built for this chart.</p>
       )}
+
+      <NextStrip upcoming={data.upcoming} />
 
       {activation && (
         <section aria-label="All 12 houses">

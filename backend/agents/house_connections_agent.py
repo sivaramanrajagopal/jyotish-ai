@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 
 from agents.house_connections.activation import compute_activation
+from agents.house_connections.upcoming import compute_upcoming
+from agents.nadi_agent import TZ
 from agents.house_connections.blessers import rank_blessers
 from agents.house_connections.core import analyze_all_houses
 from agents.house_connections.dasa_activation import compute_dasa_life_areas
@@ -43,14 +46,21 @@ def compute_house_connections(natal_chart: dict) -> dict:
     strong = sorted(houses, key=lambda x: x["strength"], reverse=True)[:3]
     weak = sorted(houses, key=lambda x: x["strength"])[:3]
     dasa_life_areas = compute_dasa_life_areas(natal_chart, maha, bhukti)
+    today = datetime.now(TZ).date()
     try:
-        activation = compute_activation(natal_chart, houses_map, yogas)
+        activation = compute_activation(natal_chart, houses_map, yogas, today)
     except Exception:
         logging.getLogger(__name__).exception("House Links activation failed")
         activation = None
+    try:
+        upcoming = compute_upcoming(natal_chart, houses_map, today)
+    except Exception:
+        logging.getLogger(__name__).exception("House Links upcoming failed")
+        upcoming = None
 
     return {
         "activation": activation,
+        "upcoming": upcoming,
         "disclaimer": {"en": DISCLAIMER_EN, "ta": DISCLAIMER_TA},
         "summary": {
             "maha_dasa": maha,
