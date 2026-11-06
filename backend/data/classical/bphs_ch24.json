@@ -1,0 +1,1577 @@
+{
+  "text": "Brihat Parashara Hora Shastra",
+  "chapter": 24,
+  "chapter_title": "Effects of the house lords placed in the houses",
+  "source_url": "https://huggingface.co/datasets/JDhruv14/Brihat_Parashara_Hora_Shastra/resolve/main/parashara_data.csv",
+  "license": "Apache-2.0",
+  "attribution": "JDhruv14/Brihat_Parashara_Hora_Shastra on Hugging Face",
+  "verses": [
+    {
+      "verse": 1,
+      "lord_of": 1,
+      "in_house": 1,
+      "sanskrit": "लग्नेशे लग्नगे देहसुखभाग् भुजविक्रमी ।मनस्वी चञ्चलश्चैव द्विभार्यो परगोऽपि व ॥१॥",
+      "transliteration": "lagneśe lagnage dehasukhabhāg bhujavikramī .manasvī cañcalaścaiva dvibhāryo parago'pi va.",
+      "translation": "If the lord of the ascendant is located in the ascendant itself, the person will enjoy bodily comforts, be valorous, intelligent, and somewhat restless. Indeed, they may have two wives, or even associate with other women.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 2,
+      "lord_of": 1,
+      "in_house": 2,
+      "sanskrit": "लग्नेशे धनगे बालो लाभवान् पण्डितः सुखी ।सुशीलो धर्मविन्मानी बहुदारगुणैर्युतः ॥२॥",
+      "transliteration": "lagneśe dhanage bālo lābhavān paṇḍitaḥ sukhī .suśīlo dharmavinmānī bahudāraguṇairyutaḥ.",
+      "translation": "If the lord of the ascendant is in the second house (dhana-ga), the person will be youthful, profitable, learned, and happy. They will be well-behaved, knowledgeable in (dharma) (natural law/righteousness), honorable, and endowed with many excellent wives and virtues.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 3,
+      "lord_of": 1,
+      "in_house": 3,
+      "sanskrit": "लग्नेशे सहजे जातः सिंहतुल्यपराक्रमी ।सर्वसम्पद्युतो मानी द्विभार्यो मतिमान् सुखी ॥३॥",
+      "transliteration": "lagneśe sahaje jātaḥ siṃhatulyaparākramī .sarvasampadyuto mānī dvibhāryo matimān sukhī.",
+      "translation": "If the lord of the ascendant is located in the third house (sahaja), the person born will be as valorous as a lion, endowed with all kinds of wealth, honorable, possess two wives, be intelligent, and happy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 4,
+      "lord_of": 1,
+      "in_house": 4,
+      "sanskrit": "लग्नेशे सुखगे बालः पितृमातृसुखान्वितः ।बहुभ्रातृयुतः कामी गुणरूपसमन्वितः ॥४॥",
+      "transliteration": "lagneśe sukhage bālaḥ pitṛmātṛsukhānvitaḥ .bahubhrātṛyutaḥ kāmī guṇarūpasamanvitaḥ.",
+      "translation": "If the lord of the ascendant is located in the fourth house (the house of happiness), the native will enjoy happiness from their parents. They will have many siblings, be sensual, and be endowed with good qualities and physical beauty.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 5,
+      "lord_of": 1,
+      "in_house": 5,
+      "sanskrit": "लग्नेशे सुतगे जन्तोः सुतसौख्यं च मध्यमम् ।प्रथमापत्यनाशः स्यान्मानी क्रोधी नृपप्रियः ॥५॥",
+      "transliteration": "lagneśe sutage jantoḥ sutasaukhyaṃ ca madhyamam .prathamāpatyanāśaḥ syānmānī krodhī nṛpapriyaḥ.",
+      "translation": "If the lord of the ascendant is located in the fifth house (the house of children) of a native, their happiness from children will be moderate, and there will be the loss of their first child. Such a person will be proud, angry, and dear to rulers.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 6,
+      "lord_of": 1,
+      "in_house": 6,
+      "sanskrit": "लग्नेशे षष्ठगे जातो देहसौख्यविवर्जितः ।पापाढ्ये शत्रुतः पीडा सौम्यदृष्टिविवर्जिते ॥६॥",
+      "transliteration": "lagneśe ṣaṣṭhage jāto dehasaukhyavivarjitaḥ .pāpāḍhye śatrutaḥ pīḍā saumyadṛṣṭivivarjite.",
+      "translation": "If the lord of the ascendant is located in the sixth house, the native is deprived of physical comfort. If that (lord or the sixth house) is afflicted by malefic planets and devoid of benefic aspects, there will be trouble from enemies.",
+      "condition_hints": [
+        "afflicted",
+        "aspect",
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 7,
+      "lord_of": 1,
+      "in_house": 7,
+      "sanskrit": "लग्नेशे सप्तमे पापे भार्या तस्य न जीवति ।शुभेऽटनो दरिद्रो वा विरक्तो वा नृपोऽपि वा ॥७॥",
+      "transliteration": "lagneśe saptame pāpe bhāryā tasya na jīvati .śubhe'ṭano daridro vā virakto vā nṛpo'pi vā.",
+      "translation": "If the lord of the ascendant is located in the seventh house and is a malefic planet, his wife will not live. However, if the lord is a benefic, the native will either be a wanderer, or poor, or detached, or even a king.",
+      "condition_hints": [
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 8,
+      "lord_of": 1,
+      "in_house": 8,
+      "sanskrit": "लग्नेशेऽष्टमगे जातः सिद्धविद्याविशारदः ।रोगी चौरो महाक्रोधी द्यूती च परदारगः ॥८॥",
+      "transliteration": "lagneśe'ṣṭamage jātaḥ siddhavidyāviśāradaḥ .rogī cauro mahākrodhī dyūtī ca paradāragaḥ.",
+      "translation": "If the lord of the ascendant is located in the eighth house, the native will be skilled in occult sciences (siddha-vidyā). Such a person will be prone to sickness, a thief, very angry, a gambler, and one who engages with other people's wives.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 9,
+      "lord_of": 1,
+      "in_house": 9,
+      "sanskrit": "लग्नेशे भाग्यगे जातो भाग्यवाञ्जनवल्लभः ।विष्णुभक्तः पटुर्वाग्मी दारपुत्रधनैर्युतः ॥९॥",
+      "transliteration": "lagneśe bhāgyage jāto bhāgyavāñjanavallabhaḥ .viṣṇubhaktaḥ paṭurvāgmī dāraputradhanairyutaḥ.",
+      "translation": "If the lord of the ascendant is situated in the ninth house (house of fortune), the person born will be fortunate, beloved by people, a devotee (bhakta) of Vishnu, skillful, eloquent, and endowed with a wife, sons, and wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 10,
+      "lord_of": 1,
+      "in_house": 10,
+      "sanskrit": "लग्नेशे दशमे जातः पितृसौख्यसमन्वितः ।नृपमान्यो जने ख्यातः स्वार्जितस्वो न संशयः ॥१०॥",
+      "transliteration": "lagneśe daśame jātaḥ pitṛsaukhyasamanvitaḥ .nṛpamānyo jane khyātaḥ svārjitasvo na saṃśayaḥ.",
+      "translation": "If the lord of the ascendant is situated in the tenth house, the person born will possess happiness from their father, be honored by rulers, renowned among people, and self-made through their own earned wealth; there is no doubt about this.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 11,
+      "lord_of": 1,
+      "in_house": 11,
+      "sanskrit": "लग्नेशे लाभगे जातः सदा लाभसमन्वितः ।सुशीलः ख्यातकीर्तिश्च बहुदारगुणैर्युतः ॥११॥",
+      "transliteration": "lagneśe lābhage jātaḥ sadā lābhasamanvitaḥ .suśīlaḥ khyātakīrtiśca bahudāraguṇairyutaḥ.",
+      "translation": "If the lord of the ascendant is situated in the eleventh house (house of gains), the person born will always be endowed with profits, possess good character, be widely renowned, and have many wives and good qualities.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 12,
+      "lord_of": 1,
+      "in_house": 12,
+      "sanskrit": "लग्नेशे व्ययभावस्थे देहसौख्यविवर्जितः ।व्यर्थव्ययी महाक्रोधी शुभदृग्योगवर्जिते ॥१२॥",
+      "transliteration": "lagneśe vyayabhāvasthe dehasaukhyavivarjitaḥ .vyarthavyayī mahākrodhī śubhadṛgyogavarjite.",
+      "translation": "If the lord of the ascendant is situated in the twelfth house (house of expenditure) and is devoid of beneficial aspects or conjunctions, the person born will be deprived of bodily happiness, a wasteful spender, and very short-tempered.",
+      "condition_hints": [
+        "aspect",
+        "benefic",
+        "conjunct"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 13,
+      "lord_of": 2,
+      "in_house": 1,
+      "sanskrit": "धनेशे लग्नगे जातः पुत्रवान् धनसंयुतः ।कुटुम्बकण्टकः कामी निष्ठुरः परकार्यकृत् ॥१३॥",
+      "transliteration": "dhaneśe lagnage jātaḥ putravān dhanasaṃyutaḥ .kuṭumbakaṇṭakaḥ kāmī niṣṭhuraḥ parakāryakṛt.",
+      "translation": "If the lord of the second house (house of wealth) is situated in the ascendant, the person born will have sons, be endowed with wealth, be a nuisance to their family, lustful, harsh, and engaged in the affairs of others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 14,
+      "lord_of": 2,
+      "in_house": 2,
+      "sanskrit": "धनेशे धनगे जातो धनवान् गर्वसंयुतः ।द्विभार्यो बहुभार्यो वा सुतहीनः प्रजायते ॥१४॥",
+      "transliteration": "dhaneśe dhanage jāto dhanavān garvasaṃyutaḥ .dvibhāryo bahubhāryo vā sutahīnaḥ prajāyate.",
+      "translation": "When the lord of the house of wealth (the second house) is situated in the house of wealth itself, the native will be wealthy and endowed with pride. They may have two wives, or many wives, or alternatively, be childless.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 15,
+      "lord_of": 2,
+      "in_house": 3,
+      "sanskrit": "धनेशे सहजे जातो विक्रमी मतिमान् गुणी ।कामी लोभी शुभाढ्ये च पापाढ्ये देवनिन्दकः ॥१५॥",
+      "transliteration": "dhaneśe sahaje jāto vikramī matimān guṇī .kāmī lobhī śubhāḍhye ca pāpāḍhye devanindakaḥ.",
+      "translation": "When the lord of the house of wealth is situated in the third house, the native is valorous, intelligent, and virtuous. They are also lustful and greedy. If this lord is associated with benefics, good qualities will further manifest; but if associated with malefics, the native becomes a reviler of the gods.",
+      "condition_hints": [
+        "associated",
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 16,
+      "lord_of": 2,
+      "in_house": 4,
+      "sanskrit": "धनेशे सुखभावस्थे सर्वसम्पतसमन्वितः ।गुरुणा संयुते स्वोच्चे राजतुल्यो नरो भवेत् ॥१६॥",
+      "transliteration": "dhaneśe sukhabhāvasthe sarvasampatasamanvitaḥ .guruṇā saṃyute svocce rājatulyo naro bhavet.",
+      "translation": "If the lord of the house of wealth is situated in the fourth house (the house of happiness), the native will be endowed with all kinds of prosperity. If this lord is conjoined with Jupiter and is in its own sign of exaltation, the person will become comparable to a king.",
+      "condition_hints": [
+        "exalt",
+        "own sign"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 17,
+      "lord_of": 2,
+      "in_house": 5,
+      "sanskrit": "धनेशे सुतभावस्थे जातो धनसमन्वितः ।धनोपार्जनशीलाश्च जायन्ते तत्सुता अपि ॥१७॥",
+      "transliteration": "dhaneśe sutabhāvasthe jāto dhanasamanvitaḥ .dhanopārjanaśīlāśca jāyante tatsutā api.",
+      "translation": "If the lord of the house of wealth is situated in the house of children (the fifth house), the native will be endowed with wealth. Furthermore, their children will also be naturally inclined to accumulate wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 18,
+      "lord_of": 2,
+      "in_house": 6,
+      "sanskrit": "धनेशे रिपुभावस्थे सशुभे शत्रुतो धनम् ।सपापे शत्रुतो हानिर्जंघावैकल्यवान् भवेत् ॥१८॥",
+      "transliteration": "dhaneśe ripubhāvasthe saśubhe śatruto dhanam .sapāpe śatruto hānirjaṃghāvaikalyavān bhavet.",
+      "translation": "If the lord of the house of wealth is situated in the sixth house (the house of enemies), then if it is associated with benefics, there will be wealth gained from enemies. However, if it is associated with malefics, there will be a loss from enemies, and the native will suffer from defective calves or limbs.",
+      "condition_hints": [
+        "associated",
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 19,
+      "lord_of": 2,
+      "in_house": 7,
+      "sanskrit": "धनेशे सप्तमे जातः परदाररतो भिषेक् ।पापेक्षितयुते तस्य भार्या च व्यभिचारिणी ॥१९॥",
+      "transliteration": "dhaneśe saptame jātaḥ paradārarato bhiṣek .pāpekṣitayute tasya bhāryā ca vyabhicāriṇī.",
+      "translation": "If the lord of the house of wealth (the second house) is in the seventh house, the native becomes attracted to other men's wives and also becomes a physician. If this (lord of wealth in the seventh house) is associated with or aspected by malefic planets, then his wife also becomes unchaste.",
+      "condition_hints": [
+        "aspect",
+        "associated",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 20,
+      "lord_of": 2,
+      "in_house": 8,
+      "sanskrit": "धनेशेऽष्टमगे जातो भूरिभूमिधनैर्युतः ।पत्नीसुखं भवेत् स्वल्पं ज्येष्ठभ्रातृसुखं न हि ॥२०॥",
+      "transliteration": "dhaneśe'ṣṭamage jāto bhūribhūmidhanairyutaḥ .patnīsukhaṃ bhavet svalpaṃ jyeṣṭhabhrātṛsukhaṃ na hi.",
+      "translation": "If the lord of the house of wealth (the second house) is in the eighth house, the native is endowed with abundant land and riches. However, marital happiness will be scarce, and there will certainly be no happiness from elder siblings.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 21,
+      "lord_of": 2,
+      "in_house": 9,
+      "sanskrit": "धनेशे धर्मभावस्थे धनवानुद्यमी पटुः ।बाल्ये रोगी सुखी पश्चात् तीर्थधर्मव्रतादिकृत् ॥२१॥",
+      "transliteration": "dhaneśe dharmabhāvasthe dhanavānudyamī paṭuḥ .bālye rogī sukhī paścāt tīrthadharmavratādikṛt.",
+      "translation": "If the lord of the house of wealth (the second house) is in the house of (natural) law (dharma) (the ninth house), the native is wealthy, diligent, and skilled. They will be sickly in childhood but happy later in life, and they will undertake pilgrimages, religious observances (dharma), vows, and other such sacred practices.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 22,
+      "lord_of": 2,
+      "in_house": 10,
+      "sanskrit": "धनेशे कर्मगे जातः कामी मानी च पण्डितः ।बहुदार्यधनैर्युक्तः किञ्च पुत्रसुखोज्झितः ॥२२॥",
+      "transliteration": "dhaneśe karmage jātaḥ kāmī mānī ca paṇḍitaḥ .bahudāryadhanairyuktaḥ kiñca putrasukhojjhitaḥ.",
+      "translation": "If the lord of the house of wealth (the second house) is in the house of actions (karma) (the tenth house), the native is passionate, respected, and learned. They will be endowed with many wives and abundant wealth, but will also be deprived of happiness from sons.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 23,
+      "lord_of": 2,
+      "in_house": 11,
+      "sanskrit": "धनेशे लाभभावस्थे सर्वलाभसमन्वितः ।सदोद्योगयुतो मानी कीर्तिमान् जायते नरः ॥२३॥",
+      "transliteration": "dhaneśe lābhabhāvasthe sarvalābhasamanvitaḥ .sadodyogayuto mānī kīrtimān jāyate naraḥ.",
+      "translation": "If the lord of the house of wealth (the second house) is situated in the house of gain (the eleventh house), the native is endowed with all kinds of benefits. Such a person becomes continuously diligent, honored, and famous.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 24,
+      "lord_of": 2,
+      "in_house": 12,
+      "sanskrit": "धनेशे व्ययभावस्थे साहमी धनवर्जितः ।परभाग्यरतस्तस्य ज्येष्ठापत्यसुखं नहि ॥२४॥",
+      "transliteration": "dhaneśe vyayabhāvasthe sāhamī dhanavarjitaḥ .parabhāgyaratastasya jyeṣṭhāpatyasukhaṃ nahi.",
+      "translation": "When the lord of the house of wealth (the second house) is situated in the house of expenditure (the twelfth house), the person, despite being courageous, is devoid of wealth. He relies on the fortunes of others, and happiness from his eldest child is not present for him.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 25,
+      "lord_of": 3,
+      "in_house": 1,
+      "sanskrit": "लग्नगे सहजाधीशे स्वभुजार्जितवित्तवान् ।सेवाज्ञः साहसी जातो विद्याहीनोऽपि बुद्धिमान् ॥२५॥",
+      "transliteration": "lagnage sahajādhīśe svabhujārjitavittavān .sevājñaḥ sāhasī jāto vidyāhīno'pi buddhimān.",
+      "translation": "When the lord of the house of co-borns (the third house) is in the ascendant, the person is one who has acquired wealth through his own efforts. He is knowledgeable about service, courageous, and intelligent even if lacking formal education.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 26,
+      "lord_of": 3,
+      "in_house": 2,
+      "sanskrit": "द्वितीये सहजाधीशे स्थूलो विक्रमवर्जितः ।स्वल्पारम्भी सुखी न स्यात् परस्त्रीधनकामुकः ॥२६॥",
+      "transliteration": "dvitīye sahajādhīśe sthūlo vikramavarjitaḥ .svalpārambhī sukhī na syāt parastrīdhanakāmukaḥ.",
+      "translation": "When the lord of the house of co-borns (the third house) is in the second house, the person is corpulent and devoid of valor. He undertakes small ventures and is not happy, being desirous of other men's wives and wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 27,
+      "lord_of": 3,
+      "in_house": 3,
+      "sanskrit": "सहजे सहजाधीशे सहोदरसुखान्वितः ।धनपुत्रयुतो हृष्टो भुनक्ति सुखमद्भुतम् ॥२७॥",
+      "transliteration": "sahaje sahajādhīśe sahodarasukhānvitaḥ .dhanaputrayuto hṛṣṭo bhunakti sukhamadbhutam.",
+      "translation": "When the lord of the house of co-borns (the third house) is in the house of co-borns (the third house), the person is blessed with happiness from siblings, united with wealth and children, joyful, and enjoys extraordinary happiness.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 28,
+      "lord_of": 3,
+      "in_house": 4,
+      "sanskrit": "सुखस्थे सहजाधीशे सुखी च धनसंयुतः ।मतिमान् जायते बालो दुष्टभार्यापतिश्च सः ॥२८॥",
+      "transliteration": "sukhasthe sahajādhīśe sukhī ca dhanasaṃyutaḥ .matimān jāyate bālo duṣṭabhāryāpatiśca saḥ.",
+      "translation": "When the lord of the house of co-borns (the third house) is in the house of happiness (the fourth house), the person becomes happy, endowed with wealth, and intelligent. And he becomes the husband of a wicked wife.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 29,
+      "lord_of": 3,
+      "in_house": 5,
+      "sanskrit": "सुतस्थे सहजाधीशे पुत्रवान् गुणसंयुतः ।भार्या तस्य भवेत् क्रूरा क्रूरग्रहयुतेक्षिते ॥२९॥",
+      "transliteration": "sutasthe sahajādhīśe putravān guṇasaṃyutaḥ .bhāryā tasya bhavet krūrā krūragrahayutekṣite.",
+      "translation": "If the lord of the 3rd house is located in the 5th house, the person will have sons and be endowed with good qualities. However, if that lord is conjoined with or aspected by malefic planets, his wife will be cruel.",
+      "condition_hints": [
+        "aspect",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 30,
+      "lord_of": 3,
+      "in_house": 6,
+      "sanskrit": "षष्ठभावे त्र्तीयेशे भ्रातृशत्रुर्महाधनी ।मातुलैश्च समं वैरं मातुलानीप्रियो नरः ॥३०॥",
+      "transliteration": "ṣaṣṭhabhāve trtīyeśe bhrātṛśatrurmahādhanī .mātulaiśca samaṃ vairaṃ mātulānīpriyo naraḥ.",
+      "translation": "If the lord of the 3rd house is in the 6th house, the person will be an enemy to his siblings and very wealthy. He will have enmity with his maternal uncles and be dear to his maternal aunts.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 31,
+      "lord_of": 3,
+      "in_house": 7,
+      "sanskrit": "सप्तमे सहजाधीशे राजसेवापरो नरः ।बाल्ये दुःखी सुखी चान्ते जायते नाऽत्र संशयः ॥३१॥",
+      "transliteration": "saptame sahajādhīśe rājasevāparo naraḥ .bālye duḥkhī sukhī cānte jāyate nā'tra saṃśayaḥ.",
+      "translation": "If the lord of the 3rd house is in the 7th house, the person will be engaged in government service. There is no doubt that they will be unhappy in childhood but happy in the end.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 32,
+      "lord_of": 3,
+      "in_house": 8,
+      "sanskrit": "अष्टमे सहजाधीशे जातश्चैरो नरो भवेत् ।दासवृत्त्योपजीवी च राजद्वारे मृतिर्भवेत् ॥३२॥",
+      "transliteration": "aṣṭame sahajādhīśe jātaścairo naro bhavet .dāsavṛttyopajīvī ca rājadvāre mṛtirbhavet.",
+      "translation": "If the lord of the 3rd house is in the 8th house, the person will become a thief and live by servitude. Death may occur at the hands of the government (lit. 'at the king's gate').",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 33,
+      "lord_of": 3,
+      "in_house": 9,
+      "sanskrit": "नवमे सहजाधीशे पितुः सुखविवर्जितः ।स्त्रीभिर्भाग्योदयस्तस्य पुत्रादिसुखसंयुतः ॥३३॥",
+      "transliteration": "navame sahajādhīśe pituḥ sukhavivarjitaḥ .strībhirbhāgyodayastasya putrādisukhasaṃyutaḥ.",
+      "translation": "If the lord of the 3rd house is in the 9th house, the person will be deprived of happiness from his father. His fortune will rise through women, and he will be endowed with happiness from sons and other family members.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 34,
+      "lord_of": 3,
+      "in_house": 10,
+      "sanskrit": "दशमे सहजाधीशे जातः सर्वसुखान्वितः ।स्वभुजार्जिवित्तश्च दुष्टस्त्रीभरणे रतः ॥३४॥",
+      "transliteration": "daśame sahajādhīśe jātaḥ sarvasukhānvitaḥ .svabhujārjivittaśca duṣṭastrībharaṇe rataḥ.",
+      "translation": "If the lord of the third house is in the tenth house, the person born is endowed with all happiness and possesses wealth earned through their own efforts. They are also devoted to maintaining wicked women.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 35,
+      "lord_of": 3,
+      "in_house": 11,
+      "sanskrit": "लाभगे सहजाधीशे व्यापारे लाभवान् सदा ।विद्याहीनोऽपि मेधावी साहसी परसेवकः ॥३५॥",
+      "transliteration": "lābhage sahajādhīśe vyāpāre lābhavān sadā .vidyāhīno'pi medhāvī sāhasī parasevakaḥ.",
+      "translation": "If the lord of the third house is in the house of gain, the person is always profitable in business. Even if they lack formal education, they are intelligent, brave, and serve others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 36,
+      "lord_of": 3,
+      "in_house": 12,
+      "sanskrit": "व्ययस्थे सहजाधीशे कुतार्ये व्ययकृज्जनः ।पिता तस्य भवेत् क्रूरः स्त्रीभिर्भाग्योदयस्तथा ॥३६॥",
+      "transliteration": "vyayasthe sahajādhīśe kutārye vyayakṛjjanaḥ .pitā tasya bhavet krūraḥ strībhirbhāgyodayastathā.",
+      "translation": "If the lord of the third house is in the twelfth house (house of expenditure), the person spends on improper actions. His father will be cruel, and his fortune will also rise through women.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 37,
+      "lord_of": 4,
+      "in_house": 1,
+      "sanskrit": "सुखेशे धनगे जातो विद्यागुणविभूषितः ।भूमीवाहनसंयुक्तो मातुः सुखसमन्वितः ॥३७॥",
+      "transliteration": "sukheśe dhanage jāto vidyāguṇavibhūṣitaḥ .bhūmīvāhanasaṃyukto mātuḥ sukhasamanvitaḥ.",
+      "translation": "If the lord of the fourth house is in the second house, the person born is adorned with knowledge and virtues. They are endowed with land and vehicles, and experience happiness concerning their mother.",
+      "condition_hints": [],
+      "source_note": "The dataset reads 'dhanage' (in the 2nd) here, repeating verse 38. The chapter's order and standard editions place this verse at the 4th lord in the lagna."
+    },
+    {
+      "verse": 38,
+      "lord_of": 4,
+      "in_house": 2,
+      "sanskrit": "सुखेशे धनगे जातो भोगी सर्वधनान्वितः ।कुटुम्बसहितो मानी साहसी कुहकान्वितः ॥३८॥",
+      "transliteration": "sukheśe dhanage jāto bhogī sarvadhanānvitaḥ .kuṭumbasahito mānī sāhasī kuhakānvitaḥ.",
+      "translation": "If the lord of the fourth house is in the second house, the person born is a pleasure-seeker and endowed with all wealth. They are accompanied by family, honorable, brave, and cunning.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 39,
+      "lord_of": 4,
+      "in_house": 3,
+      "sanskrit": "सुखेशे सहजे जातो विक्रमी भृत्यसंयुतः ।उदारोऽरुग् गुणी दाता स्वभुजार्जितवित्तवान् ॥३९॥",
+      "transliteration": "sukheśe sahaje jāto vikramī bhṛtyasaṃyutaḥ .udāro'rug guṇī dātā svabhujārjitavittavān.",
+      "translation": "If the lord of the house of happiness (4th house) is in the 3rd house, the person born will be valiant, possess servants, be generous, healthy, virtuous, charitable, and acquire wealth through their own efforts.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 40,
+      "lord_of": 4,
+      "in_house": 4,
+      "sanskrit": "सुखेशे सुखभावस्थे मन्त्री सर्वधनान्वितः ।चतुरः शीलवान् मानी ज्ञानवान् स्त्रीप्रियः सुखी ॥४०॥",
+      "transliteration": "sukheśe sukhabhāvasthe mantrī sarvadhanānvitaḥ .caturaḥ śīlavān mānī jñānavān strīpriyaḥ sukhī.",
+      "translation": "If the lord of the house of happiness (4th house) is located in the 4th house itself, the person will be a minister or counselor, possess all kinds of wealth, be skillful, of good moral conduct, esteemed, knowledgeable, beloved by women, and happy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 41,
+      "lord_of": 4,
+      "in_house": 5,
+      "sanskrit": "सुखेशे पुत्रभावस्थे सुखी सर्वजनप्रियः ।विष्णुभक्तो गुणी मानी स्वभुजार्जितवित्तवान् ॥४१॥",
+      "transliteration": "sukheśe putrabhāvasthe sukhī sarvajanapriyaḥ .viṣṇubhakto guṇī mānī svabhujārjitavittavān.",
+      "translation": "If the lord of the house of happiness (4th house) is in the house of children (5th house), the person will be happy, beloved by all people, a devotee of Viṣṇu (bhakti), virtuous, esteemed, and acquire wealth through their own efforts.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 42,
+      "lord_of": 4,
+      "in_house": 6,
+      "sanskrit": "सुखेशे रिपुभावस्थे मातुः सुखविवर्जितः ।क्रोधी चोरोऽभिचारी च स्वेच्छाचारश्च दुर्मनाः ॥४२॥",
+      "transliteration": "sukheśe ripubhāvasthe mātuḥ sukhavivarjitaḥ .krodhī coro'bhicārī ca svecchācāraśca durmanāḥ.",
+      "translation": "If the lord of the house of happiness (4th house) is in the house of enemies (6th house), the person will be deprived of their mother's happiness and comforts. They will be prone to anger, a thief, one who engages in malicious acts, licentious, and evil-minded.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 43,
+      "lord_of": 4,
+      "in_house": 7,
+      "sanskrit": "सुखेशे सप्तमे जातो बहुविद्यासमन्वितः ।पित्रार्जितधनत्यागी सभायां मूकवद् भवेत् ॥४३॥",
+      "transliteration": "sukheśe saptame jāto bahuvidyāsamanvitaḥ .pitrārjitadhanatyāgī sabhāyāṃ mūkavad bhavet.",
+      "translation": "If the lord of the house of happiness (4th house) is in the 7th house, the person will be endowed with extensive knowledge. They will abandon wealth earned by their father and become speechless, like a mute, in public assemblies.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 44,
+      "lord_of": 4,
+      "in_house": 8,
+      "sanskrit": "सुखेशे रन्ध्रभावस्थे गृहादिसुखवर्जितः ।पित्रोः सुखं भवेदल्पं जातः क्लीबसमो भवेत् ॥४४॥",
+      "transliteration": "sukheśe randhrabhāvasthe gṛhādisukhavarjitaḥ .pitroḥ sukhaṃ bhavedalpaṃ jātaḥ klībasamo bhavet.",
+      "translation": "When the lord of the fourth house (house of comforts) is situated in the eighth house (house of difficulties), the native is deprived of comforts such as a home. The parents will experience little happiness, and the native will be like an impotent person.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 45,
+      "lord_of": 4,
+      "in_house": 9,
+      "sanskrit": "सुखेशे भाग्यभावस्थे जातः सर्वजनप्रियः ।देवभक्तो गुणी मानी भवेत् सर्वसुखान्वितः ॥४५॥",
+      "transliteration": "sukheśe bhāgyabhāvasthe jātaḥ sarvajanapriyaḥ .devabhakto guṇī mānī bhavet sarvasukhānvitaḥ.",
+      "translation": "If the lord of the fourth house (house of comforts) is situated in the ninth house (house of fortune), the native becomes beloved by all people. They are devoted to the deities (deva), virtuous, honorable, and endowed with all kinds of happiness.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 46,
+      "lord_of": 4,
+      "in_house": 10,
+      "sanskrit": "सुखेशे कर्मभावस्थे राजमान्यो नरो भवेत् ।रसायनी महाहृष्टो सुखभोगी जितेन्द्रियः ॥४६॥",
+      "transliteration": "sukheśe karmabhāvasthe rājamānyo naro bhavet .rasāyanī mahāhṛṣṭo sukhabhogī jitendriyaḥ.",
+      "translation": "If the lord of the fourth house (house of comforts) is situated in the tenth house (house of profession), the person (nara) becomes honored by the king or government. They will be skilled in \"rasāyana\" (alchemy or elixirs), exceedingly joyful, an enjoyer of comforts, and one who has mastered their senses (indriya).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 47,
+      "lord_of": 4,
+      "in_house": 11,
+      "sanskrit": "सुखेशे लाभगे जातो गुप्तरोगभयान्वितः ।उदारी गुणवान् दाता परोपकरणे रतः ॥४७॥",
+      "transliteration": "sukheśe lābhage jāto guptarogabhayānvitaḥ .udārī guṇavān dātā paropakaraṇe rataḥ.",
+      "translation": "If the lord of the fourth house (house of comforts) is situated in the eleventh house (house of gains), the native may experience fear of hidden diseases. However, they are generous, virtuous, a donor, and devoted to helping others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 48,
+      "lord_of": 4,
+      "in_house": 12,
+      "sanskrit": "सुखेशे व्ययभावस्थे गृहादिसुखवर्जितः ।जातो दुर्व्यसनी मूढः सदाऽलस्यसमन्वितः ॥४८॥",
+      "transliteration": "sukheśe vyayabhāvasthe gṛhādisukhavarjitaḥ .jāto durvyasanī mūḍhaḥ sadā'lasyasamanvitaḥ.",
+      "translation": "If the lord of the fourth house (house of comforts) is situated in the twelfth house (house of loss), the native is deprived of comforts such as a home. Such a person (jāta) becomes addicted to bad habits, foolish, and always associated with laziness.",
+      "condition_hints": [
+        "associated"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 49,
+      "lord_of": 5,
+      "in_house": 1,
+      "sanskrit": "सुतेशे लग्नगे जातो विद्यान् पुत्रसुखान्वितः ।कदर्यो वक्रचित्तश्च परद्रव्यापहारकः ॥४९॥",
+      "transliteration": "suteśe lagnage jāto vidyān putrasukhānvitaḥ .kadaryo vakracittaśca paradravyāpahārakaḥ.",
+      "translation": "When the lord of the fifth house (suteśa) is situated in the ascendant (lagna), the person born will be knowledgeable and endowed with happiness from children. They will be miserly, crooked-minded, and a stealer of others' wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 50,
+      "lord_of": 5,
+      "in_house": 2,
+      "sanskrit": "सुतेशे धनगे जातो बहुपुत्रो धनान्वितः ।कुटुम्बपोषको मानी स्त्रीप्रियः सुयशा भुवि ॥५०॥",
+      "transliteration": "suteśe dhanage jāto bahuputro dhanānvitaḥ .kuṭumbapoṣako mānī strīpriyaḥ suyaśā bhuvi.",
+      "translation": "When the lord of the fifth house (suteśa) is situated in the second house (dhana bhāva), the person born will have many children and be endowed with wealth. They will be a supporter of their family, respected, fond of women, and of good reputation on earth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 51,
+      "lord_of": 5,
+      "in_house": 3,
+      "sanskrit": "सुतेशे सहजे भावे जायते सोदरप्रियः ।पिशुनश्च कदर्यश्च स्वकार्यनिरतः सदा ॥५१॥",
+      "transliteration": "suteśe sahaje bhāve jāyate sodarapriyaḥ .piśunaśca kadaryaśca svakāryanirataḥ sadā.",
+      "translation": "When the lord of the fifth house (suteśa) is situated in the third house (sahaja bhāva), the person born will be fond of siblings. They will also be malicious, miserly, and always devoted to their own work.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 52,
+      "lord_of": 5,
+      "in_house": 4,
+      "sanskrit": "सुतेशे सुखभावस्थे सुखी मातृसुखान्वितः ।लक्ष्मीयुक्तः सुबुद्धिश्च राज्ञोऽमात्योऽथवा गुरुः ॥५२॥",
+      "transliteration": "suteśe sukhabhāvasthe sukhī mātṛsukhānvitaḥ .lakṣmīyuktaḥ subuddhiśca rājño'mātyo'thavā guruḥ.",
+      "translation": "When the lord of the fifth house (suteśa) is situated in the fourth house (sukha bhāva), the person will be happy and endowed with happiness from their mother. They will be prosperous, intelligent, and either a minister to a king or a preceptor.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 53,
+      "lord_of": 5,
+      "in_house": 5,
+      "sanskrit": "सुतेशे सुतभावस्ते शुभाढ्ये पुत्रवान् नरः ।पापाढ्येऽपत्यहीनोऽसौ गुणवान् मित्रवत्सलः ॥५३॥",
+      "transliteration": "suteśe sutabhāvaste śubhāḍhye putravān naraḥ .pāpāḍhye'patyahīno'sau guṇavān mitravatsalaḥ.",
+      "translation": "When the lord of the fifth house (suteśa) is situated in the fifth house (suta bhāva) itself and is aspected by benefic planets, the person will have children. If it is aspected by malefic planets, that person will be without children. However, they will be virtuous and fond of friends.",
+      "condition_hints": [
+        "aspect",
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 54,
+      "lord_of": 5,
+      "in_house": 6,
+      "sanskrit": "सुतेशे रिपुभावस्थे पुत्रः शत्रुसमो भवेत् ।मृतापत्योऽथवा जातो दत्तक्रीतसुतोऽथवा ॥५४॥",
+      "transliteration": "suteśe ripubhāvasthe putraḥ śatrusamo bhavet .mṛtāpatyo'thavā jāto dattakrītasuto'thavā.",
+      "translation": "If the lord of the fifth house is situated in the sixth house, the native's son will be like an enemy. Alternatively, the native may have deceased children, or an adopted or bought son.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 55,
+      "lord_of": 5,
+      "in_house": 7,
+      "sanskrit": "सुतेशे सप्तमे मानी सर्वधर्मसमन्वितः ।पुत्रादिसुखयुक्तश्च परोपकरणे रतः ॥५५॥",
+      "transliteration": "suteśe saptame mānī sarvadharmasamanvitaḥ .putrādisukhayuktaśca paropakaraṇe rataḥ.",
+      "translation": "If the lord of the fifth house is situated in the seventh house, the native will be respectable and endowed with all righteous conduct (dharma). Such a person will experience happiness from children and other sources, and will be devoted to helping others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 56,
+      "lord_of": 5,
+      "in_house": 8,
+      "sanskrit": "सुतेशे रन्ध्रभावस्थे स्वल्पपुत्रसुखान्वितः ।कासश्वाससमायुक्तः क्रोधी च सुखवर्जितः ॥५६॥",
+      "transliteration": "suteśe randhrabhāvasthe svalpaputrasukhānvitaḥ .kāsaśvāsasamāyuktaḥ krodhī ca sukhavarjitaḥ.",
+      "translation": "If the lord of the fifth house is situated in the eighth house, the native will experience little happiness from children. Such a person will suffer from cough and respiratory problems, be irritable, and be deprived of overall happiness.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 57,
+      "lord_of": 5,
+      "in_house": 9,
+      "sanskrit": "सुतेशे भाग्यगे पुत्रो भपो वा तत्समो भवेत् ।स्वयं वा ग्रन्थकर्ता च विख्यातः कुलदीपकः ॥५७॥",
+      "transliteration": "suteśe bhāgyage putro bhapo vā tatsamo bhavet .svayaṃ vā granthakartā ca vikhyātaḥ kuladīpakaḥ.",
+      "translation": "If the lord of the fifth house is situated in the ninth house (house of fortune), the native's son will become a king or a person of similar status. Alternatively, the native himself may become a renowned author and a luminary of his family.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 58,
+      "lord_of": 5,
+      "in_house": 10,
+      "sanskrit": "सुतेशे राज्यभावस्थे राजयोगो हि जायते ।अनेकसुखभोगी च ख्यातकीर्तिर्नरो भवेत् ॥५८॥",
+      "transliteration": "suteśe rājyabhāvasthe rājayogo hi jāyate .anekasukhabhogī ca khyātakīrtirnaro bhavet.",
+      "translation": "If the lord of the fifth house is situated in the tenth house (house of kingdom and profession), a royal planetary combination (rājayoga) will indeed arise. Such a person will enjoy numerous pleasures and will be a man of widespread fame.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 59,
+      "lord_of": 5,
+      "in_house": 11,
+      "sanskrit": "सुतेशे लाभगे जातो विद्यावान् जनवल्लभः ।ग्रन्थकर्ता महादक्षो बहुपुत्रधनान्वितः ॥५९॥",
+      "transliteration": "suteśe lābhage jāto vidyāvān janavallabhaḥ .granthakartā mahādakṣo bahuputradhanānvitaḥ.",
+      "translation": "When the lord of the fifth house is situated in the eleventh house, the person born will be learned, beloved by people, an author, very skillful, and endowed with many sons and wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 60,
+      "lord_of": 5,
+      "in_house": 12,
+      "sanskrit": "सुतेशे व्ययभावस्थे जातः पुत्रसुखोज्ज्ञितः ।दत्तपुत्रयुतो वाऽसौ क्रीतपुत्रान्वितोऽथवा ॥६०॥",
+      "transliteration": "suteśe vyayabhāvasthe jātaḥ putrasukhojjñitaḥ .dattaputrayuto vā'sau krītaputrānvito'thavā.",
+      "translation": "When the lord of the fifth house is situated in the twelfth house (vyayabhāva), the person born will be deprived of the happiness of sons. Or he will have an adopted son, or be endowed with a purchased son.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 61,
+      "lord_of": 6,
+      "in_house": 1,
+      "sanskrit": "षष्ठेशे लग्नगे जातो रोगवान् कीर्तिसंयुतः ।आत्मशत्रुर्धनी मानी साहसी गुणवान् नरः ॥६१॥",
+      "transliteration": "ṣaṣṭheśe lagnage jāto rogavān kīrtisaṃyutaḥ .ātmaśatrurdhanī mānī sāhasī guṇavān naraḥ.",
+      "translation": "When the lord of the sixth house is situated in the Ascendant (Lagna), the person born will be sickly but endowed with fame. He will be his own enemy, wealthy, proud, courageous, virtuous, and a man of quality.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 62,
+      "lord_of": 6,
+      "in_house": 2,
+      "sanskrit": "षष्ठेशे धनभावस्थे साहसी कुलविश्रुतः ।परदेशी सुखी वक्ता स्वकर्मनीरतः सदा ॥६२॥",
+      "transliteration": "ṣaṣṭheśe dhanabhāvasthe sāhasī kulaviśrutaḥ .paradeśī sukhī vaktā svakarmanīrataḥ sadā.",
+      "translation": "When the lord of the sixth house is situated in the second house (house of wealth), the person will be courageous, famous in his family, live in a foreign land, be happy, an eloquent speaker, and always devoted to his own action (karma).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 63,
+      "lord_of": 6,
+      "in_house": 3,
+      "sanskrit": "षष्ठेशे सहजः जातः क्रोधी विक्रमवर्जितः ।भ्राता शत्रुसमस्तस्य भृत्यश्चोत्तरदायकः ॥६३॥",
+      "transliteration": "ṣaṣṭheśe sahajaḥ jātaḥ krodhī vikramavarjitaḥ .bhrātā śatrusamastasya bhṛtyaścottaradāyakaḥ.",
+      "translation": "When the lord of the sixth house is situated in the third house (house of siblings/courage), the person born will be angry and devoid of valor. His brother will be like an enemy to him, and his servants will be defiant.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 64,
+      "lord_of": 6,
+      "in_house": 4,
+      "sanskrit": "षष्ठेशे सुखभावस्थे मातुः सुखविवर्जितः ।मनस्वी पिशुना द्वेषी चलचित्तोऽतिवित्तवान् ॥६४॥",
+      "transliteration": "ṣaṣṭheśe sukhabhāvasthe mātuḥ sukhavivarjitaḥ .manasvī piśunā dveṣī calacitto'tivittavān.",
+      "translation": "If the lord of the sixth house is situated in the house of happiness (the fourth house), the native is deprived of their mother's happiness. Such a person is high-minded, malicious, envious, fickle-minded, and possesses great wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 65,
+      "lord_of": 6,
+      "in_house": 5,
+      "sanskrit": "षष्ठेशे सुतगो यस्य चलं तस्य धनादिकम् ।शत्रुता पुत्रमित्रैश्च सुखी स्वार्थी दयान्वितः ॥६५॥",
+      "transliteration": "ṣaṣṭheśe sutago yasya calaṃ tasya dhanādikam .śatrutā putramitraiśca sukhī svārthī dayānvitaḥ.",
+      "translation": "If the lord of the sixth house is in the house of children (the fifth house), that person's wealth and other possessions are unstable. There will also be enmity with their children and friends. The native is happy, selfish, and endowed with compassion.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 66,
+      "lord_of": 6,
+      "in_house": 6,
+      "sanskrit": "षष्ठेशे रिपुभावस्थे वैरं स्वज्ञातिमण्डलात् ।अन्यैः सह भवेन् मैत्री सुखं मध्यं धनादिजम् ॥६६॥",
+      "transliteration": "ṣaṣṭheśe ripubhāvasthe vairaṃ svajñātimaṇḍalāt .anyaiḥ saha bhaven maitrī sukhaṃ madhyaṃ dhanādijam.",
+      "translation": "If the lord of the sixth house is situated in the house of enemies (the sixth house), the native will experience enmity from their own family (jñāti) and community. However, they will have friendships with others. Their happiness and wealth will be moderate.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 67,
+      "lord_of": 6,
+      "in_house": 7,
+      "sanskrit": "षष्ठेशे दारभावस्थे जातो दारसुखोज्झितः ।कीर्तिमान् गुणवान् मानी साहसी धनसंयुतः ॥६७॥",
+      "transliteration": "ṣaṣṭheśe dārabhāvasthe jāto dārasukhojjhitaḥ .kīrtimān guṇavān mānī sāhasī dhanasaṃyutaḥ.",
+      "translation": "If the lord of the sixth house is situated in the house of spouse (the seventh house), the native is deprived of marital happiness. Such a person is famous, virtuous, proud, courageous, and possesses wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 68,
+      "lord_of": 6,
+      "in_house": 8,
+      "sanskrit": "षष्ठेशेऽष्टमगे जातो रोगी शत्रुर्मनीषिणाम् ।परद्रव्याभिलाषी च परदाररतोऽशुचिः ॥६८॥",
+      "transliteration": "ṣaṣṭheśe'ṣṭamage jāto rogī śatrurmanīṣiṇām .paradravyābhilāṣī ca paradārarato'śuciḥ.",
+      "translation": "If the lord of the sixth house is in the eighth house, the native is sickly and an enemy of the wise. Such a person desires others' property, is attracted to others' wives, and is impure.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 69,
+      "lord_of": 6,
+      "in_house": 9,
+      "sanskrit": "षष्ठेशे भाग्यगे जातः काष्ठपाषाणविक्रयी ।व्यवहारे क्वचिद्धानिः क्वचिद्वृद्धिश्च जायते ॥६९॥",
+      "transliteration": "ṣaṣṭheśe bhāgyage jātaḥ kāṣṭhapāṣāṇavikrayī .vyavahāre kvaciddhāniḥ kvacidvṛddhiśca jāyate.",
+      "translation": "If the lord of the sixth house is situated in the ninth house (bhāgya bhāva), the native will be a seller of wood and stone. In their business dealings, they will sometimes experience loss and sometimes gain.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 70,
+      "lord_of": 6,
+      "in_house": 10,
+      "sanskrit": "षष्ठेशे दशमे भावे मानवः कुलविश्रुतः ।अभक्तश्च पितुर्वक्ता विदेशे च सुखी भवेत् ॥७०॥",
+      "transliteration": "ṣaṣṭheśe daśame bhāve mānavaḥ kulaviśrutaḥ .abhaktaśca piturvaktā videśe ca sukhī bhavet.",
+      "translation": "If the lord of the sixth house is situated in the tenth house, the native will be renowned within their lineage. They will be disrespectful and critical of their father, and will find happiness in a foreign land.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 71,
+      "lord_of": 6,
+      "in_house": 11,
+      "sanskrit": "षष्ठेशे लाभगे जातः शत्रुतो धनमाप्नुयात् ।गुणवान् साहसी मानी किन्तु पुत्रसुखोज्झितः ॥७१॥",
+      "transliteration": "ṣaṣṭheśe lābhage jātaḥ śatruto dhanamāpnuyāt .guṇavān sāhasī mānī kintu putrasukhojjhitaḥ.",
+      "translation": "If the lord of the sixth house is situated in the eleventh house (lābha bhāva), the native will acquire wealth from their adversaries. Such a person is virtuous, courageous, and honorable, but deprived of happiness from their children.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 72,
+      "lord_of": 6,
+      "in_house": 12,
+      "sanskrit": "षष्ठेशे व्ययभावस्थे व्यसने व्ययकृत् सदा ।विद्वद्द्वेषी भवेज्जातो जीवहिंसासु तत्परः ॥७२॥",
+      "transliteration": "ṣaṣṭheśe vyayabhāvasthe vyasane vyayakṛt sadā .vidvaddveṣī bhavejjāto jīvahiṃsāsu tatparaḥ.",
+      "translation": "If the lord of the sixth house is situated in the twelfth house (vyaya bhāva), the native will always spend on vices. Such a person becomes hostile towards scholars and is inclined to harm living beings.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 73,
+      "lord_of": 7,
+      "in_house": 1,
+      "sanskrit": "दारेशे लग्नगे जातः परदारेषु लम्पटः ।दुष्टो विचक्षणोऽधीरो जनो वातरुजान्वितः ॥७३॥",
+      "transliteration": "dāreśe lagnage jātaḥ paradāreṣu lampaṭaḥ .duṣṭo vicakṣaṇo'dhīro jano vātarujānvitaḥ.",
+      "translation": "If the lord of the seventh house (dāreśa) is situated in the ascendant (lagna), the native will be lustful towards other people's wives. Such a person is wicked, yet clever, impatient, and afflicted by diseases caused by an imbalance of the vāta (air) humor.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 74,
+      "lord_of": 7,
+      "in_house": 2,
+      "sanskrit": "दारेशे धनगे जातो बहुस्त्रीभिः समन्वितः ।दारयोगाद्धनाप्तिश्च दीर्घसूत्री च मानवः ॥७४॥",
+      "transliteration": "dāreśe dhanage jāto bahustrībhiḥ samanvitaḥ .dārayogāddhanāptiśca dīrghasūtrī ca mānavaḥ.",
+      "translation": "When the lord of the seventh house is situated in the second house (the house of wealth), the native is associated with many women. This person acquires wealth through their spouse (dāra) and is also a procrastinator.",
+      "condition_hints": [
+        "associated"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 75,
+      "lord_of": 7,
+      "in_house": 3,
+      "sanskrit": "दारेशे सहजे जातो मृतापत्यो हि मानवः ।कदाचिज्जायते पुत्री यत्नात् पुत्रोऽपि जीवति ॥७५॥",
+      "transliteration": "dāreśe sahaje jāto mṛtāpatyo hi mānavaḥ .kadācijjāyate putrī yatnāt putro'pi jīvati.",
+      "translation": "When the lord of the seventh house is situated in the third house (the house of siblings and effort), the native certainly has deceased children. Occasionally, a daughter may be born, and even a son will survive only with great effort.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 76,
+      "lord_of": 7,
+      "in_house": 4,
+      "sanskrit": "दारेशे सुखभावस्थे जाया नास्य वशे सदा ।स्वयं सत्यप्रियो धीमान् धर्मात्मा दन्तरोगयुक् ॥७६॥",
+      "transliteration": "dāreśe sukhabhāvasthe jāyā nāsya vaśe sadā .svayaṃ satyapriyo dhīmān dharmātmā dantarogayuk.",
+      "translation": "When the lord of the seventh house is situated in the fourth house (the house of happiness), his wife is not always under his control. The native himself is truthful, intelligent, righteous (dharma), and afflicted with tooth disease.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 77,
+      "lord_of": 7,
+      "in_house": 5,
+      "sanskrit": "दारेशे पञ्चमे जातो मानि सर्वगुणान्वितः ।सर्वदा हर्षयुक्तश्च तथा सर्वधनाधिपः ॥७७॥",
+      "transliteration": "dāreśe pañcame jāto māni sarvaguṇānvitaḥ .sarvadā harṣayuktaśca tathā sarvadhanādhipaḥ.",
+      "translation": "When the lord of the seventh house is situated in the fifth house (the house of children and intellect), the native is proud and endowed with all good qualities. Such a person is always cheerful and also the lord of all wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 78,
+      "lord_of": 7,
+      "in_house": 6,
+      "sanskrit": "दारेशे रिपुभावस्थे भार्या तस्य रुजान्विता ।स्त्रिया सहाऽथ वा वैरं स्वयं क्रोधी सुखोज्झितः ॥७८॥",
+      "transliteration": "dāreśe ripubhāvasthe bhāryā tasya rujānvitā .striyā sahā'tha vā vairaṃ svayaṃ krodhī sukhojjhitaḥ.",
+      "translation": "When the lord of the seventh house is situated in the sixth house (the house of enemies), his wife is afflicted with disease. Alternatively, he may have enmity with women. The native himself is prone to anger and deprived of happiness.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 79,
+      "lord_of": 7,
+      "in_house": 7,
+      "sanskrit": "दारेशे सप्तमे भावे जातो दारसुखान्वितः ।धीरो विचक्षणो धीमान् केवलं वातरोगवान् ॥७९॥",
+      "transliteration": "dāreśe saptame bhāve jāto dārasukhānvitaḥ .dhīro vicakṣaṇo dhīmān kevalaṃ vātarogavān.",
+      "translation": "If the lord of the seventh house is situated in the seventh house, the person born will be endowed with happiness from their spouse, courageous, discerning, and intelligent, but will only suffer from ailments caused by an imbalance of the air element (vāta).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 80,
+      "lord_of": 7,
+      "in_house": 8,
+      "sanskrit": "दारेशे मृत्युभावस्थे जातो दारसुखोज्झितः ।भार्याऽपि रोगयुक्ताऽस्य दुःशीलाऽपि न चानुगा ॥८०॥",
+      "transliteration": "dāreśe mṛtyubhāvasthe jāto dārasukhojjhitaḥ .bhāryā'pi rogayuktā'sya duḥśīlā'pi na cānugā.",
+      "translation": "If the lord of the seventh house is situated in the eighth house (house of death), the person born will be deprived of happiness from their spouse. Moreover, their wife will be afflicted by disease, ill-natured, and disobedient.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 81,
+      "lord_of": 7,
+      "in_house": 9,
+      "sanskrit": "दारेशे धर्मभावस्थे नानास्त्रीभिः समागमः ।जायाहृतमना जातो बह्वारम्भकरो नरः ॥८१॥",
+      "transliteration": "dāreśe dharmabhāvasthe nānāstrībhiḥ samāgamaḥ .jāyāhṛtamanā jāto bahvārambhakaro naraḥ.",
+      "translation": "If the lord of the seventh house is situated in the ninth house (house of natural law [dharma]), there will be association with various women. The person born will have their mind captivated by their wife and will undertake many ventures.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 82,
+      "lord_of": 7,
+      "in_house": 10,
+      "sanskrit": "दारेशे कर्मभावस्थे नास्य जाया वशानुगा ।स्वयं धर्मरतो जातो धनपुत्रादिसंयुतः ॥८२॥",
+      "transliteration": "dāreśe karmabhāvasthe nāsya jāyā vaśānugā .svayaṃ dharmarato jāto dhanaputrādisaṃyutaḥ.",
+      "translation": "If the lord of the seventh house is situated in the tenth house (house of action [karma]), his wife will not be obedient. The person born will himself be devoted to natural law (dharma) and endowed with wealth, children, and so on.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 83,
+      "lord_of": 7,
+      "in_house": 11,
+      "sanskrit": "दारेशे लाभभावस्थे दारैरर्थसमागमः ।पुत्रादिसुखमल्पं च जनः कन्यप्रजो भवेत् ॥८३॥",
+      "transliteration": "dāreśe lābhabhāvasthe dārairarthasamāgamaḥ .putrādisukhamalpaṃ ca janaḥ kanyaprajo bhavet.",
+      "translation": "If the lord of the seventh house is situated in the eleventh house (house of gain), there will be acquisition of wealth through spouses. Happiness from children and so on will be limited, and the person will primarily have female offspring.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 84,
+      "lord_of": 7,
+      "in_house": 12,
+      "sanskrit": "दारेशे व्ययगे जातो दरिद्रः कृपणोऽपि वा ।भार्या;पि व्ययशीलाऽस्य वस्त्राजीवी नरो भवेत् ॥८४॥",
+      "transliteration": "dāreśe vyayage jāto daridraḥ kṛpaṇo'pi vā .bhāryā;pi vyayaśīlā'sya vastrājīvī naro bhavet.",
+      "translation": "If the lord of the seventh house is situated in the twelfth house, the person born will be poor or even miserly. His wife will also be extravagant, and the man will earn his living through clothes (a tailor).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 85,
+      "lord_of": 8,
+      "in_house": 1,
+      "sanskrit": "अष्टमेशे तनौ जातस्तनुसौख्यविवर्जितः ।देवानां ब्राह्मणानां च निन्दको व्रणसंयुतः ॥८५॥",
+      "transliteration": "aṣṭameśe tanau jātastanusaukhyavivarjitaḥ .devānāṃ brāhmaṇānāṃ ca nindako vraṇasaṃyutaḥ.",
+      "translation": "If the lord of the eighth house is in the first house, the person born will be deprived of bodily comforts. He will be a slanderer of gods and brahmins, and afflicted with wounds or ulcers.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 86,
+      "lord_of": 8,
+      "in_house": 2,
+      "sanskrit": "अष्टमेशे धने बाहुबलहीनः प्रजायते ।धनं तस्य भवेत् स्वल्पं नष्ट वित्तं न लभ्यते ॥८६॥",
+      "transliteration": "aṣṭameśe dhane bāhubalahīnaḥ prajāyate .dhanaṃ tasya bhavet svalpaṃ naṣṭa vittaṃ na labhyate.",
+      "translation": "If the lord of the eighth house is in the second house, the person born will lack physical strength. His wealth will be meager, and lost wealth will not be recovered.",
+      "condition_hints": [
+        "strength"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 87,
+      "lord_of": 8,
+      "in_house": 3,
+      "sanskrit": "रन्ध्रेशे सहजे भावे भ्रातृसौख्यं न जायते ।सालस्यो भृत्यहीनश्च जायते बलवर्जितः ॥८७॥",
+      "transliteration": "randhreśe sahaje bhāve bhrātṛsaukhyaṃ na jāyate .sālasyo bhṛtyahīnaśca jāyate balavarjitaḥ.",
+      "translation": "If the lord of the eighth house is in the third house, there will be no happiness from siblings. The person born will be lazy, without servants, and devoid of strength.",
+      "condition_hints": [
+        "strength"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 88,
+      "lord_of": 8,
+      "in_house": 4,
+      "sanskrit": "रन्ध्रेशे सुखभावस्थे मातृहीनो भवेच्छिशुः ।गृहभूमिसुखैर्हीनो मित्रद्रोही न संशयः ॥८८॥",
+      "transliteration": "randhreśe sukhabhāvasthe mātṛhīno bhavecchiśuḥ .gṛhabhūmisukhairhīno mitradrohī na saṃśayaḥ.",
+      "translation": "If the lord of the eighth house is situated in the fourth house (the house of happiness or mother), the child will be without a mother. He will be deprived of happiness from home and land, and undoubtedly a betrayer of friends.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 89,
+      "lord_of": 8,
+      "in_house": 5,
+      "sanskrit": "रन्ध्रेशे सुतभावस्थे जडबुद्धिः प्रजायते ।स्वल्पप्रज्ञो भवेज्जतो दीर्घायुश्च धनान्वितः ॥८९॥",
+      "transliteration": "randhreśe sutabhāvasthe jaḍabuddhiḥ prajāyate .svalpaprajño bhavejjato dīrghāyuśca dhanānvitaḥ.",
+      "translation": "If the lord of the eighth house is located in the fifth house, the native will be dull-witted and possess little wisdom. Despite this, they will have a long life and be endowed with wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 90,
+      "lord_of": 8,
+      "in_house": 6,
+      "sanskrit": "रन्ध्रेशे रिपुभावस्थे शत्रुजेता भवेज्जनः ।रोगयुक्तशरीरश्च बाल्ये सर्पजलाद् भयम् ॥९०॥",
+      "transliteration": "randhreśe ripubhāvasthe śatrujetā bhavejjanaḥ .rogayuktaśarīraśca bālye sarpajalād bhayam.",
+      "translation": "If the lord of the eighth house is located in the sixth house, the native will conquer their enemies. However, they will have a body afflicted with disease and experience fear of snakes and water during childhood.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 91,
+      "lord_of": 8,
+      "in_house": 7,
+      "sanskrit": "रन्ध्रेशे दारभावस्थे तस्य भार्याद्वयं भवेत् ।व्यापारे च भवेधानिस्तस्मिन् पापयुते ध्रुवम् ॥९१॥",
+      "transliteration": "randhreśe dārabhāvasthe tasya bhāryādvayaṃ bhavet .vyāpāre ca bhavedhānistasmin pāpayute dhruvam.",
+      "translation": "If the lord of the eighth house is located in the seventh house, the native will have two wives. Furthermore, if that lord is associated with a malefic planet, there will certainly be financial loss in business.",
+      "condition_hints": [
+        "associated",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 92,
+      "lord_of": 8,
+      "in_house": 8,
+      "sanskrit": "रन्ध्रेशे मृत्युभावस्थे जाता दीर्घायुषा युतः ।निर्बले मध्यमायुः स्याच्चौरो निन्द्योऽन्यनिन्दकः ॥९२॥",
+      "transliteration": "randhreśe mṛtyubhāvasthe jātā dīrghāyuṣā yutaḥ .nirbale madhyamāyuḥ syāccauro nindyo'nyanindakaḥ.",
+      "translation": "If the lord of the eighth house is located in the eighth house, the native will have a long life. However, if that lord is weak, the native will have an average lifespan, be a thief, despicable, and a slanderer of others.",
+      "condition_hints": [
+        "weak"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 93,
+      "lord_of": 8,
+      "in_house": 9,
+      "sanskrit": "अष्टमेशे तपःस्थाने धर्मद्रोही च नास्तिकः ।दुष्टभार्यापतिश्चैव परद्रव्यापहारकः ॥९३॥",
+      "transliteration": "aṣṭameśe tapaḥsthāne dharmadrohī ca nāstikaḥ .duṣṭabhāryāpatiścaiva paradravyāpahārakaḥ.",
+      "translation": "If the lord of the eighth house is located in the ninth house (tapas-sthāna), the native will be an enemy of (dharma) and an atheist. Furthermore, he will be the husband of a wicked wife and a stealer of others' property.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 94,
+      "lord_of": 8,
+      "in_house": 10,
+      "sanskrit": "रन्ध्रेशे कर्मभावस्ते पितृसौख्यविवर्जितः ।पिशुनः कर्महीनश्च यदि नैव शुभेक्षिते ॥९४॥",
+      "transliteration": "randhreśe karmabhāvaste pitṛsaukhyavivarjitaḥ .piśunaḥ karmahīnaśca yadi naiva śubhekṣite.",
+      "translation": "If the lord of the 8th house is situated in the 10th house, the native will be deprived of happiness from their father. They will also be a backbiter and lack professional engagement (karma), particularly if this lord is not aspected by benefic planets.",
+      "condition_hints": [
+        "aspect",
+        "benefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 95,
+      "lord_of": 8,
+      "in_house": 11,
+      "sanskrit": "रन्ध्रेशे लाभभावस्थे सपापे धनवर्जितः ।बाल्ये दुःखी सुखी पश्चात् दीर्घायुश्च शुभान्विते ॥९५॥",
+      "transliteration": "randhreśe lābhabhāvasthe sapāpe dhanavarjitaḥ .bālye duḥkhī sukhī paścāt dīrghāyuśca śubhānvite.",
+      "translation": "If the lord of the 8th house is situated in the 11th house (lābhabhāva) and associated with malefic planets, the native will be devoid of wealth. Such a person will experience unhappiness in childhood but happiness later in life, and will have a long life if associated with benefic planets.",
+      "condition_hints": [
+        "associated",
+        "benefic",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 96,
+      "lord_of": 8,
+      "in_house": 12,
+      "sanskrit": "रन्ध्रेशे व्ययभावस्थे कुकार्ये व्ययकृत् सदा ।अल्पायुश्च भवेज्जातः सपापे च विशेषतः ॥९६॥",
+      "transliteration": "randhreśe vyayabhāvasthe kukārye vyayakṛt sadā .alpāyuśca bhavejjātaḥ sapāpe ca viśeṣataḥ.",
+      "translation": "If the lord of the 8th house is situated in the 12th house (vyayabhāva), the native will always spend on ignoble actions. This individual will also be short-lived (alpāyu), particularly if the lord is associated with malefic planets.",
+      "condition_hints": [
+        "associated",
+        "malefic"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 97,
+      "lord_of": 9,
+      "in_house": 1,
+      "sanskrit": "भाग्येशे लग्नगे जातो भाग्यवान् भूपवन्दितः ।सुशीलश्च सुरूपश्च विद्यावान् जनपूजितः ॥९७॥",
+      "transliteration": "bhāgyeśe lagnage jāto bhāgyavān bhūpavanditaḥ .suśīlaśca surūpaśca vidyāvān janapūjitaḥ.",
+      "translation": "If the lord of the 9th house (bhāgya) is situated in the 1st house (lagna), the native becomes very fortunate and revered by rulers. Such a person is also of good character, handsome, learned, and honored by the public.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 98,
+      "lord_of": 9,
+      "in_house": 2,
+      "sanskrit": "भाग्येशे धनभावस्थे पण्डितो जनवल्लभः ।जायते धनवान् कामी स्त्रीपुत्रादिसुखान्वितः ॥९८॥",
+      "transliteration": "bhāgyeśe dhanabhāvasthe paṇḍito janavallabhaḥ .jāyate dhanavān kāmī strīputrādisukhānvitaḥ.",
+      "translation": "If the lord of the 9th house (bhāgya) is situated in the 2nd house (dhanabhāva), the native becomes a scholar and is beloved by people. Such a person is born wealthy, possesses strong desires, and enjoys happiness from spouse, children, and other such comforts.",
+      "condition_hints": [
+        "strong"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 99,
+      "lord_of": 9,
+      "in_house": 3,
+      "sanskrit": "भाग्येशे भ्रातृभावस्थे जातो भ्रातृसुखान्वितः ।धनवान् गुणवांश्चापि रूपशीलसमन्वितः ॥९९॥",
+      "transliteration": "bhāgyeśe bhrātṛbhāvasthe jāto bhrātṛsukhānvitaḥ .dhanavān guṇavāṃścāpi rūpaśīlasamanvitaḥ.",
+      "translation": "When the lord of the house of fortune (bhāgyeśa) is situated in the house of siblings, the person born is blessed with happiness from siblings. They are also wealthy, virtuous, and endowed with beauty and good character.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 100,
+      "lord_of": 9,
+      "in_house": 4,
+      "sanskrit": "भाग्येशे तुर्यभावस्थे गृहयानसुखान्वितः ।सर्वसम्पत्तियुक्तश्च मातृभक्तो भवेन्नरः ॥१००॥",
+      "transliteration": "bhāgyeśe turyabhāvasthe gṛhayānasukhānvitaḥ .sarvasampattiyuktaśca mātṛbhakto bhavennaraḥ.",
+      "translation": "When the lord of the house of fortune (bhāgyeśa) is situated in the fourth house, the person born is blessed with happiness from home and conveyances. That person will be endowed with all kinds of wealth and devoted (bhakti) to their mother.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 101,
+      "lord_of": 9,
+      "in_house": 5,
+      "sanskrit": "भाग्येशे सुतभावस्थे सुतभाग्यसमन्वितः ।गुरुभक्तिरतो धीरो धर्मात्मा पण्डितो नरः ॥१०१॥",
+      "transliteration": "bhāgyeśe sutabhāvasthe sutabhāgyasamanvitaḥ .gurubhaktirato dhīro dharmātmā paṇḍito naraḥ.",
+      "translation": "When the lord of the house of fortune (bhāgyeśa) is situated in the fifth house (the house of children), the person born is blessed with good fortune concerning children. That person is devoted (bhakti) to preceptors (guru), steady, righteous (dharma) in soul, and learned.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 102,
+      "lord_of": 9,
+      "in_house": 6,
+      "sanskrit": "भाग्येशे रिपुभावस्थे स्वल्पभाग्यो भवेन्नरः ।मातुलादिसुखैर्हीनः शत्रुभिः पीडितः सदा ॥१०२॥",
+      "transliteration": "bhāgyeśe ripubhāvasthe svalpabhāgyo bhavennaraḥ .mātulādisukhairhīnaḥ śatrubhiḥ pīḍitaḥ sadā.",
+      "translation": "When the lord of the house of fortune (bhāgyeśa) is situated in the sixth house (the house of enemies), the person born will have little fortune. Such a person will be devoid of happiness from maternal uncles and similar relatives, and always tormented by enemies.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 103,
+      "lord_of": 9,
+      "in_house": 7,
+      "sanskrit": "भाग्येशे दारभावस्थे दारयोगात् सुखोदयः ।गुणवान् कीर्तिमांश्चापि जायते द्विजसत्तमः ॥१०३॥",
+      "transliteration": "bhāgyeśe dārabhāvasthe dārayogāt sukhodayaḥ .guṇavān kīrtimāṃścāpi jāyate dvijasattamaḥ.",
+      "translation": "When the lord of the house of fortune (bhāgyeśa) is situated in the seventh house (the house of spouse), happiness arises from the relationship (yoga) with the spouse. The person born becomes virtuous, famous, and an excellent Brahmin.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 104,
+      "lord_of": 9,
+      "in_house": 8,
+      "sanskrit": "भाग्येशे मृत्युभावस्थे भाग्यहीनो नरो भवेत् ।ज्येष्ठभ्रातृसुखं नैव तस्य जातस्य जायते ॥१०४॥",
+      "transliteration": "bhāgyeśe mṛtyubhāvasthe bhāgyahīno naro bhavet .jyeṣṭhabhrātṛsukhaṃ naiva tasya jātasya jāyate.",
+      "translation": "If the lord of the house of fortune (bhāgya) is situated in the eighth house (the house of death or obstacles), the person born will be devoid of good fortune. That native will also not experience any happiness from elder siblings.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 105,
+      "lord_of": 9,
+      "in_house": 9,
+      "sanskrit": "भाग्येशे भाग्यभावस्थे बहुभाग्यसमन्वितः ।गुणसौन्दर्यसम्पन्नो सहजेभ्यः सुखं बहु ॥१०५॥",
+      "transliteration": "bhāgyeśe bhāgyabhāvasthe bahubhāgyasamanvitaḥ .guṇasaundaryasampanno sahajebhyaḥ sukhaṃ bahu.",
+      "translation": "If the lord of the house of fortune (bhāgya) is situated in the ninth house (the house of fortune), the native will be endowed with abundant fortune, virtues, and beauty, and will receive much happiness from siblings.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 106,
+      "lord_of": 9,
+      "in_house": 10,
+      "sanskrit": "भाग्येशे कर्मभावस्थे जातो राजाऽथ तत्समः ।मन्त्री सेनापतिर्वाऽपि गुणवान् जनपुजितः ॥१०६॥",
+      "transliteration": "bhāgyeśe karmabhāvasthe jāto rājā'tha tatsamaḥ .mantrī senāpatirvā'pi guṇavān janapujitaḥ.",
+      "translation": "If the lord of the house of fortune (bhāgya) is situated in the tenth house (the house of action or profession), the native will be born as a king or one equal to a king, or as a minister or a commander-in-chief. Such a person will be virtuous and respected by the populace.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 107,
+      "lord_of": 9,
+      "in_house": 11,
+      "sanskrit": "भाग्येशे लाभभावस्थे धनलाभो दिने दिने ।भक्तो गुरुजनानां च गुणवान् पुण्यवानपि ॥१०७॥",
+      "transliteration": "bhāgyeśe lābhabhāvasthe dhanalābho dine dine .bhakto gurujanānāṃ ca guṇavān puṇyavānapi.",
+      "translation": "If the lord of the house of fortune (bhāgya) is situated in the eleventh house (the house of gains), there will be an increase in wealth day by day. The native will be devoted to elders (guru), virtuous, and also meritorious.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 108,
+      "lord_of": 9,
+      "in_house": 12,
+      "sanskrit": "भाग्येशो व्ययभावस्थो भाग्यहानिकरो नृणाम् ।शुभकार्ये व्ययो नित्यं निर्धनोऽतिथिसङ्गमात् ॥१०८॥",
+      "transliteration": "bhāgyeśo vyayabhāvastho bhāgyahānikaro nṛṇām .śubhakārye vyayo nityaṃ nirdhano'tithisaṅgamāt.",
+      "translation": "If the lord of the house of fortune (bhāgya) is situated in the twelfth house (the house of loss or expenditure), it causes a reduction in fortune for people. There is constant expenditure on auspicious activities, and the native becomes poor due to interacting with guests.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 109,
+      "lord_of": 10,
+      "in_house": 1,
+      "sanskrit": "कर्मेशे लग्नगे जातो विद्वान् ख्यातो धनी कवीः ।बाल्ये रोगी सुखी पश्चाद् धनवृद्धिर्दिने दिने ॥१०९॥",
+      "transliteration": "karmeśe lagnage jāto vidvān khyāto dhanī kavīḥ .bālye rogī sukhī paścād dhanavṛddhirdine dine.",
+      "translation": "If the lord of the tenth house (karma) is located in the ascendant, the person born will be learned, famous, wealthy, and a poet. They will be sickly in childhood, but happy later, with their wealth increasing day by day.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 110,
+      "lord_of": 10,
+      "in_house": 2,
+      "sanskrit": "राज्येशे धनभावस्थे धनवान् गुणसंयुतः ।राजमान्यो वदान्यश्च पित्रादिसुखसंयुतः ॥११०॥",
+      "transliteration": "rājyeśe dhanabhāvasthe dhanavān guṇasaṃyutaḥ .rājamānyo vadānyaśca pitrādisukhasaṃyutaḥ.",
+      "translation": "If the lord of the tenth house (rājya) is located in the second house (house of wealth), the person will be wealthy and endowed with good qualities. They will be honored by the government and generous, enjoying happiness from their father and others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 111,
+      "lord_of": 10,
+      "in_house": 3,
+      "sanskrit": "कर्मेशे सहजे जातो भ्रातृभृत्यसुखान्वितः ।विक्रमी गुणसम्पन्नः वाग्मी सत्यरतो नरः ॥१११॥",
+      "transliteration": "karmeśe sahaje jāto bhrātṛbhṛtyasukhānvitaḥ .vikramī guṇasampannaḥ vāgmī satyarato naraḥ.",
+      "translation": "If the lord of the tenth house (karma) is in the third house, the person born will be endowed with happiness from siblings and servants. That person will be valorous, virtuous, eloquent, and devoted to truth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 112,
+      "lord_of": 10,
+      "in_house": 4,
+      "sanskrit": "कर्मेशे सुखभावस्थे सुखी मातृहिते रतः ।यानभूमिगृहाधीशो गुणवान् धनवानपि ॥११२॥",
+      "transliteration": "karmeśe sukhabhāvasthe sukhī mātṛhite rataḥ .yānabhūmigṛhādhīśo guṇavān dhanavānapi.",
+      "translation": "If the lord of the tenth house (karma) is located in the fourth house (house of happiness), the person will be happy and devoted to their mother's welfare. They will be the owner of vehicles, land, and houses, as well as virtuous and wealthy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 113,
+      "lord_of": 10,
+      "in_house": 5,
+      "sanskrit": "कर्मेशे सुतभावस्थे सर्वविद्यासमन्वितः ।सर्वदा हृर्षसंयुक्तो धनवान् पुत्रवानपि ॥११३॥",
+      "transliteration": "karmeśe sutabhāvasthe sarvavidyāsamanvitaḥ .sarvadā hṛrṣasaṃyukto dhanavān putravānapi.",
+      "translation": "If the lord of the tenth house (karma) is located in the fifth house (house of children), the person will be endowed with all knowledge. They will always be joyful, wealthy, and have children.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 114,
+      "lord_of": 10,
+      "in_house": 6,
+      "sanskrit": "कर्मेशे रिपुभावस्थे पितृसौख्यविवर्जितः ।चतुरोऽपि धनैर्हीनः शत्रुभिः परिपीडितः ॥११४॥",
+      "transliteration": "karmeśe ripubhāvasthe pitṛsaukhyavivarjitaḥ .caturo'pi dhanairhīnaḥ śatrubhiḥ paripīḍitaḥ.",
+      "translation": "When the lord of the 10th house (karma) is situated in the 6th house, the person is deprived of paternal happiness. Even if clever, they are devoid of wealth and afflicted by enemies.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 115,
+      "lord_of": 10,
+      "in_house": 7,
+      "sanskrit": "राज्येशे दारभावस्थे जातो दारसुखान्वितः ।मनस्वी गुणवान् वाग्मी सत्यधर्मरतः सदा ॥११५॥",
+      "transliteration": "rājyeśe dārabhāvasthe jāto dārasukhānvitaḥ .manasvī guṇavān vāgmī satyadharmarataḥ sadā.",
+      "translation": "When the lord of the 10th house is situated in the 7th house, the native is endowed with marital happiness. Such a person is high-minded, virtuous, eloquent, and always devoted to truth and natural law (dharma).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 116,
+      "lord_of": 10,
+      "in_house": 8,
+      "sanskrit": "कर्मेशे रन्ध्रभावस्थे कर्महीनो भवेन्नरः ।दीर्घायुरप्यसौ जातः परनिन्दापरायणः ॥११६॥",
+      "transliteration": "karmeśe randhrabhāvasthe karmahīno bhavennaraḥ .dīrghāyurapyasau jātaḥ paranindāparāyaṇaḥ.",
+      "translation": "When the lord of the 10th house (karma) is situated in the 8th house, the person is devoid of meaningful action or work. Even if long-lived, such a native is prone to criticizing others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 117,
+      "lord_of": 10,
+      "in_house": 9,
+      "sanskrit": "राज्येशे भाग्यभे जातो राजा राजकुलोद्भवः ।तत्समोऽन्यकुलोत्पन्नो धनपुत्रादिसंयुतः ॥११७॥",
+      "transliteration": "rājyeśe bhāgyabhe jāto rājā rājakulodbhavaḥ .tatsamo'nyakulotpanno dhanaputrādisaṃyutaḥ.",
+      "translation": "When the lord of the 10th house is situated in the 9th house (house of fortune, also known as the dharma house), the native becomes a king or is born into a royal family. Even if born in another family, such a person is equal to a king and endowed with wealth, children, and other such blessings.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 118,
+      "lord_of": 10,
+      "in_house": 10,
+      "sanskrit": "कर्मेशे राज्यभावस्थे सर्वकर्मपटुः सुखी ।विक्रमी सत्यवक्ता च गुरुभक्तिरतो नरः ॥११८॥",
+      "transliteration": "karmeśe rājyabhāvasthe sarvakarmapaṭuḥ sukhī .vikramī satyavaktā ca gurubhaktirato naraḥ.",
+      "translation": "When the lord of the 10th house (karma) is situated in the 10th house itself, the person is skillful in all actions and happy. Such a native is courageous, truthful in speech, and devoted to their spiritual teacher (guru).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 119,
+      "lord_of": 10,
+      "in_house": 11,
+      "sanskrit": "राज्येशे लाभभावस्थे जातो धनसुतान्वितः ।हर्षवान् गुणवांश्चापि सत्यवक्ता सदा सुखी ॥११९॥",
+      "transliteration": "rājyeśe lābhabhāvasthe jāto dhanasutānvitaḥ .harṣavān guṇavāṃścāpi satyavaktā sadā sukhī.",
+      "translation": "When the lord of the tenth house is situated in the eleventh house (house of gains), the native is endowed with wealth and sons, delighted, virtuous, a speaker of truth, and always happy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 120,
+      "lord_of": 10,
+      "in_house": 12,
+      "sanskrit": "राज्येशे व्ययभावस्थे तस्य राजगृहे व्ययः ।शत्रुतोऽपि भयं नित्यं चतुरश्चापि चिन्तितः ॥१२०॥",
+      "transliteration": "rājyeśe vyayabhāvasthe tasya rājagṛhe vyayaḥ .śatruto'pi bhayaṃ nityaṃ caturaścāpi cintitaḥ.",
+      "translation": "When the lord of the tenth house is situated in the twelfth house (house of expenditure), the native incurs expenses in government-related matters. There is also constant fear from enemies. Such a person is clever, but also anxious.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 121,
+      "lord_of": 11,
+      "in_house": 1,
+      "sanskrit": "लाभेशे लग्नगे जातः सात्त्विको धनवान् सुखी ।समदृष्टिः कविर्वाग्मी सदा लाभसमन्वितः ॥१२१॥",
+      "transliteration": "lābheśe lagnage jātaḥ sāttviko dhanavān sukhī .samadṛṣṭiḥ kavirvāgmī sadā lābhasamanvitaḥ.",
+      "translation": "When the lord of the eleventh house is situated in the ascendant, the native is pure (sāttvika), wealthy, and happy. He has an equal vision, is a poet and an eloquent speaker, and is always endowed with gains.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 122,
+      "lord_of": 11,
+      "in_house": 2,
+      "sanskrit": "लाभेशे धनभावस्थे जातः सर्वधनान्वितः ।सर्वसिद्धियुतो दाता धार्मिकश्च सुखी सदा ॥१२२॥",
+      "transliteration": "lābheśe dhanabhāvasthe jātaḥ sarvadhanānvitaḥ .sarvasiddhiyuto dātā dhārmikaśca sukhī sadā.",
+      "translation": "When the lord of the eleventh house is situated in the second house (house of wealth), the native is endowed with all kinds of wealth, possesses all accomplishments, is a generous person, and is always righteous (dhārmika) and happy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 123,
+      "lord_of": 11,
+      "in_house": 3,
+      "sanskrit": "लाभेशे सहजे जातः कुशलः सर्वकर्मसु ।धनी भ्रातृसुखोपेतः शूलरोगभयं क्वचित् ॥१२३॥",
+      "transliteration": "lābheśe sahaje jātaḥ kuśalaḥ sarvakarmasu .dhanī bhrātṛsukhopetaḥ śūlarogabhayaṃ kvacit.",
+      "translation": "When the lord of the eleventh house is situated in the third house (house of siblings/courage), the native is skillful in all endeavors. He is wealthy and endowed with happiness from siblings. Fear of colic disease is occasional.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 124,
+      "lord_of": 11,
+      "in_house": 4,
+      "sanskrit": "लाभेशे सुखभावस्थे लाभो मातृकुलाद् भवेत् ।तीर्थयात्राकरो जातो गृहभूमिसुखान्वितः ॥१२४॥",
+      "transliteration": "lābheśe sukhabhāvasthe lābho mātṛkulād bhavet .tīrthayātrākaro jāto gṛhabhūmisukhānvitaḥ.",
+      "translation": "When the lord of the house of gains (lābha) is situated in the fourth house (the house of happiness/sukha), the native will acquire gains from their maternal family. Such a person will undertake pilgrimages and be endowed with happiness from home and land.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 125,
+      "lord_of": 11,
+      "in_house": 5,
+      "sanskrit": "लाभेशे सुतभावस्थे भवन्ति सुखिनः सुताः ।विद्यवन्तोऽपि सच्छीलाः स्वयं धर्मरतः सुखी ॥१२५॥",
+      "transliteration": "lābheśe sutabhāvasthe bhavanti sukhinaḥ sutāḥ .vidyavanto'pi sacchīlāḥ svayaṃ dharmarataḥ sukhī.",
+      "translation": "When the lord of the house of gains (lābha) is situated in the fifth house (the house of children/suta), the children become happy, learned, and of good moral conduct. The native themselves will be devoted to righteousness (dharma) and happy.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 126,
+      "lord_of": 11,
+      "in_house": 6,
+      "sanskrit": "लाभेशे रोगभावस्थे जातो रोगसमन्वितः ।क्रूरबुद्धिः प्रवासी च शत्रुभि परिपीडितः ॥१२६॥",
+      "transliteration": "lābheśe rogabhāvasthe jāto rogasamanvitaḥ .krūrabuddhiḥ pravāsī ca śatrubhi paripīḍitaḥ.",
+      "translation": "When the lord of the house of gains (lābha) is situated in the sixth house (the house of diseases/roga), the native will be afflicted with illnesses. They will possess a cruel intellect, be a wanderer, and be tormented by enemies.",
+      "condition_hints": [
+        "afflicted"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 127,
+      "lord_of": 11,
+      "in_house": 7,
+      "sanskrit": "लाभेशे दारभावस्थे लाभो दारकुलात् सदा ।उदारश्च गुणी कामी जनो भार्यावशानुगः ॥१२७॥",
+      "transliteration": "lābheśe dārabhāvasthe lābho dārakulāt sadā .udāraśca guṇī kāmī jano bhāryāvaśānugaḥ.",
+      "translation": "When the lord of the house of gains (lābha) is situated in the seventh house (the house of spouse/dāra), there will always be gains from the spouse's family. The native will be generous, virtuous, passionate, and obedient to their wife.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 128,
+      "lord_of": 11,
+      "in_house": 8,
+      "sanskrit": "लाभेशे रन्ध्रभावस्थे हानिः कार्येषु जायते ।तस्यायुश्च भवेद्दीर्घं प्रथमं मरणं स्त्रियः ॥१२८॥",
+      "transliteration": "lābheśe randhrabhāvasthe hāniḥ kāryeṣu jāyate .tasyāyuśca bhaveddīrghaṃ prathamaṃ maraṇaṃ striyaḥ.",
+      "translation": "When the lord of the house of gains (lābha) is situated in the eighth house (the house of obstacles/randhra), losses will occur in one's undertakings. While the native's lifespan will be long, their wife's death will precede their own.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 129,
+      "lord_of": 11,
+      "in_house": 9,
+      "sanskrit": "लभेशे भाग्यभावस्थे भाग्यवान् जायते नरः ।चतुरः सत्यवादी च राजपुज्यो धनाधिपः ॥१२९॥",
+      "transliteration": "labheśe bhāgyabhāvasthe bhāgyavān jāyate naraḥ .caturaḥ satyavādī ca rājapujyo dhanādhipaḥ.",
+      "translation": "When the lord of the house of gains is located in the house of fortune, a person is born fortunate. He becomes clever, truthful, honored by rulers, and a master of wealth.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 130,
+      "lord_of": 11,
+      "in_house": 10,
+      "sanskrit": "लाभेशे कर्मभावस्थे भूपवन्द्यो गुणान्वितः ।निजधर्मरतो धीमान् सत्यवादी जितेन्द्रियः ॥१३०॥",
+      "transliteration": "lābheśe karmabhāvasthe bhūpavandyo guṇānvitaḥ .nijadharmarato dhīmān satyavādī jitendriyaḥ.",
+      "translation": "When the lord of the house of gains is located in the house of action (karma), the person is honored by kings, endowed with good qualities, devoted to his own intrinsic nature (dharma), intelligent, truthful, and has conquered his senses.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 131,
+      "lord_of": 11,
+      "in_house": 11,
+      "sanskrit": "लाभेशे लाभभावस्थे लाभः सर्वेषु कर्मसु ।पण्डित्यं च सुखं तस्य वर्द्धते च दिने दिने ॥१३१॥",
+      "transliteration": "lābheśe lābhabhāvasthe lābhaḥ sarveṣu karmasu .paṇḍityaṃ ca sukhaṃ tasya varddhate ca dine dine.",
+      "translation": "When the lord of the house of gains (lābha-bhāva) is situated in the house of gains, the person achieves profit in all undertakings (karma). His wisdom and happiness also increase day by day.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 132,
+      "lord_of": 11,
+      "in_house": 12,
+      "sanskrit": "लाभेशे व्ययभावस्थे सत्कार्येषु व्ययः सदा ।कामुको बहुपत्नीको म्लेच्छसंसर्गकारकः ॥१३२॥",
+      "transliteration": "lābheśe vyayabhāvasthe satkāryeṣu vyayaḥ sadā .kāmuko bahupatnīko mlecchasaṃsargakārakaḥ.",
+      "translation": "When the lord of the house of gains is situated in the house of loss (vyaya-bhāva), there is always expenditure on virtuous actions. Such a person is lustful, has many wives, and associates with people outside of traditional social order (mleccha).",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 133,
+      "lord_of": 12,
+      "in_house": 1,
+      "sanskrit": "व्ययेशे लग्नगे जातो व्ययशीलो जतो भवेत् ।दुर्बलः कफरोगी च धनविद्याविवर्जितः ॥१३३॥",
+      "transliteration": "vyayeśe lagnage jāto vyayaśīlo jato bhavet .durbalaḥ kapharogī ca dhanavidyāvivarjitaḥ.",
+      "translation": "When the lord of the house of loss is in the Ascendant, the person born becomes extravagant. He is weak, prone to phlegm-related ailments, and devoid of both wealth and knowledge.",
+      "condition_hints": [
+        "weak"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 134,
+      "lord_of": 12,
+      "in_house": 2,
+      "sanskrit": "व्ययेशे धनभावस्थे शुभकार्ये व्ययः सदा ।धार्मिकः प्रियवादी च गुणसौख्यसमन्वितः ॥१३४॥",
+      "transliteration": "vyayeśe dhanabhāvasthe śubhakārye vyayaḥ sadā .dhārmikaḥ priyavādī ca guṇasaukhyasamanvitaḥ.",
+      "translation": "When the lord of the twelfth house is situated in the second house, there is always expenditure on auspicious activities. Such a person is righteous (dharma), speaks pleasantly, and is endowed with good qualities and happiness.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 135,
+      "lord_of": 12,
+      "in_house": 3,
+      "sanskrit": "व्ययेशे सहजे जातो भ्रातृसौक्यविवर्जितः ।भवेदन्यजनद्वेषी स्वशरीरस्य पोषकः ॥१३५॥",
+      "transliteration": "vyayeśe sahaje jāto bhrātṛsaukyavivarjitaḥ .bhavedanyajanadveṣī svaśarīrasya poṣakaḥ.",
+      "translation": "When the lord of the twelfth house is situated in the third house, the person is deprived of happiness from siblings. He becomes hostile to other people and is a caretaker of his own body.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 136,
+      "lord_of": 12,
+      "in_house": 4,
+      "sanskrit": "व्ययेशे सुखभावस्थे मातुः सुखविवर्जितः ।भूमियानगृहादीनां हानिस्तस्य दिनेदिने ॥१३६॥",
+      "transliteration": "vyayeśe sukhabhāvasthe mātuḥ sukhavivarjitaḥ .bhūmiyānagṛhādīnāṃ hānistasya dinedine.",
+      "translation": "When the lord of the twelfth house is situated in the fourth house, the person is deprived of happiness from his mother. There is a daily loss for him concerning land, conveyances, and houses.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 137,
+      "lord_of": 12,
+      "in_house": 5,
+      "sanskrit": "व्ययेशे सुतभावस्थे सुतविद्याविवर्जितः ।पुत्रार्थे च व्ययस्तस्य तीर्थाटनपरो नरः ॥१३७॥",
+      "transliteration": "vyayeśe sutabhāvasthe sutavidyāvivarjitaḥ .putrārthe ca vyayastasya tīrthāṭanaparo naraḥ.",
+      "translation": "When the lord of the twelfth house is situated in the fifth house, the person is deprived of children and education. He incurs expenses for the sake of his son, and this man is devoted to pilgrimage.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 138,
+      "lord_of": 12,
+      "in_house": 6,
+      "sanskrit": "व्ययेशे रिपुभावस्थे जातः स्वजनवैरकृत् ।क्रोधी पापी च दुःखी च परजायारतो नरः ॥१३८॥",
+      "transliteration": "vyayeśe ripubhāvasthe jātaḥ svajanavairakṛt .krodhī pāpī ca duḥkhī ca parajāyārato naraḥ.",
+      "translation": "When the lord of the twelfth house is situated in the sixth house, the person creates hostility with his own people. He is angry, sinful, and unhappy, and this man is attached to other men's wives.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 139,
+      "lord_of": 12,
+      "in_house": 7,
+      "sanskrit": "व्ययेशे दारभावस्थे व्ययो दारकृतः सदा ।तस्य भार्यासुखं नैव बलविद्याविवर्जितः ॥१३९॥",
+      "transliteration": "vyayeśe dārabhāvasthe vyayo dārakṛtaḥ sadā .tasya bhāryāsukhaṃ naiva balavidyāvivarjitaḥ.",
+      "translation": "If the lord of the twelfth house (house of expenditure) is located in the seventh house (house of spouse), there will always be expenses caused by the spouse. Such a person will lack marital happiness and will be devoid of strength and knowledge.",
+      "condition_hints": [
+        "strength"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 140,
+      "lord_of": 12,
+      "in_house": 8,
+      "sanskrit": "व्ययेशे मृत्युभावस्थे जातो लाभान्वितः सदा ।प्रियवाङ् मध्यमायुश्च सम्पूर्णगुणसंयुतः ॥१४०॥",
+      "transliteration": "vyayeśe mṛtyubhāvasthe jāto lābhānvitaḥ sadā .priyavāṅ madhyamāyuśca sampūrṇaguṇasaṃyutaḥ.",
+      "translation": "If the lord of the twelfth house (house of expenditure) is in the eighth house (house of death/longevity), the native will always be blessed with gains, be sweet-spoken, have a medium lifespan, and possess complete virtues.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 141,
+      "lord_of": 12,
+      "in_house": 9,
+      "sanskrit": "व्ययेशे भाग्यभावस्थे गुरुद्वेषी भवेन्नरः ।मित्रैरपि भवेद्वैरं स्वार्थसाधनतत्परः ॥१४१॥",
+      "transliteration": "vyayeśe bhāgyabhāvasthe gurudveṣī bhavennaraḥ .mitrairapi bhavedvairaṃ svārthasādhanatatparaḥ.",
+      "translation": "If the lord of the twelfth house (house of expenditure) is in the ninth house (house of fortune), the person becomes hateful towards teachers (guru). There will be enmity even with friends, and the individual will be solely intent on achieving their own self-interest.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 142,
+      "lord_of": 12,
+      "in_house": 10,
+      "sanskrit": "व्ययेशे राज्यभावस्थे व्ययो राजकुलाद्भवेत् ।पितृतोऽपि सुखं तस्य स्वल्पमेव हि जायते ॥१४२॥",
+      "transliteration": "vyayeśe rājyabhāvasthe vyayo rājakulādbhavet .pitṛto'pi sukhaṃ tasya svalpameva hi jāyate.",
+      "translation": "If the lord of the twelfth house (house of expenditure) is in the tenth house (house of kingdom/profession), expenses will arise from the government or authorities. Such a person will indeed receive very little happiness even from their father.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 143,
+      "lord_of": 12,
+      "in_house": 11,
+      "sanskrit": "व्ययेशे लाभभावस्थे लाभे हानिः प्रजायते ।परेण रक्षितं द्रव्यं कदाचिल्लभते नरः ॥१४३॥",
+      "transliteration": "vyayeśe lābhabhāvasthe lābhe hāniḥ prajāyate .pareṇa rakṣitaṃ dravyaṃ kadācillabhate naraḥ.",
+      "translation": "If the lord of the twelfth house (house of expenditure) is in the eleventh house (house of gains), there will be losses concerning gains. The person may sometimes obtain wealth that was protected or kept by others.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 144,
+      "lord_of": 12,
+      "in_house": 12,
+      "sanskrit": "व्ययेशे व्ययभावस्थे व्ययाधिक्यं हि जायते ।न शरीरसुखं तस्य क्रोधी द्वेषपरो नृणाम् ॥१४४॥",
+      "transliteration": "vyayeśe vyayabhāvasthe vyayādhikyaṃ hi jāyate .na śarīrasukhaṃ tasya krodhī dveṣaparo nṛṇām.",
+      "translation": "When the lord of the twelfth house (vyayeśa) is situated in the twelfth house (vyayabhāva), there is indeed excessive expenditure. That person experiences no physical comfort; he is angry and hostile towards people.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 145,
+      "lord_of": null,
+      "in_house": null,
+      "sanskrit": "इति ते कथितं विप्र भावेशानां च यत् फलम् ।बलाबलविवेकेन सर्वेषं तत्समादिशेत् ॥१४५॥",
+      "transliteration": "iti te kathitaṃ vipra bhāveśānāṃ ca yat phalam .balābalavivekena sarveṣaṃ tatsamādiśet.",
+      "translation": "O Brahmin (vipra), thus has been explained to you the effect of the lords of the houses. One should declare all these effects by discerning their strengths and weaknesses.",
+      "condition_hints": [
+        "strength",
+        "weak"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 146,
+      "lord_of": null,
+      "in_house": null,
+      "sanskrit": "द्विराशीशस्य खेटस्य विदित्वोभयथा फलम् ।विरोधे तुल्यफलयोर्द्वयोर्नाशः प्रजायते ॥१४६॥",
+      "transliteration": "dvirāśīśasya kheṭasya viditvobhayathā phalam .virodhe tulyaphalayordvayornāśaḥ prajāyate.",
+      "translation": "Having known the two-fold effects of a planet that is the lord of two signs, if the two effects are equal and contradictory, both will be destroyed.",
+      "condition_hints": [],
+      "source_note": null
+    },
+    {
+      "verse": 147,
+      "lord_of": null,
+      "in_house": null,
+      "sanskrit": "विभिन्नयोस्तु फलयोर्द्वयोः प्राप्तिर्भवेद्ध्रुवम् ।ग्रहे पूर्णबले पुर्णमर्धमर्धबले फलम् ॥१४७॥",
+      "transliteration": "vibhinnayostu phalayordvayoḥ prāptirbhaveddhruvam .grahe pūrṇabale purṇamardhamardhabale phalam.",
+      "translation": "However, if the two effects are different, then certainly both will be obtained. If the planet has full strength, the full effect manifests; if it has half strength, half the effect manifests.",
+      "condition_hints": [
+        "strength"
+      ],
+      "source_note": null
+    },
+    {
+      "verse": 148,
+      "lord_of": null,
+      "in_house": null,
+      "sanskrit": "पादं हीनबले खेटे ज्ञेयमित्थं बुधैरिति ।उक्तं भावस्थितानां ते भावेशानां पलं मया ॥१४८॥",
+      "transliteration": "pādaṃ hīnabale kheṭe jñeyamitthaṃ budhairiti .uktaṃ bhāvasthitānāṃ te bhāveśānāṃ palaṃ mayā.",
+      "translation": "Similarly, a quarter (pāda) effect should be known when the planet has weak strength – this is what the wise ones say. Thus, I have explained to you the effects of the lords of the houses situated in various houses.",
+      "condition_hints": [
+        "strength",
+        "weak"
+      ],
+      "source_note": null
+    }
+  ]
+}
