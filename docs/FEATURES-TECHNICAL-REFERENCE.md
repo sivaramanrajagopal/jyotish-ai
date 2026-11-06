@@ -46,7 +46,7 @@ Companion to [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md).
 | Ashtakavarga | My Chart section | `POST /ashtakavarga` | `ashtakavarga_agent` | No | SAV only in prompt |
 | AV triggers | Home + Ashtakavarga | `POST /ashtakavarga/triggers` | `compute_trigger_status()` | No | — |
 | Prashna | Prashna tab | `POST /prashna/analyze` | `prashna/*` | Optional | — |
-| Life Cycle | Life Cycle tab (`?tab=life-cycle`) | `POST /prediction/simulate` | `prediction_simulator/*` | Optional | — |
+| Life Cycle | Life Cycle tab (`?tab=life-cycle`) | `POST /prediction/simulate` | `life_cycle/*` | No | — |
 | Panchangam | Panchangam tab | `GET /panchangam/*` | `panchangam_agent` | No | 📅 |
 | Personal Panchangam | Home card | `GET /personal-panchangam/*` + triggers | `tara_engine`, `ashtama_agent`, `ashtakavarga_agent` | No | ⭐ |
 
@@ -873,169 +873,49 @@ Deep-link scroll: `?tab=chart&section=ashtakavarga` (see `Home.jsx` scroll effec
 
 ### Purpose
 
-Forward **10-year Parasara planner**: natal Bhava strength + **SAV** + Drishti + D9 overlay → Vimshottari **MD / AD / PD** → slow-planet Gochara on house lords & karakas → theme-specific activation windows (marriage, career, health, property, foreign, education).
+The next ten years, theme by theme, on the **same rules as the House Links tab**. No scores.
 
-**Method (exam-aligned):** Bhava → SAV → Dasa permission (MD→AD→PD) → Gochara trigger.  
-Windows are **indications**, not guaranteed events.
+- **Dasha:** each bhukti switches on the houses its lords rule and sit in (main) and the houses both lords reach (shared) — `dasha_reasons` / `shared_houses` from `house_connections/activation.py`.
+- **Transit:** a switched-on house is live when Jupiter and Saturn each occupy or aspect it or its lord's sign (double transit) — `double_runs` / `sky_segments` from `house_connections/upcoming.py`.
+- **Themes:** career (10), income (2, 11), marriage (7; "Spouse & partnership" when the user ticks *Already married*), children (5), home (4), health (1, 6, 8; care theme), foreign (12, 9), education (4, 5; hidden after age 30). A theme is on when a key house is switched on; support houses are listed only.
+- **Saturn from the Moon:** Sade Sati (12th/1st/2nd, with phases), Ardhashtama (4th), Ashtama (8th), from the same daily sky table (looks back 8 years to find the true start).
+- **Promise:** each key house's Navamsa fruit line (Reading tab) and the lord remedy from `house_connections/guidance.py`.
 
 ### Files
 
 ```
-backend/agents/prediction_simulator/
-  __init__.py           # exports compute_life_cycle_simulation + life_cycle_context_for_narrator
-  agent.py              # orchestrator + one-pass slow-planet scan + chat narrator block
-  constants.py          # LIFE_THEMES, KARAKA_ROLES, PLANET_WEIGHT
-  themes.py             # SAV natal promise, PD peaks, verdict + has_caution (lord/karaka gated)
-  narration.py          # short rule-based headline / theme lines
-  ai_narrator.py        # optional 3-sentence OpenAI narration
-backend/dasha_core.py   # generate_pratyantars() — PD within each AD
-backend/main.py         # POST /prediction/simulate
-backend/agents/chat_agent.py         # keyword-gated Life Cycle block in chat system prompt
-frontend/src/components/LifeCycleSimulatorPanel.jsx  # fingerprint fetch + abort/timeout + soft loading
-frontend/src/components/ChatPanel.jsx # 🧭 Life Cycle topic chip + auto-tag
-frontend/src/pages/Home.jsx          # tab key: life-cycle
-frontend/src/constants/brand.js      # Life Cycle feature chip
-frontend/src/index.css               # .lcs-* mobile styles
-backend/tests/test_prediction_simulator.py       # 11 tests
-backend/tests/test_chat_life_cycle_context.py    # chat gating + grounded block (3 tests)
+backend/agents/life_cycle/
+  __init__.py     # compute_life_cycle, life_cycle_context_for_narrator
+  engine.py       # bhukti periods, theme windows, status now, timeline
+  themes.py       # THEMES (key + support houses, age gates, married label)
+  saturn.py       # Sade Sati / Ardhashtama / Ashtama from the Moon
+  narrator.py     # chat block (dates verbatim, no scores)
+backend/agents/house_connections/narrator.py  # House Links chat block, same rules as the tab
+backend/main.py                               # POST /prediction/simulate
+frontend/src/components/LifeCycleSimulatorPanel.jsx
+backend/tests/test_life_cycle.py
+backend/tests/test_chat_life_cycle_context.py
+backend/tests/test_chat_house_connections_context.py
 ```
 
 ### API
 
 ```
 POST /prediction/simulate
-Rate limit: 30/minute
-Auth: optional JWT (resolve_natal_chart)
-
-Body:
-{
-  "natal_chart": { ... },   // omit when signed-in + saved chart
-  "horizon_years": 10,      // clamped 1–15
-  "start_date": null,       // optional ISO date; default = today
-  "include_ai": false,      // optional short AI narration
-  "language": "english"     // or "tamil" for AI
-}
+Rate limit: 30/minute · Auth: optional JWT (resolve_natal_chart)
+Body: { "natal_chart": {...}, "horizon_years": 10, "married": true|false|null }
 ```
 
-**AI path:** If `include_ai=true`:
-1. Requires `OPENAI_API_KEY` on Render → else **503** `"OPENAI_API_KEY is not configured."`
-2. Then `check_ai_quota(..., "forecast", ...)` (same bucket as daily reading)
-3. If OpenAI fails after quota check → response still returns rule-based data; `meta.ai_error` set
+Response: `meta` (dates, lagna, Moon sign, age, method), `now` (bhukti, houses on with who switches them, live houses with end date), `themes[]` (status now, `live_now`, `next_live`, `windows[]` per bhukti with per-house live runs and overlapping Saturn phases, `fruit[]`, `remedies[]`, `notes[]`), `saturn[]`, `timeline[]`.
 
-### Chat integration (Ask AI tab)
+### Chat integration
 
-Life Cycle answers are available **inside the chat** — no separate tab needed — via a grounded, hallucination-safe block.
-
-- **Grounding block:** `life_cycle_context_for_narrator(natal_chart)` (in `agent.py`) runs the simulator and emits a compact, **facts-only** text block: current MD/AD/PD, top 5 dated activation windows, event-theme verdicts (SAV + peak window + caution), and caution windows. Dates are month-scale (`Mar 2034–Apr 2035`).
-- **Keyword gate:** `_wants_life_cycle(user_message)` in `chat_agent.py`. The ~1.2 s simulation runs **only** for timing-related questions ("next few years", "best/worst period", "when will…", "timing", "forecast", "next N years"). Normal chats stay fast — the block is appended in `_build_gochara_block` alongside the other `*_context_for_narrator` blocks.
-- **Prompt routing:** the chat system prompt instructs the model to use **only** the LIFE CYCLE block, **quote dates verbatim, never invent timing**, and answer in the mobile format: 1-line verdict → 2–3 dated bullets → 1 caution line, under 6 lines. If a theme has no window, say so — never guess.
-- **UI chip:** `ChatPanel.jsx` has a 🧭 **Life Cycle** topic chip whose question trips the gate; replies mentioning activation/peak/caution windows auto-tag back to the chip for follow-ups.
-
-This reuses the same anti-hallucination contract as the CRITICAL DASHA RULES (quote only precomputed windows/dates).
-
-### Response shape (key fields)
-
-```json
-{
-  "meta": {
-    "phase": 3,
-    "lagna": "Aquarius",
-    "navamsa_lagna": "Aries",
-    "moon_sign": "Pisces",
-    "start_date": "2026-07-12",
-    "end_date": "2036-07-11",
-    "method": "Parasara: Bhava → SAV → …",
-    "ai_narration": false,
-    "ai_error": null
-  },
-  "current_period": {
-    "mahadasha": "Moon", "antardasha": "Ketu", "pratyantar": "Venus",
-    "pratyantar_start": "...", "pratyantar_end": "...",
-    "focus_houses": [2, 6], "life_themes": ["..."]
-  },
-  "dasha_timeline": [ /* AD segments */ ],
-  "pratyantar_timeline": [ /* PD segments over horizon */ ],
-  "transit_hits": [ /* Jupiter/Saturn/Mars/Rahu per-sign windows */ ],
-  "top_windows": [ /* AD × transit overlaps ranked */ ],
-  "caution_windows": [ /* Saturn/Rahu/Mars overlaps */ ],
-  "impact_areas": [ /* 12 houses + drishti + strength */ ],
-  "event_themes": [
-    {
-      "key": "health",
-      "verdict": "highly_active",
-      "has_caution": true,
-      "natal_promise_score": 39.2,
-      "activation_score": 100,
-      "sav": { "average": 24.7, "label": "Average", "by_house": [...] },
-      "peak_window": { "type": "overlap|pratyantar|...", "theme_houses": [6,8,12], ... },
-      "pratyantar_windows": [ /* top PD clusters for this theme */ ],
-      "d9_overlay": { "house_lords": [...], "d9_support": "neutral" }
-    }
-  ],
-  "narration": { "headline": "...", "current_period": "...", "theme_summaries": [...], "caution": "..." },
-  "ai_reading": null
-}
-```
-
-### Scoring notes (production-critical)
-
-| Piece | Rule |
-|-------|------|
-| Transit scan | **One pass per slow planet**, emitting a window each time it occupies a target sign (`_scan_slow_planet_windows` in `agent.py`). ~7× faster than the old per-sign×12 loop. Never pass all 12 signs as one target set (that bug spanned full horizon) |
-| Theme peak | Must hit **theme houses / lords / karakas** (`themes.py` relevance ≥ 45) |
-| Verdict | `highly_active` / `active` / `moderate` / `quiet` from natal + activation + SAV/D9 |
-| Caution | Separate flag `has_caution` — does **not** overwrite verdict. Fires **only** when a slow malefic afflicts the theme's own **house-lord or karaka** with relevance ≥ 70 (`lord_transit`/`karaka_transit`). A bare transit through a theme sign is *not* enough — prevents every theme flagging caution |
-| SAV | Blended into natal promise; labels match Ashtakavarga (≥30 Strong, ≥25 Good, ≥20 Average) |
-| PD | `generate_pratyantars(bhukti)` in `dasha_core.py` — AD years × lord/120 |
-
-### UI (`LifeCycleSimulatorPanel.jsx`)
-
-| Section | Mobile behaviour |
-|---------|------------------|
-| Rule / AI reading | Short headline; AI = 3 sentences max |
-| Theme chips | Horizontal scroll |
-| Theme detail | SAV chips + Pratyantar list |
-| Dasa | Segment **list** on mobile; bar on desktop |
-| Charts | D1 / D9 toggle |
-| Transits | **Cards** on mobile; table on desktop |
-| Impact areas | Collapsed by default |
-
-Deep link: `?tab=life-cycle`
+- `life_cycle_context_for_narrator` is attached for timing questions (`_wants_life_cycle` in `chat_agent.py`).
+- `house_connections_context_for_narrator` is attached to every chat: status of all 12 houses (live / dasha on / transit only / quiet), exchanges with meanings, remedies, coming bhuktis with double-transit windows, and full reasons for houses the user names. It no longer uses the 7-step dasa activation, strength /100 or blesser scores.
 
 ### Golden test native
 
-| Field | Value |
-|-------|--------|
-| DOB | 1978-09-18, 17:35, Chennai |
-| Lagna | Aquarius |
-| Tests | `pytest tests/test_prediction_simulator.py -q` (11) + `tests/test_chat_life_cycle_context.py` (3) |
-
-### Debug checklist
-
-1. Confirm deploy ≥ commit with Life Cycle (`ba03c0c`+) and SW ≥ `jyotish-shell-v7` with `life-cycle` in `ALLOWED_TABS`
-2. `GET /openapi.json` includes `/prediction/simulate`
-3. Chart has `birth_data.dob`, `planet_positions.Moon.longitude`, `navamsa_positions`
-4. Guest: body must include full `natal_chart`; signed-in: JWT + saved chart
-5. AI 503 → check Render `OPENAI_API_KEY`
-6. AI button no text → check `meta.ai_error` / OpenAI quota
-7. All transit hits spanning ~10 years → old backend without per-sign scan fix
-8. Tab blank offline / SW error → bump SW cache; hard refresh
-
-### Useful curl
-
-```bash
-# Rule-only (no AI quota)
-curl -s -X POST "$API/prediction/simulate" -H 'Content-Type: application/json' \
-  -d '{"natal_chart":{...},"horizon_years":10}' \
-  | jq '.meta.phase, .narration.headline, .event_themes[0].key, .event_themes[0].sav'
-
-# With AI (needs OPENAI_API_KEY + forecast quota)
-curl -s -X POST "$API/prediction/simulate" -H 'Content-Type: application/json' \
-  -d '{"natal_chart":{...},"horizon_years":10,"include_ai":true}' \
-  | jq '.ai_reading, .meta.ai_error'
-```
-
----
+Chart A (1978-09-18 17:35 Chennai): on 6 Nov 2026 the Moon–Ketu bhukti switches on H2, H6, H8, H11; H8 and H11 are live until 7 Jan 2027; Sade Sati runs 18 Jan 2023 → 8 Aug 2029 (peak now); Ardhashtama 31 May 2032 → 12 Jul 2034.
 
 ## 15. Service worker & PWA
 
@@ -1081,14 +961,7 @@ Invalid `?tab=` is stripped on navigation fetch to avoid offline shell errors.
 | Life Cycle 404 / 500 | Life Cycle | Old backend | Redeploy Render ≥ Life Cycle commit; check `/prediction/simulate` in OpenAPI |
 | Life Cycle 422 / natal required | Life Cycle | Guest without chart body | Enter birth details on Home first; signed-in users need saved chart |
 | Life Cycle 500 stale chart | Life Cycle | Missing dasha / old schema | Recalculate chart (`StaleChartBanner`) |
-| Transit hits span full 10 years | Life Cycle | Pre-fix scan | Deploy agent with one-pass `_scan_slow_planet_windows` |
-| "Calculating 10-year life cycle…" stuck forever | Life Cycle | Overlapping refetches kept `loading` true (results hidden) + slow scan; axios had no timeout | Deploy panel with **chart-fingerprint fetch + AbortController + 90 s timeout + soft loading** (shows data as soon as it arrives, Retry on error) and faster scan |
-| All themes flagged CAUTION | Life Cycle | Old caution threshold (any theme-sign transit) | Deploy `themes.py` where `has_caution` requires lord/karaka affliction + relevance ≥ 70 |
-| All themes same peak window | Life Cycle | Old theme peak logic | Deploy `themes.py` with theme-house relevance filter |
 | Timing question in chat gives no dates / vague | Chat | Life Cycle block not gated in or old backend | Ensure `chat_agent.py` has `_wants_life_cycle` + `life_cycle_context_for_narrator`; redeploy Render |
-| Short AI reading → 503 | Life Cycle | Missing `OPENAI_API_KEY` | Set on Render; redeploy |
-| Short AI reading → no text | Life Cycle | OpenAI error after quota | Check Render logs; rule reading still works; `meta.ai_error` |
-| AI reading 429 | Life Cycle | Forecast AI quota | Same as daily reading limits; wait UTC day or raise env |
 | CORS on Life Cycle | All API | `ALLOWED_ORIGINS` | Add exact Vercel origin on Render |
 | Chat 503 every message | Chat | Broken import or oversized House Links prompt | Deploy ≥ `c1e399e`; verify lazy `house_connections_context_for_narrator` |
 | Chat 503 rate limit | Chat | OpenAI RPM/quota | Wait 1 min; check OpenAI dashboard |
@@ -1156,7 +1029,7 @@ pytest tests/test_dosha_radar.py tests/test_chat_dosha_radar_context.py -q
 pytest tests/test_tamil_doshas.py tests/test_indu_lagna.py -q
 pytest tests/test_ashtakavarga_triggers.py -q
 pytest tests/test_house_connections*.py tests/test_dasa_activation.py tests/test_chat_house_connections_context.py -q
-pytest tests/test_prediction_simulator.py -q
+pytest tests/test_life_cycle.py tests/test_chat_life_cycle_context.py -q
 pytest tests/ -q   # full suite
 
 cd ../frontend && npm test -- src/lib/horai.test.js

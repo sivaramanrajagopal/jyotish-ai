@@ -24,6 +24,7 @@ def _chart():
     )
     c["birth_data"] = {
         "dob": CHENNAI["dob"],
+        "tob": CHENNAI["tob"],
         "timezone": CHENNAI["tz"],
         "lat": CHENNAI["lat"],
         "lon": CHENNAI["lon"],
