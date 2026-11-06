@@ -1,17 +1,17 @@
 /**
- * HouseLinksPanel — astrologer prediction map: 12-house lord links, blessers, yogas.
+ * HouseLinksPanel — which houses are active now and why.
+ * Now: the dasha lords switch houses on; Jupiter and Saturn trigger them.
+ * Houses: one row per house with its links, dasha, transit and BPHS line.
+ * The connection map stays behind a button.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
+import { classicalForHouse, useClassicalRules } from '../hooks/useClassicalRules'
 import HouseLinksGraph from './HouseLinksGraph'
 import SouthIndianChart from './SouthIndianChart'
 
-const RAG_CLASS = {
-  strong: 'hl-rag--strong',
-  moderate: 'hl-rag--moderate',
-  weak: 'hl-rag--weak',
-}
+const TONE_TO_RAG = { good: 'strong', mixed: 'moderate', hard: 'weak' }
 
 function Bilingual({ en, ta, inline = false }) {
   if (inline) {
@@ -30,252 +30,268 @@ function Bilingual({ en, ta, inline = false }) {
   )
 }
 
-function PredictionCard({ pred, houseRow }) {
-  if (!pred) return null
-  const st = pred.structure || {}
-  const rag = st.rag || {}
-  const top = pred.top_blesser
-
+function Line({ en, ta }) {
   return (
-    <article className="hl-pred">
-      <header className="hl-pred__head">
-        <h3 className="hl-pred__title">
-          H{pred.house} · <Bilingual en={pred.theme_en} ta={pred.theme_ta} inline />
-        </h3>
-        <span className={`hl-rag ${RAG_CLASS[rag.status] || ''}`}>
-          {rag.emoji} {rag.label_en} ({st.strength}/100)
-        </span>
-      </header>
-
-      <div className="hl-pred__grid">
-        <div>
-          <span className="hl-pred__label">Lord</span>
-          <strong>{st.lord}</strong> in H{st.lord_house}
-        </div>
-        <div>
-          <span className="hl-pred__label">From own</span>
-          {houseRow?.position_en || st.position_type}
-        </div>
-        <div>
-          <span className="hl-pred__label">Channels in</span>
-          {(pred.channels_in || []).map(h => `H${h}`).join(', ') || '—'}
-        </div>
-        <div>
-          <span className="hl-pred__label">Channels out</span>
-          {(pred.channels_out || []).map(h => `H${h}`).join(', ') || '—'}
-        </div>
-      </div>
-
-      {top && (
-        <div className="hl-pred__blesser">
-          <span className="hl-pred__label">Primary blesser</span>
-          <strong>{top.planet}</strong>
-          <span className="hl-pred__score"> score {top.score}</span>
-          {(top.active_maha || top.active_bhukti) && (
-            <span className="hl-pred__active"> ● Active in Dasa</span>
-          )}
-        </div>
-      )}
-
-      {(pred.blessers || []).length > 1 && (
-        <ul className="hl-blesser-list">
-          {pred.blessers.slice(0, 4).map(b => (
-            <li key={b.planet} className={b.active_maha || b.active_bhukti ? 'hl-blesser-list__on' : ''}>
-              {b.planet} ({b.score})
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="hl-pred__inference">{pred.inference_en}</p>
-      {pred.inference_ta && <p className="hl-pred__inference hl-pred__inference--ta">{pred.inference_ta}</p>}
-
-      {(pred.incoming_edges || []).length > 0 && (
-        <details className="hl-edges">
-          <summary>Connection details ({pred.incoming_edges.length})</summary>
-          <ul>
-            {pred.incoming_edges.map(e => (
-              <li key={e.id} className={e.supportive === false ? 'hl-edges__stress' : ''}>
-                {e.label_en}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </article>
+    <li>
+      {en}.
+      {ta && <span className="hl-line__ta">{ta}</span>}
+    </li>
   )
+}
+
+function StatusBadge({ status }) {
+  if (!status) return null
+  return <span className={`hl-badge hl-badge--${status.key}`}>{status.en}</span>
+}
+
+function FruitBadge({ fruit }) {
+  if (!fruit?.en) return null
+  return <span className={`hl-badge hl-badge--fruit-${fruit.tone}`}>{fruit.en.replace(/\.$/, '')}</span>
+}
+
+function transitSummary(row) {
+  const t = row.transit || {}
+  if (t.jupiter && t.saturn) return 'Jupiter and Saturn both touch it now'
+  if (t.jupiter) return 'Jupiter touches it now, Saturn does not yet'
+  if (t.saturn) return 'Saturn touches it now, Jupiter does not yet'
+  return 'Neither Jupiter nor Saturn touches it yet'
+}
+
+function NowCard({ activation, rows, onOpen }) {
+  if (!activation) return null
+  const p = activation.period
+  const now = (activation.now || []).map(h => rows[h]).filter(Boolean)
+  const sky = (activation.sky_only || []).map(h => rows[h]).filter(Boolean)
+  return (
+    <section className="hl-now" aria-label="Active now">
+      <h3 className="hl-now__title">
+        <Bilingual en="Active now" ta="இப்போது செயலில்" inline />
+      </h3>
+      {p && (
+        <p className="hl-now__period">
+          <strong>{p.mahadasha.planet}</strong> mahadasha to {p.mahadasha.end}
+          {' · '}
+          <strong>{p.bhukti.planet}</strong> bhukti to {p.bhukti.end}
+          {p.days_left >= 0 ? ` (${p.days_left} days left)` : ''}
+          {p.next_bhukti ? ` · ${p.next_bhukti.planet} bhukti from ${p.next_bhukti.start}` : ''}
+        </p>
+      )}
+      {activation.relation && (
+        <p className={`hl-now__line hl-now__line--${activation.relation.tone}`}>
+          {activation.relation.en}
+          <span className="hl-line__ta">{activation.relation.ta}</span>
+        </p>
+      )}
+      {activation.today && (
+        <p className="hl-now__line">
+          {activation.today.en}
+          <span className="hl-line__ta">{activation.today.ta}</span>
+        </p>
+      )}
+      <ul className="hl-now__list">
+        {now.map(row => (
+          <li key={row.house}>
+            <button type="button" className="hl-now__item" onClick={() => onOpen(row.house)}>
+              <span className="hl-now__head">
+                <strong>{row.ordinal} · {row.theme_en}</strong>
+                <StatusBadge status={row.status} />
+              </span>
+              <span className="hl-now__why">{row.dasha.reasons[0]?.en}.</span>
+              <span className="hl-now__why">{transitSummary(row)}.</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {sky.length > 0 && (
+        <p className="hl-now__line hl-now__line--muted">
+          Jupiter and Saturn also touch{' '}
+          {sky.map(r => `the ${r.ordinal} (${r.theme_en.toLowerCase()})`).join(', ')}
+          , with no dasha link to it now.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function HouseRow({ row, classical, open, onToggle }) {
+  const t = row.transit || {}
+  const reasons = row.dasha?.reasons || []
+  return (
+    <li id={`hl-row-${row.house}`} className={`hl-row${open ? ' hl-row--open' : ''}`}>
+      <button type="button" className="hl-row__head" aria-expanded={open} onClick={onToggle}>
+        <span className="hl-row__title">
+          <strong>{row.ordinal}</strong> · {row.theme_en}
+          <span className="hl-bi__ta"> · {row.theme_ta}</span>
+        </span>
+        <span className="hl-row__tags">
+          <StatusBadge status={row.status} />
+          <FruitBadge fruit={row.fruit} />
+        </span>
+        <span className="hl-row__lord">{row.sign} · lord {row.lord} in the {row.lord_house}{ordSuffix(row.lord_house)}</span>
+      </button>
+      {open && (
+        <div className="hl-row__body">
+          <h4>How it is tied</h4>
+          <ul>{(row.links || []).map(l => <Line key={l.en} en={l.en} ta={l.ta} />)}</ul>
+
+          <h4>Dasha</h4>
+          {reasons.length ? (
+            <ul>{reasons.map(r => <Line key={r.en} en={`${r.en}${r.level === 'side' ? ' (side)' : ''}`} ta={r.ta} />)}</ul>
+          ) : (
+            <p className="hl-row__muted">The running lords do not touch this house.</p>
+          )}
+
+          <h4>Transit today</h4>
+          {(t.lines || []).length ? (
+            <ul>{t.lines.map(l => <Line key={l.en} en={l.en} ta={l.ta} />)}</ul>
+          ) : (
+            <p className="hl-row__muted">Jupiter and Saturn are not touching this house or its lord.</p>
+          )}
+          <p className="hl-row__muted">
+            {t.planets_now?.length ? `In this sign now: ${t.planets_now.join(', ')}. ` : ''}
+            {t.sav_label ? `Sarvashtakavarga ${t.sav_label.toLowerCase()}.` : ''}
+          </p>
+
+          {classical && (
+            <>
+              <h4>Classical</h4>
+              <p className="hl-row__classical">
+                {classical.source.cite}
+                {classical.strength_label ? ` · ${classical.strength_label}. ` : ' '}
+                {classical.summary}
+              </p>
+            </>
+          )}
+          <p className="hl-row__muted">How well it gives: {row.fruit?.en} {row.fruit?.ta}</p>
+        </div>
+      )}
+    </li>
+  )
+}
+
+function ordSuffix(n) {
+  if (n % 100 >= 10 && n % 100 <= 20) return 'th'
+  return { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'
 }
 
 function YogaList({ yogas }) {
   if (!yogas?.length) {
-    return <p className="hl-muted">No major kendra–trikona or dharma–karma lord yogas flagged.</p>
+    return <p className="hl-muted">No kendra–trikona or dharma–karma lord yogas found.</p>
   }
   return (
     <ul className="hl-yoga-list">
-      {yogas.map((y, i) => (
-        <li key={`${y.name}-${i}`} className="hl-yoga-list__item">
+      {yogas.map(y => (
+        <li key={`${y.name}-${y.lords.join('-')}`} className="hl-yoga-list__item">
           <strong>{y.name}</strong>
           <span className="hl-yoga-list__ta">{y.name_ta}</span>
           <p>{y.detail_en}</p>
-          <span className="hl-yoga-list__meta">H{y.houses?.join('–H')} · strength {y.strength}</span>
         </li>
       ))}
     </ul>
   )
 }
 
-function ActivationChain({ chain, defaultOpen = false, onSelectHouse }) {
-  if (!chain?.steps?.length) return null
-  return (
-    <details className="hl-dasa-chain" open={defaultOpen}>
-      <summary className="hl-dasa-chain__summary">
-        {chain.period_en}: <strong>{chain.planet}</strong>
-        {' · '}
-        focus {chain.focus_houses?.map(h => `H${h}`).join(', ')}
-      </summary>
-      <ol className="hl-dasa-steps">
-        {chain.steps.map(step => (
-          <li key={step.key} className="hl-dasa-step">
-            <span className="hl-dasa-step__num">{step.step}</span>
-            <span className="hl-dasa-step__label">
-              <Bilingual en={step.label_en} ta={step.label_ta} inline />
-            </span>
-            <p className="hl-dasa-step__detail">{step.detail_en}</p>
-            {step.detail_ta && (
-              <p className="hl-dasa-step__detail hl-pred__inference--ta">{step.detail_ta}</p>
-            )}
-            <div className="hl-dasa-step__houses">
-              {(step.houses_added?.length ? step.houses_added : step.houses_all)?.length ? (
-                (step.houses_added?.length ? step.houses_added : step.houses_all).map(h => (
-                  <button
-                    key={`${step.key}-${h}`}
-                    type="button"
-                    className="hl-dasa-step__house"
-                    onClick={() => onSelectHouse?.(h)}
-                  >
-                    H{h}
-                  </button>
-                ))
-              ) : (
-                <span className="hl-dasa-step__house hl-dasa-step__house--none">link only</span>
-              )}
-            </div>
-          </li>
-        ))}
-      </ol>
-    </details>
-  )
-}
-
-function DasaLifeAreas({ dasa, focusHouse, onSelectHouse }) {
-  if (!dasa?.combined) return null
-  const combined = dasa.combined
-
-  return (
-    <div className="hl-dasa-focus">
-      <header className="hl-dasa-section__head" style={{ margin: '0 0 0.65rem', borderRadius: '0.35rem' }}>
-        <h3 className="hl-dasa-section__title">
-          <Bilingual en="Dasa life areas" ta="தசை வாழ்க்கை துறைகள்" inline />
-        </h3>
-        <p className="hl-dasa-section__sub">
-          {dasa.maha_dasa} Mahadasha · {dasa.bhukti} Bhukti — emphasize focus houses; de-emphasize background
-        </p>
-      </header>
-
-      <p className="hl-dasa-guidance">{combined.guidance_en}</p>
-      {combined.guidance_ta && (
-        <p className="hl-dasa-guidance hl-pred__inference--ta">{combined.guidance_ta}</p>
-      )}
-
-      <div className="hl-dasa-chip-row" role="list" aria-label="Focus houses">
-        {(combined.focus_themes || []).map(t => (
-          <button
-            key={`f-${t.house}`}
-            type="button"
-            role="listitem"
-            className={`hl-dasa-chip hl-dasa-chip--focus${focusHouse === t.house ? ' hl-house-card--focus' : ''}`}
-            onClick={() => onSelectHouse(t.house)}
-          >
-            H{t.house} {t.theme_en}
-          </button>
-        ))}
-      </div>
-
-      <div className="hl-dasa-chip-row" role="list" aria-label="Background houses">
-        {(combined.background_themes || []).map(t => (
-          <span key={`b-${t.house}`} role="listitem" className="hl-dasa-chip hl-dasa-chip--bg">
-            H{t.house}
-          </span>
-        ))}
-      </div>
-
-      <ActivationChain chain={dasa.mahadasha} defaultOpen onSelectHouse={onSelectHouse} />
-      <ActivationChain chain={dasa.antardasha} onSelectHouse={onSelectHouse} />
-    </div>
-  )
-}
-
-function D1ReferenceChart({ chart, focusHouses }) {
-  if (!chart?.planet_positions) return null
+function MapSection({ data, chart, rows, focusHouse, setFocusHouse }) {
+  const graph = useMemo(() => ({
+    ...data.graph,
+    nodes: (data.graph?.nodes || []).map(n => ({ ...n, rag: TONE_TO_RAG[rows[n.house]?.fruit?.tone] || 'moderate' })),
+  }), [data.graph, rows])
+  const pred = (data.predictions || []).find(p => p.house === focusHouse)
+  const activeHouses = (data.activation?.rows || []).filter(r => r.dasha?.level).map(r => r.house)
   const bd = chart.birth_data || {}
   return (
-    <div className="hl-dasa-chart-wrap">
-      <SouthIndianChart
-        title="D1"
-        subtitle={`${bd.dob || ''} · ${bd.tob || ''}`}
-        planetPositions={chart.planet_positions}
-        lagnaSignIndex={chart.ascendant?.sign_index ?? 0}
-        variant="classic"
-        showDetails={false}
-        chartKind="natal"
-        highlightBhavaHouses={focusHouses}
-      />
-      <div className="hl-dasa-chart-legend">
-        <span>
-          <span className="hl-dasa-chart-legend__dot hl-dasa-chart-legend__dot--active" />
-          Active Dasa houses
-        </span>
-        <span>Lagna ↑ highlighted separately</span>
+    <div className="hl-map">
+      <div className="hl-graph-toolbar">
+        <label htmlFor="hl-focus-select" className="hl-graph-toolbar__label">Focus house</label>
+        <select
+          id="hl-focus-select"
+          className="hl-focus-select"
+          value={focusHouse}
+          onChange={e => setFocusHouse(Number(e.target.value))}
+        >
+          {(data.houses || []).map(h => (
+            <option key={h.house} value={h.house}>
+              {h.house}{ordSuffix(h.house)} · {h.theme_en} ({h.lord})
+            </option>
+          ))}
+        </select>
       </div>
+      <div className="hl-layout">
+        <section className="hl-graph-wrap">
+          <HouseLinksGraph graph={graph} focusHouse={focusHouse} onSelectHouse={setFocusHouse} />
+          <p className="hl-graph-hint">Lines show this house’s links. Green supports, red dashed strains.</p>
+        </section>
+        <section className="hl-graph-wrap">
+          <SouthIndianChart
+            title="D1"
+            subtitle={`${bd.dob || ''} · ${bd.tob || ''}`}
+            planetPositions={chart.planet_positions}
+            lagnaSignIndex={chart.ascendant?.sign_index ?? 0}
+            variant="classic"
+            showDetails={false}
+            chartKind="natal"
+            highlightBhavaHouses={activeHouses}
+          />
+          <p className="hl-graph-hint">Tinted houses are switched on by the running dasha.</p>
+        </section>
+      </div>
+      {pred && (
+        <div className="hl-map__detail">
+          <p>
+            <strong>Feeds in from:</strong> {(pred.channels_in || []).map(h => `${h}${ordSuffix(h)}`).join(', ') || 'none'}
+            {' · '}
+            <strong>Feeds out to:</strong> {(pred.channels_out || []).map(h => `${h}${ordSuffix(h)}`).join(', ') || 'none'}
+          </p>
+          {(pred.incoming_edges || []).length > 0 && (
+            <ul className="hl-edges">
+              {pred.incoming_edges.map(e => (
+                <li key={e.id} className={e.supportive === false ? 'hl-edges__stress' : ''}>{e.label_en}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 export default function HouseLinksPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [result, setResult] = useState({ chart: null, data: null, error: '' })
+  const [openHouse, setOpenHouse] = useState(null)
+  const [showMap, setShowMap] = useState(false)
   const [focusHouse, setFocusHouse] = useState(10)
-
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/house-connections/analyze', chartPayload(chart, userId))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load House Links.'))
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
+  const classical = useClassicalRules(chart, userId, enabled)
 
   useEffect(() => {
-    if (enabled && chart) load()
-  }, [enabled, chart, load])
+    if (!chart || !enabled) return undefined
+    let cancel = false
+    api.post('/house-connections/analyze', chartPayload(chart, userId))
+      .then(r => {
+        if (!cancel) setResult({ chart, data: r.data, error: '' })
+      })
+      .catch(e => {
+        if (!cancel) setResult({ chart, data: null, error: e.response?.data?.detail || 'Could not load House Links.' })
+      })
+    return () => { cancel = true }
+  }, [chart, userId, enabled])
 
-  const houseMap = useMemo(() => {
+  const current = result.chart === chart
+  const data = current ? result.data : null
+  const error = current ? result.error : ''
+  const loading = Boolean(chart && enabled && !current)
+
+  const rows = useMemo(() => {
     const m = {}
-    for (const h of data?.houses || []) m[h.house] = h
+    for (const r of data?.activation?.rows || []) m[r.house] = r
     return m
   }, [data])
 
-  const focusPred = useMemo(
-    () => (data?.predictions || []).find(p => p.house === focusHouse),
-    [data, focusHouse],
-  )
-
-  const dasaFocusHouses = useMemo(
-    () => data?.dasa_life_areas?.combined?.focus_houses || [],
-    [data],
-  )
+  const openFromNow = useCallback(house => {
+    setOpenHouse(house)
+    requestAnimationFrame(() => {
+      document.getElementById(`hl-row-${house}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
 
   if (!chart) {
     return <div className="hl-panel hl-panel--muted">Open My Chart first…</div>
@@ -284,115 +300,43 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
   if (error) return <div className="hl-error" role="alert">{error}</div>
   if (!data) return null
 
-  const s = data.summary || {}
+  const activation = data.activation
 
   return (
     <div className="hl-panel" id="house-links-panel">
-      {data.disclaimer?.en && (
-        <div className="hl-disclaimer" role="note">
-          <strong>{data.disclaimer.en}</strong>
-          <p>{data.disclaimer.ta}</p>
-        </div>
-      )}
-
       <header className="hl-hero">
         <h2 className="hl-hero__title">
-          <Bilingual en="House Links" ta="வீட்டு தொடர்பு வரைபடம்" inline />
+          <Bilingual en="House Links" ta="வீட்டு தொடர்பு" inline />
         </h2>
         <p className="hl-hero__meta">
-          {s.edge_count} connections · {s.yoga_count} yogas · Dasa {s.maha_dasa}–{s.bhukti}
+          The dasha switches houses on. Jupiter and Saturn touching the house or its lord says the time is now.
         </p>
-        <div className="hl-hero__chips">
-          {(s.strongest_houses || []).map(h => (
-            <button
-              key={`s-${h.house}`}
-              type="button"
-              className="hl-chip hl-chip--strong"
-              onClick={() => setFocusHouse(h.house)}
-            >
-              🟢 H{h.house} {h.theme_en}
-            </button>
-          ))}
-          {(s.weakest_houses || []).map(h => (
-            <button
-              key={`w-${h.house}`}
-              type="button"
-              className="hl-chip hl-chip--weak"
-              onClick={() => setFocusHouse(h.house)}
-            >
-              🔴 H{h.house}
-            </button>
-          ))}
-        </div>
       </header>
 
-      <section className="hl-dasa-section" aria-label="D1 reference chart">
-        <header className="hl-dasa-section__head">
-          <h3 className="hl-dasa-section__title">
-            <Bilingual en="D1 Rasi — quick reference" ta="D1 ராசி — விரைவு குறிப்பு" inline />
+      {activation ? (
+        <NowCard activation={activation} rows={rows} onOpen={openFromNow} />
+      ) : (
+        <p className="hl-error" role="alert">The dasha and transit layer could not be built for this chart.</p>
+      )}
+
+      {activation && (
+        <section aria-label="All 12 houses">
+          <h3 className="hl-section-title">
+            <Bilingual en="All 12 houses" ta="12 வீடுகள்" inline />
           </h3>
-          <p className="hl-dasa-section__sub">Orange tint = active life areas in current Dasa</p>
-        </header>
-        <div className="hl-dasa-grid">
-          <D1ReferenceChart chart={chart} focusHouses={dasaFocusHouses} />
-          <DasaLifeAreas
-            dasa={data.dasa_life_areas}
-            focusHouse={focusHouse}
-            onSelectHouse={setFocusHouse}
-          />
-        </div>
-      </section>
-
-      <div className="hl-layout">
-        <section className="hl-graph-wrap">
-          <div className="hl-graph-toolbar">
-            <label htmlFor="hl-focus-select" className="hl-graph-toolbar__label">Focus house</label>
-            <select
-              id="hl-focus-select"
-              className="hl-focus-select"
-              value={focusHouse}
-              onChange={e => setFocusHouse(Number(e.target.value))}
-            >
-              {(data.houses || []).map(h => (
-                <option key={h.house} value={h.house}>
-                  H{h.house} — {h.theme_en} ({h.lord})
-                </option>
-              ))}
-            </select>
-          </div>
-          <HouseLinksGraph
-            graph={data.graph}
-            focusHouse={focusHouse}
-            onSelectHouse={setFocusHouse}
-          />
-          <p className="hl-graph-hint">Tap a house node to focus · lines show lord & pada links</p>
+          <ul className="hl-rows">
+            {activation.rows.map(row => (
+              <HouseRow
+                key={row.house}
+                row={row}
+                classical={classicalForHouse(classical.data, row.house)}
+                open={openHouse === row.house}
+                onToggle={() => setOpenHouse(openHouse === row.house ? null : row.house)}
+              />
+            ))}
+          </ul>
         </section>
-
-        <section className="hl-pred-wrap">
-          <PredictionCard pred={focusPred} houseRow={houseMap[focusHouse]} />
-        </section>
-      </div>
-
-      <details className="hl-section" open={false}>
-        <summary className="hl-section__summary">
-          <Bilingual en="All 12 houses" ta="12 வீடுகள்" inline />
-        </summary>
-        <div className="hl-house-grid">
-          {(data.houses || []).map(h => (
-            <button
-              key={h.house}
-              type="button"
-              className={`hl-house-card hl-house-card--${h.rag?.status || 'moderate'} ${focusHouse === h.house ? 'hl-house-card--focus' : ''}`}
-              onClick={() => setFocusHouse(h.house)}
-            >
-              <span className="hl-house-card__num">H{h.house}</span>
-              <span className="hl-house-card__theme">{h.theme_en}</span>
-              <span className="hl-house-card__lord">{h.lord} → H{h.lord_house}</span>
-              <span className="hl-house-card__score">{h.rag?.emoji} {h.strength}</span>
-            </button>
-          ))}
-        </div>
-      </details>
+      )}
 
       <details className="hl-section">
         <summary className="hl-section__summary">
@@ -401,6 +345,25 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
         </summary>
         <YogaList yogas={data.yogas} />
       </details>
+
+      <button
+        type="button"
+        className="hl-map-toggle"
+        aria-expanded={showMap}
+        onClick={() => setShowMap(v => !v)}
+      >
+        {showMap ? 'Hide map' : 'Show map'}
+      </button>
+      {showMap && (
+        <MapSection data={data} chart={chart} rows={rows} focusHouse={focusHouse} setFocusHouse={setFocusHouse} />
+      )}
+
+      {data.disclaimer?.en && (
+        <p className="hl-disclaimer" role="note">
+          {data.disclaimer.en}
+          <span className="hl-line__ta">{data.disclaimer.ta}</span>
+        </p>
+      )}
     </div>
   )
 }
