@@ -272,6 +272,7 @@ def compute_life_cycle(
         })
     themes.sort(key=lambda th: (
         STATUS_ORDER[th["status"]["key"]],
+        th["care"],
         (th["next_live"] or {}).get("start_iso", "9999"),
     ))
 

@@ -49,6 +49,12 @@ def test_themes_have_no_scores_and_marriage_does_not_lead(lc):
     assert spouse["notes"]
 
 
+def test_care_theme_follows_others_with_same_status(lc):
+    keys = [t["key"] for t in lc["themes"]]
+    assert keys[:2] == ["wealth", "health"]
+    assert lc["themes"][1]["status"]["key"] == "live"
+
+
 def test_education_hidden_for_adult(lc):
     assert "education" not in [t["key"] for t in lc["themes"]]
 
