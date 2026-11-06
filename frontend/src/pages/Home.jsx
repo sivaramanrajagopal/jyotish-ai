@@ -804,6 +804,7 @@ function HomeApp() {
           dob: bd.dob || f.dob,
           tob: bd.tob || f.tob,
           place_of_birth: data.place_of_birth || f.place_of_birth,
+          gender: bd.gender || f.gender,
           time_unknown: bd.birth_time_approximate ?? f.time_unknown,
         }))
       })

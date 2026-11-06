@@ -7,6 +7,8 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
+
+from time_utils import today_ist
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -183,7 +185,7 @@ def admin_overview(request: Request, _admin: AuthUser = Depends(require_admin)):
     if not _SB:
         raise HTTPException(status_code=503, detail="Database not configured.")
 
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
     try:
         total_users = _table_count("users")
         total_charts = _table_count("natal_charts")
@@ -326,7 +328,7 @@ def admin_ai_usage(
 ):
     if not _SB:
         raise HTTPException(status_code=503, detail="Database not configured.")
-    since = (date.today() - timedelta(days=days - 1)).isoformat()
+    since = (today_ist() - timedelta(days=days - 1)).isoformat()
     try:
         rows = _query_view("v_ai_usage_daily", order_col="usage_date", desc=True, limit=days)
         if rows:
@@ -373,7 +375,7 @@ def admin_signups(
 ):
     if not _SB:
         raise HTTPException(status_code=503, detail="Database not configured.")
-    since = (date.today() - timedelta(days=days - 1)).isoformat()
+    since = (today_ist() - timedelta(days=days - 1)).isoformat()
     try:
         rows = _query_view("v_signups_daily", order_col="signup_date", desc=True, limit=days)
         if rows:

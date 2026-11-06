@@ -9,6 +9,7 @@ import { forecastPayload } from '../lib/chartPayload'
 import { roundScore } from '../lib/scoreFormat'
 import { formatApiError } from '../lib/apiError'
 import { formatTransitMoment } from '../lib/formatMoment'
+import { localISODate, localISODateOffset } from '../lib/dates'
 
 const HOUSE_ICONS = {
   1: '🧘', 2: '💰', 3: '💬', 4: '🏠', 5: '🎨', 6: '⚔️',
@@ -27,13 +28,11 @@ const PLANET_SHORT = {
 }
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0]
+  return localISODate()
 }
 
 function tomorrowISO() {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
+  return localISODateOffset(1)
 }
 
 function rankedHouses(houses) {

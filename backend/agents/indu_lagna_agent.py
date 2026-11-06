@@ -10,6 +10,7 @@ Natal judgment (occupants, lord dignity, aspects) + tiered activation:
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 from typing import Optional
 
 import ephemeris as swe
@@ -383,7 +384,7 @@ def _scan_transits_in_signs(
 ) -> list[dict]:
     """Whole-sign transit windows; targets = [{index, label}, ...]."""
     windows: list[dict] = []
-    today = datetime.date.today()
+    today = today_ist()
     target_indices = {t["index"] for t in targets}
     target_by_idx = {t["index"]: t["label"] for t in targets}
 
@@ -535,7 +536,7 @@ def compute_indu_lagna(
         moon_lon, birth_date, relevant, years=dasa_years,
     )
 
-    today = datetime.date.today()
+    today = today_ist()
     today_str = today.isoformat()
     transit_start = today
     transit_end = today + datetime.timedelta(days=transit_years * 365)

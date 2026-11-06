@@ -13,6 +13,7 @@ import { chartPayload, forecastPayload } from '../lib/chartPayload'
 import { roundScore } from '../lib/scoreFormat'
 import { formatApiError } from '../lib/apiError'
 import QuotaHint from './QuotaHint'
+import { localISODate, localISODateOffset } from '../lib/dates'
 
 const HOUSE_ICONS = {
   1:'🧘', 2:'💰', 3:'💬', 4:'🏠', 5:'🎨', 6:'⚔️',
@@ -148,9 +149,7 @@ const RAG = {
 const t = (lang) => TR[lang] || TR.english
 
 function tomorrowISO() {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
+  return localISODateOffset(1)
 }
 
 function rankedHouses(houses) {
@@ -637,7 +636,7 @@ function DailyReadingCard({ reading, dtc, overall, topHouses, challengingHouses,
 
 // ── Main ───────────────────────────────────────────────────────────────────
 function todayISO() {
-  return new Date().toISOString().split('T')[0]
+  return localISODate()
 }
 
 export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId, enabled = true }) {

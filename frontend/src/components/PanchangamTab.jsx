@@ -17,6 +17,7 @@ import SouthIndianChart from './SouthIndianChart'
 import HoraiPanel from './HoraiPanel'
 import { isPlanetRetrograde } from '../lib/planetRetrograde'
 import { computeLiveHorai, expandPlanetSequence, weekdaySunZeroFromYmd } from '../lib/horai'
+import { localISODate } from '../lib/dates'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -469,7 +470,7 @@ function skyError(err, fallback) {
 }
 
 export default function PanchangamTab({ chart = null }) {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localISODate()
   const requestRef = useRef(0)
 
   const [date, setDate]           = useState(todayStr)

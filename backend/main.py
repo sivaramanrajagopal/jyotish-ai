@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 import datetime as _dt_module
 from datetime import date, datetime
 from pathlib import Path
+from time_utils import today_in, today_ist
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")  # explicit path — works from any cwd
@@ -454,7 +455,7 @@ def panchangam_today(request: Request, location: str = Query("Chennai", descript
     Get today's Panchangam for a location.
     Checks Supabase cache first; calculates and stores on miss.
     """
-    today = date.today().isoformat()
+    today = today_in((LOCATIONS.get(location) or {}).get("tz")).isoformat()
     return _get_panchangam(today, location)
 
 
@@ -550,7 +551,7 @@ def bulk_preload(
         raise HTTPException(status_code=400, detail=f"Unknown location '{location}'.")
 
     results = []
-    start = date.today()
+    start = today_in(LOCATIONS[location].get("tz"))
     errors = []
 
     for i in range(days):
@@ -581,7 +582,7 @@ def validate_today(
     """
     if IS_PRODUCTION:
         raise HTTPException(status_code=404, detail="Not found.")
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
     if force:
         result = calculate_panchangam(today, location)
     else:
@@ -1225,7 +1226,7 @@ def forecast_house_insight(
     age = ""
     try:
         dob_dt = date.fromisoformat(dob_str)
-        today  = date.today()
+        today  = today_ist()
         age    = str(today.year - dob_dt.year -
                      ((today.month, today.day) < (dob_dt.month, dob_dt.day)))
     except Exception:
@@ -1351,7 +1352,7 @@ def forecast_daily_reading(
     age = ""
     try:
         dob_d = date.fromisoformat(dob_str)
-        today = date.today()
+        today = today_ist()
         age   = str(today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day)))
     except Exception:
         pass
@@ -1373,11 +1374,11 @@ def forecast_daily_reading(
         rasi_idx = chart.get("moon_rasi_index")
         if nak_idx is not None and rasi_idx is not None:
             tz_id = bd.get("timezone", "Asia/Kolkata")
-            td    = date.fromisoformat(req.transit_date) if req.transit_date else date.today()
+            td    = date.fromisoformat(req.transit_date) if req.transit_date else today_ist()
             dt    = datetime(td.year, td.month, td.day, 12, 0, 0, tzinfo=ZoneInfo(tz_id))
             pp    = _tara_all(int(nak_idx), int(rasi_idx), dt, tz_id)
             tara  = pp.get("tara", {})
-            day_lbl = "today" if td == date.today() else td.isoformat()
+            day_lbl = "today" if td == today_ist() else td.isoformat()
             tara_context = (
                 f"Tara Balam ({day_lbl}): {tara.get('name')} (Tara {tara.get('position')}) — "
                 f"{tara.get('nature')}. {tara.get('meaning', '')}"

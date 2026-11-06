@@ -18,6 +18,7 @@ Entry points:
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 from pathlib import Path
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -610,7 +611,7 @@ def compute_trigger_status(
         else:
             return {"available": False, "reason": "missing_lagna"}
 
-    day = target_date or datetime.date.today()
+    day = target_date or today_ist()
     try:
         ZoneInfo(timezone)
     except Exception:

@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { localISODate } from '../lib/dates'
 
 const LOCATIONS = [
   'Chennai', 'Bangalore', 'Mumbai', 'Delhi',
@@ -57,7 +58,7 @@ const valueColor = { color: '#fef3c7' }
 const subColor   = { color: 'rgba(254,243,199,0.35)' }
 
 export default function DailyPanchangamCard() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localISODate()
 
   const [location, setLocation] = useState('Chennai')
   const [date, setDate]         = useState(today)

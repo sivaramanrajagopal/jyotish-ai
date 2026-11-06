@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+from time_utils import today_ist
+
 from agents.bhavat_bhavam.core import _lords_linked
 from agents.house_connections.activation import dasha_reasons, shared_houses
 from agents.house_connections.core import nakshatra_lord_for
@@ -257,7 +259,7 @@ def compute_tables(
     upcoming: dict | None,
     as_of: date | None = None,
 ) -> dict:
-    when = as_of or date.fromisoformat((activation or {}).get("as_of") or date.today().isoformat())
+    when = as_of or date.fromisoformat((activation or {}).get("as_of") or today_ist().isoformat())
     asc = int((chart.get("ascendant") or {}).get("sign_index") or 0)
     ends = [date.fromisoformat(p["end_iso"]) for p in (upcoming or {}).get("periods") or []]
     period = (activation or {}).get("period")

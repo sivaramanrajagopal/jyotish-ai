@@ -22,6 +22,7 @@ Register in main.py:
 """
 
 import datetime
+from time_utils import today_ist
 from pathlib import Path
 from typing import Optional
 
@@ -161,7 +162,7 @@ def _valid_timezone(tz: str) -> str:
 
 def _parse_date(date_str: Optional[str]):
     if not date_str:
-        return datetime.date.today()
+        return today_ist()
     try:
         return datetime.date.fromisoformat(date_str)
     except ValueError:
@@ -276,7 +277,7 @@ def daily_personal_panchangam_job() -> None:
         return
 
     from zoneinfo import ZoneInfo
-    today = datetime.date.today()
+    today = today_ist()
     tz    = ZoneInfo("Asia/Kolkata")
     dt    = datetime.datetime(today.year, today.month, today.day, 12, 0, 0, tzinfo=tz)
 

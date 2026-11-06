@@ -6,6 +6,7 @@
 import api from '../api/client'
 import { chartFingerprint, chartPayload } from './chartPayload'
 import { getNativeNote } from './nativeNote'
+import { localISODate } from './dates'
 
 const PREFS_KEY = 'jyotish-notif-prefs-v1'
 const SENT_KEY  = 'jyotish-notif-sent-v1'
@@ -39,7 +40,7 @@ export function saveNotificationPrefs(prefs) {
 }
 
 function todayKey() {
-  return new Date().toISOString().split('T')[0]
+  return localISODate()
 }
 
 function getSentLog() {

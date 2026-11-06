@@ -20,6 +20,7 @@ Main entry point:
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional
@@ -366,7 +367,8 @@ def _house_quality_score(house: int) -> float:
 def _natal_house_strength(house_num: int, lord_data: dict,
                            planets_in: list, planets_asp: list,
                            houses_from_own: int) -> float:
-    pos_s = {12:100,4:90,7:90,10:90,5:95,9:95,3:75,11:75,2:50,6:40,8:30}
+    # houses_from_own is an inclusive count: lord in the owned house = 1.
+    pos_s = {1:100,4:90,7:90,10:90,5:95,9:95,3:75,11:75,2:50,6:40,8:30,12:35}
     lp = pos_s.get(houses_from_own, 50)
     ld = _dignity_score(lord_data["State"], lord_data.get("Deep", False))
 
@@ -401,7 +403,7 @@ def _analyze_house_lords(natal_data: dict, conns: list[dict], asc_deg: float) ->
         if not ld:
             continue
         lh      = ld["Placed_House"]
-        hfo     = ((lh - h) % 12) or 12
+        hfo     = ((lh - h) % 12) + 1
         p_in    = [c["Planet"] for c in conns if c["Placed_House"] == h]
         p_asp   = [c["Planet"] for c in conns if h in c["Aspects"]]
         ns      = _natal_house_strength(h, ld, p_in, p_asp, hfo)
@@ -625,7 +627,7 @@ def score_all_houses(
     dict: houses, overall_health, transit_analysis, dasha_transit, transit_moment, …
     """
     if transit_date is None:
-        transit_date = datetime.date.today().isoformat()
+        transit_date = today_ist().isoformat()
 
     ck = _cache_key(natal_chart, transit_date, transit_time)
     if ck in _score_cache:
@@ -636,21 +638,19 @@ def score_all_houses(
     tob    = bd.get("tob", "")
     lat    = float(bd.get("lat", 13.08))
     lon    = float(bd.get("lon", 80.27))
-    # Derive UTC offset from timezone string (more accurate than hardcoded 5.5)
     tz_str = bd.get("timezone", "Asia/Kolkata")
-    try:
-        from zoneinfo import ZoneInfo
-        _tz  = ZoneInfo(tz_str)
-        _ref = datetime.datetime(2000, 1, 1, 12, 0, tzinfo=_tz)
-        tz_off = _ref.utcoffset().total_seconds() / 3600  # type: ignore
-    except Exception:
-        tz_off = float(bd.get("tz_offset", 5.5))
 
     # ── Natal chart ────────────────────────────────────────────────────────
     dob_dt   = datetime.datetime.strptime(dob, "%Y-%m-%d")
     tob_dt   = datetime.datetime.strptime(tob[:5], "%H:%M")
     local_dt = datetime.datetime(dob_dt.year, dob_dt.month, dob_dt.day,
                                  tob_dt.hour, tob_dt.minute)
+    # UTC offset in force at the birth moment (DST and historical offsets, e.g. IST +6:30 in 1942–45)
+    try:
+        from zoneinfo import ZoneInfo
+        tz_off = local_dt.replace(tzinfo=ZoneInfo(tz_str)).utcoffset().total_seconds() / 3600  # type: ignore
+    except Exception:
+        tz_off = float(bd.get("tz_offset", 5.5))
     utc_dt   = local_dt - datetime.timedelta(hours=tz_off)
     natal_jd = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
                           utc_dt.hour + utc_dt.minute / 60.0)

@@ -5,6 +5,7 @@ health_agent.py — D3 Drekkana body map + Dasa/Bhukti + transit health awarenes
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 
 from agents.bhavat_bhavam.slices import compute_health_bhavat_bhavam
 from agents.health.body_map import body_part_for_d3_house
@@ -39,7 +40,7 @@ def _transit_positions_for_today(natal_chart: dict) -> dict:
     tz = bd.get("timezone") or "Asia/Kolkata"
     if lat is None or lon is None:
         return {}
-    today = datetime.date.today().isoformat()
+    today = today_ist().isoformat()
     try:
         transit = calculate_natal_chart(today, "12:00", float(lat), float(lon), tz)
         return transit.get("planet_positions") or {}
@@ -117,7 +118,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     top_region = body_regions[0] if body_regions else {}
     top_factor = (factor_groups.get("d3_natal") or [None])[0]
     overall = top_factor["risk"] if top_factor else (body_regions[0]["risk"] if body_regions else "low")
-    transit_date = datetime.date.today().isoformat()
+    transit_date = today_ist().isoformat()
     bhavat_bhavam = compute_health_bhavat_bhavam(natal_chart, maha=maha, bhukti=bhukti)
 
     return {

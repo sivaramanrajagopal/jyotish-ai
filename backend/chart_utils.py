@@ -36,17 +36,35 @@ def chart_fingerprint(natal_chart: dict) -> str:
     return "|".join(parts)
 
 
+def expected_lahiri(dob: str) -> float | None:
+    """Approximate Lahiri ayanamsa for a YYYY-MM-DD date (within 0.005° for 1900–2060)."""
+    try:
+        y, m, d = (int(x) for x in str(dob)[:10].split("-"))
+    except (TypeError, ValueError):
+        return None
+    return 23.8531 + 0.013969 * (y + (m - 1) / 12 + (d - 1) / 365.25 - 2000)
+
+
 def is_chart_stale(natal_chart: dict) -> bool:
-    """Charts saved before the Lahiri ayanamsa fix may use wrong sidereal positions."""
+    """
+    Charts saved before the Lahiri ayanamsa fix carry Fagan–Bradley values labelled
+    Lahiri (about 0.88° higher). Compare against the Lahiri value for the birth date.
+    """
     if not natal_chart:
         return True
     ayan = natal_chart.get("ayanamsa_value")
     if ayan is None:
         return True
     try:
-        return natal_chart.get("ayanamsa") == "Lahiri" and float(ayan) > 24.0
+        ayan = float(ayan)
     except (TypeError, ValueError):
         return True
+    if natal_chart.get("ayanamsa") != "Lahiri":
+        return False
+    expected = expected_lahiri((natal_chart.get("birth_data") or {}).get("dob"))
+    if expected is None:
+        return ayan > 24.0
+    return abs(ayan - expected) > 0.3
 
 
 def assert_chart_not_stale(natal_chart: dict) -> None:
@@ -61,8 +79,8 @@ def assert_chart_not_stale(natal_chart: dict) -> None:
 
 
 def ensure_dasha(natal_chart: dict) -> dict:
-    """Compute Vimshottari dasha if missing from a saved chart."""
-    return refresh_dasha(natal_chart, force=False)
+    """Recompute Vimshottari dasha as of now; a saved chart's running periods go stale."""
+    return refresh_dasha(natal_chart, force=True)
 
 
 def refresh_dasha(natal_chart: dict, *, force: bool = True) -> dict:

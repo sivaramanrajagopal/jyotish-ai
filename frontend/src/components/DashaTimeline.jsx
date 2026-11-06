@@ -4,6 +4,7 @@
  * Data comes from chart.dasha.timeline (ISO dates, Lahiri Moon).
  */
 import { useState } from 'react'
+import { localISODate } from '../lib/dates'
 
 const PLANET_COLOURS = {
   Sun: '#E47911', Moon: '#5B8DD9', Mars: '#D13212',
@@ -92,7 +93,7 @@ export default function DashaTimeline({ chart }) {
 
   if (!timeline.length) return null
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localISODate()
   const first = timeline[0]
   const toggle = (planet) => setOpen((ids) => (
     ids.includes(planet) ? ids.filter((id) => id !== planet) : [...ids, planet]

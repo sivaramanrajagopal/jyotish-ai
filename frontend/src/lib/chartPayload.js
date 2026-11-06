@@ -1,3 +1,5 @@
+import { localISODate } from './dates'
+
 /**
  * Build API request body — authenticated users rely on server-side chart (Step 4).
  */
@@ -24,7 +26,7 @@ export function chartPayload(chart, userId, extra = {}) {
 /** Forecast API extras: pass transit_time when set (today defaults to now). */
 export function forecastPayload(chart, userId, transitDate, transitTime) {
   const extra = { transit_date: transitDate }
-  const today = new Date().toISOString().split('T')[0]
+  const today = localISODate()
   if (transitTime) {
     extra.transit_time = transitTime
   } else if (transitDate === today) {

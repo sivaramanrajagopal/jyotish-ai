@@ -5,6 +5,7 @@ career_agent.py — D1 + D10 career prediction (10 rules, profession tags, Dasa 
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 
 from agents.bhavat_bhavam.slices import compute_career_bhavat_bhavam
 from agents.career.atmakaraka import classical_karakas, evaluate_atmakaraka_d10
@@ -78,7 +79,7 @@ def compute_career_prediction(natal_chart: dict, *, timing_years: int = 90) -> d
     top_prob = professions[0]["probability"] if professions else 0.0
     strength = _strength_label(matched, top_prob)
 
-    today = datetime.date.today().isoformat()
+    today = today_ist().isoformat()
     current_timing = [p for p in timing if p["start"] <= today <= p["end"]]
     upcoming_timing = [p for p in timing if p["start"] > today][:10]
 

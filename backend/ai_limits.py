@@ -8,7 +8,7 @@ import hashlib
 import logging
 import os
 import re
-from datetime import date
+from time_utils import today_ist
 from typing import Optional
 
 from fastapi import HTTPException
@@ -69,7 +69,7 @@ def _anon_limits(kind: str) -> int:
 
 def _check_anon_quota(client_ip: str, kind: str) -> None:
     limit = _anon_limits(kind)
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
     ip_hash = _hash_ip(client_ip or "unknown")
     col = _usage_column(kind)
 
@@ -127,7 +127,7 @@ def _check_anon_quota(client_ip: str, kind: str) -> None:
 
 
 def get_anon_ai_usage(client_ip: str) -> dict:
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
     ip_hash = _hash_ip(client_ip or "unknown")
     out = {
         "chat_count": 0,
@@ -177,8 +177,7 @@ def check_ai_quota(
         return
 
     limit = DAILY_CHAT_LIMIT if kind == "chat" else DAILY_FORECAST_LIMIT
-    col = _usage_column(kind)
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
 
     if not _SB:
         return
@@ -187,7 +186,7 @@ def check_ai_quota(
         sb = get_supabase()
         row = (
             sb.table("ai_usage")
-            .select(col)
+            .select("chat_count, forecast_count")
             .eq("user_id", user_id)
             .eq("usage_date", today)
             .maybe_single()
@@ -227,7 +226,7 @@ def check_ai_quota(
 
 def get_ai_usage(user_id: str) -> dict:
     """Return today's AI usage counts for an authenticated user."""
-    today = date.today().isoformat()
+    today = today_ist().isoformat()
     out = {
         "chat_count": 0,
         "forecast_count": 0,

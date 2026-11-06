@@ -9,6 +9,7 @@ answer is grounded in their specific chart.
 from __future__ import annotations
 
 import datetime
+from time_utils import today_ist
 import os
 from typing import Optional
 
@@ -228,7 +229,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
             return iso_str
 
     # Today's panchangam
-    today = datetime.date.today().isoformat()
+    today = today_ist().isoformat()
     panch: dict = {}
     loc = location if location in LOCATIONS else (next(iter(LOCATIONS)) if LOCATIONS else "")
     if loc:
@@ -244,7 +245,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
             import contextlib as _cl, io as _io
             lines = []
             for i in range(1, 8):
-                d = (datetime.date.today() + datetime.timedelta(days=i)).isoformat()
+                d = (today_ist() + datetime.timedelta(days=i)).isoformat()
                 with _cl.redirect_stdout(_io.StringIO()), _cl.redirect_stderr(_io.StringIO()):
                     p = calculate_panchangam(d, loc)
                 rahu = f"{_fmt_iso(p.get('rahu_kalam_start'))}–{_fmt_iso(p.get('rahu_kalam_end'))}"
@@ -265,7 +266,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
         try:
             from zoneinfo import ZoneInfo
             tz_id = birth.get("timezone", "Asia/Kolkata")
-            td    = datetime.date.today()
+            td    = today_ist()
             dt    = datetime.datetime(td.year, td.month, td.day, 12, 0, 0,
                                       tzinfo=ZoneInfo(tz_id))
             raw = compute_personal_panchangam(int(nak_idx), int(rasi_idx), dt, tz_id)
@@ -283,7 +284,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
     if nak_idx is not None:
         try:
             tz_id  = birth.get("timezone", "Asia/Kolkata")
-            td     = datetime.date.today()
+            td     = today_ist()
             # current month
             m_label, m_cal = _build_tara_calendar(int(nak_idx), td.year, td.month, tz_id)
             # next month
