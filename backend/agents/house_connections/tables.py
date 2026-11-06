@@ -22,6 +22,7 @@ from agents.bhavat_bhavam.core import _lords_linked
 from agents.house_connections.activation import dasha_reasons, shared_houses
 from agents.house_connections.core import nakshatra_lord_for
 from agents.house_connections.edges import exchanges
+from agents.house_connections.guidance import exchange_meanings, house_remedies
 from agents.natal_agent import SIGN_LORDS
 from agents.house_connections.upcoming import MAX_YEARS, double_runs, sign_changes, sky_segments
 from agents.nadi_agent import _fmt
@@ -269,10 +270,13 @@ def compute_tables(
         runs = double_runs(segments, when, horizon, asc, h, houses[h]["lord_house"])
         if runs and runs[0][0] <= when:
             live_until[h] = _fmt(runs[0][1])
+    timeline = timeline_table(chart, when)
     return {
         "live_until": live_until,
         "natal": natal_table(houses, chart),
         "dasha": dasha_table(chart, houses, activation, upcoming, when, segments, horizon),
         "transit": transit_table(houses, activation, sign_changes(segments, asc)),
-        "timeline": timeline_table(chart, when),
+        "timeline": timeline,
+        "remedies": house_remedies(chart, timeline),
+        "exchanges": exchange_meanings(houses, timeline),
     }

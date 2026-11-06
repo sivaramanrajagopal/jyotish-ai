@@ -6235,6 +6235,10 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .hl-tbl__both { display: block; color: var(--rag-green-text); }
 .hl-tbl__row--now { background: var(--highlight-bg); }
 .hl-tbl__row--past { opacity: 0.6; }
+.hl-remedy { margin-top: 0.75rem; border-top: 1px solid var(--card-border); }
+.hl-remedy__summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--orange); }
+.hl-remedy__list { margin: 0.3rem 0 0.5rem; padding-left: 1.1rem; font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; }
+.hl-remedy__list li { margin-bottom: 0.35rem; }
 .hl-jump { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.8rem; }
 .hl-jump__btn { min-height: 44px; padding: 0 0.85rem; border-radius: 999px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text-primary); font-size: 0.8rem; cursor: pointer; }
 .hl-jump__btn:hover, .hl-jump__btn:focus-visible { border-color: var(--orange); }
