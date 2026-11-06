@@ -1,0 +1,2168 @@
+{
+  "text": "Brihat Parashara Hora Shastra",
+  "chapter": 24,
+  "note": "Summaries are written for this app. The verse text stays in bphs_ch24.json.",
+  "rules": [
+    {
+      "id": "bphs-24-1",
+      "verse": 1,
+      "lord_of": 1,
+      "in_house": 1,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Good physical comfort and strong personal drive. The native is capable and quick-minded, with a restless streak. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-2",
+      "verse": 2,
+      "lord_of": 1,
+      "in_house": 2,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Earns well, gains learning, and is content. Courteous, principled and respected, with many good qualities. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-3",
+      "verse": 3,
+      "lord_of": 1,
+      "in_house": 3,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Bold and courageous, with the drive to build wealth of every kind. Respected, clever and content. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-4",
+      "verse": 4,
+      "lord_of": 1,
+      "in_house": 4,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from both parents and a comfortable home life. Has many siblings, enjoys life's pleasures, and is attractive and well-mannered."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-5",
+      "verse": 5,
+      "lord_of": 1,
+      "in_house": 5,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Happiness from children is moderate, and the text warns of difficulty around the first child; read the 5th house and Jupiter before raising it. The native is proud and quick to anger, and finds favour with people in authority."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-6",
+      "verse": 6,
+      "lord_of": 1,
+      "in_house": 6,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {
+            "malefic_conjunct": true,
+            "benefic_aspect": false
+          },
+          "tone": "challenging",
+          "summary": "Physical comfort is reduced and health needs care. Malefics join the lord and no benefic aspects it, so the text also warns of trouble from opponents."
+        },
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Physical comfort is reduced and health needs care. The text's warning about opponents needs malefics joining the lord with no benefic aspect, which this chart does not have."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-7",
+      "verse": 7,
+      "lord_of": 1,
+      "in_house": 7,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {
+            "lord_nature": "malefic"
+          },
+          "tone": "challenging",
+          "summary": "With a malefic lagna lord here, the text warns of serious strain on the spouse's health and wellbeing. Weigh the 7th lord, Venus, and any benefic aspect on the 7th before drawing a conclusion, and keep this as background for your own judgment."
+        },
+        {
+          "when": {
+            "lord_nature": "benefic"
+          },
+          "tone": "mixed",
+          "summary": "With a benefic lagna lord here, life takes one of several turns: much travel, lean periods, a detached outlook, or at the other end, high status and authority. The lord's strength shows which way it leans."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-8",
+      "verse": 8,
+      "lord_of": 1,
+      "in_house": 8,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Gifted in occult and hidden subjects. The text also warns of poor health, a fierce temper, and a pull toward risky or dishonest ways such as gambling and secret affairs. Health and conduct are the areas to watch."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-9",
+      "verse": 9,
+      "lord_of": 1,
+      "in_house": 9,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Fortunate and well liked. Devotional by nature (the text names devotion to Vishnu), capable and a good speaker, and blessed with spouse, children and wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-10",
+      "verse": 10,
+      "lord_of": 1,
+      "in_house": 10,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from the father, honour from people in authority, and a good name in public. Wealth comes through the native's own effort, which the text states without doubt."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-11",
+      "verse": 11,
+      "lord_of": 1,
+      "in_house": 11,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Steady gains throughout life, good character, and a wide reputation. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-12",
+      "verse": 12,
+      "lord_of": 1,
+      "in_house": 12,
+      "status": "approved",
+      "variants": [
+        {
+          "when": {
+            "benefic_aspect_or_conjunct": false
+          },
+          "tone": "challenging",
+          "summary": "Physical comfort is reduced, money goes on fruitless spending, and the native is short-tempered."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "The text gives reduced comfort, fruitless spending and a short temper here only when no benefic joins or aspects the lord. A benefic does in this chart, so the verse's warning is held back."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-13",
+      "verse": 13,
+      "lord_of": 2,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Has children and wealth, but is harsh, a source of friction in the family, and busy with other people's affairs. Strong appetites run through the nature."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-14",
+      "verse": 14,
+      "lord_of": 2,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Wealthy and proud. The text also mentions more than one partner, or else difficulty with children; check the 7th and 5th houses before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-15",
+      "verse": 15,
+      "lord_of": 2,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "benefic_conjunct": true,
+            "malefic_conjunct": false
+          },
+          "tone": "favourable",
+          "summary": "Brave, intelligent and well-meaning, though also driven by desire and greed. Benefics join the lord, so the good qualities come forward."
+        },
+        {
+          "when": {
+            "malefic_conjunct": true,
+            "benefic_conjunct": false
+          },
+          "tone": "challenging",
+          "summary": "Brave, intelligent and well-meaning, though also driven by desire and greed. Malefics join the lord, so the text warns of irreverence toward the sacred."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Brave, intelligent and well-meaning, though also driven by desire and greed."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-16",
+      "verse": 16,
+      "lord_of": 2,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "jupiter_conjunct": true,
+            "exalted_or_own": true
+          },
+          "tone": "favourable",
+          "summary": "Prosperity of every kind. Jupiter joins the lord and the lord stands in its own or exaltation sign, so the text raises this to near-royal standing."
+        },
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Prosperity of every kind."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-17",
+      "verse": 17,
+      "lord_of": 2,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealthy, and the children too are inclined to build and keep wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-18",
+      "verse": 18,
+      "lord_of": 2,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "benefic_conjunct": true,
+            "malefic_conjunct": false
+          },
+          "tone": "favourable",
+          "summary": "Benefics join the lord, so the native gains wealth through rivals or competition."
+        },
+        {
+          "when": {
+            "malefic_conjunct": true,
+            "benefic_conjunct": false
+          },
+          "tone": "challenging",
+          "summary": "Malefics join the lord, so the text warns of losses through rivals and trouble in the legs or limbs."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Money comes and goes through rivals and disputes. The text turns this on whether benefics or malefics join the lord; here neither side does on its own, so the outcome stays open."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-19",
+      "verse": 19,
+      "lord_of": 2,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "malefic_aspect_or_conjunct": true
+          },
+          "tone": "challenging",
+          "summary": "Skill in healing or medicine. The text also warns about faithfulness in relationships. With malefics joining or aspecting the lord, the text extends the warning to the spouse; read the 7th house carefully before saying anything."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Skill in healing or medicine. The text also warns about faithfulness in relationships."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-20",
+      "verse": 20,
+      "lord_of": 2,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Plenty of land and money, but little happiness in marriage and none from elder siblings."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-21",
+      "verse": 21,
+      "lord_of": 2,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealthy, hardworking and skilled. Health is delicate in childhood and improves later in life. Drawn to pilgrimage, vows and religious practice."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-22",
+      "verse": 22,
+      "lord_of": 2,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Passionate, respected, learned and very wealthy, though happiness from children is lacking; read the 5th house and Jupiter before raising it. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-23",
+      "verse": 23,
+      "lord_of": 2,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Gains of every kind. Hardworking, honoured and well known."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-24",
+      "verse": 24,
+      "lord_of": 2,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Courageous yet short of money, leaning on the fortunes of others. Happiness from the eldest child is lacking; read the 5th house and Jupiter before raising it."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-25",
+      "verse": 25,
+      "lord_of": 3,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Earns wealth through own effort. Brave and intelligent, able in service, and capable even without formal education."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-26",
+      "verse": 26,
+      "lord_of": 3,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Heavy-bodied and lacking courage, takes on small ventures, and is not content. The text also warns of coveting other people's wealth and partners."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-27",
+      "verse": 27,
+      "lord_of": 3,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from siblings, wealth and children, and a joyful, contented life."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-28",
+      "verse": 28,
+      "lord_of": 3,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Happy, wealthy and intelligent, though the text warns of a difficult spouse."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-29",
+      "verse": 29,
+      "lord_of": 3,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "malefic_aspect_or_conjunct": true
+          },
+          "tone": "mixed",
+          "summary": "Has children and good qualities. Malefics join or aspect the lord, so the text warns of a harsh-tempered spouse."
+        },
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Has children and good qualities."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-30",
+      "verse": 30,
+      "lord_of": 3,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Very wealthy, but at odds with siblings and with maternal uncles, while close to maternal aunts."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-31",
+      "verse": 31,
+      "lord_of": 3,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Works in government or public service. Childhood is unhappy, and life improves steadily toward the end."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-32",
+      "verse": 32,
+      "lord_of": 3,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Earns through service to others, with a pull toward dishonest ways. The text also warns of serious trouble with the authorities."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-33",
+      "verse": 33,
+      "lord_of": 3,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Little happiness from the father, but fortune rises through women, and there is happiness from children and family."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-34",
+      "verse": 34,
+      "lord_of": 3,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Every comfort and self-earned wealth. The text also warns about faithfulness in relationships."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-35",
+      "verse": 35,
+      "lord_of": 3,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Always profitable in business. Intelligent and brave even without formal education, and works in service of others."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-36",
+      "verse": 36,
+      "lord_of": 3,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Spends on the wrong things, and the father is harsh. Fortune rises through women."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-37",
+      "verse": 37,
+      "lord_of": 4,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Learned and virtuous, owns land and vehicles, and enjoys the mother's happiness."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-38",
+      "verse": 38,
+      "lord_of": 4,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Enjoys life and has wealth of every kind. Close to family, respected, bold and shrewd."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-39",
+      "verse": 39,
+      "lord_of": 4,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Brave, healthy, generous and charitable, with people to help and wealth earned through own effort."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-40",
+      "verse": 40,
+      "lord_of": 4,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Becomes a minister or counsellor, with wealth of every kind. Skilled, principled, respected, learned, well liked and happy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-41",
+      "verse": 41,
+      "lord_of": 4,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happy, liked by all, devotional (the text names devotion to Vishnu), virtuous and respected, with self-earned wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-42",
+      "verse": 42,
+      "lord_of": 4,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness or comfort from the mother. The text also warns of a hot temper, dishonest ways, a pull toward indulgence, and an ill-intentioned mind."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-43",
+      "verse": 43,
+      "lord_of": 4,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Very learned, yet lets go of the father's wealth and falls silent in public gatherings."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-44",
+      "verse": 44,
+      "lord_of": 4,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Deprived of comforts such as a home, little happiness for the parents, and a lack of vigour."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-45",
+      "verse": 45,
+      "lord_of": 4,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Liked by all, devout, virtuous and respected, with happiness of every kind."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-46",
+      "verse": 46,
+      "lord_of": 4,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Honoured by the government, skilled in chemistry or medicine (the text says rasayana), joyful, comfortable and self-controlled."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-47",
+      "verse": 47,
+      "lord_of": 4,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Generous, virtuous, charitable and devoted to helping others. The text warns of hidden illnesses."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-48",
+      "verse": 48,
+      "lord_of": 4,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Deprived of comforts such as a home, given to bad habits and poor judgment, and held back by laziness."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-49",
+      "verse": 49,
+      "lord_of": 5,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Learned, with happiness from children, but miserly, scheming, and tempted by others' wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-50",
+      "verse": 50,
+      "lord_of": 5,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Many children and wealth. Supports the family, is respected and well known, and is fond of company."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-51",
+      "verse": 51,
+      "lord_of": 5,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Fond of siblings and devoted to own work, but miserly and spiteful."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-52",
+      "verse": 52,
+      "lord_of": 5,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happy, prosperous and intelligent, with the mother's happiness. Becomes an adviser to those in power, or a teacher."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-53",
+      "verse": 53,
+      "lord_of": 5,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "benefic_aspect": true,
+            "malefic_aspect": false
+          },
+          "tone": "favourable",
+          "summary": "Virtuous and fond of friends. Benefics aspect the lord, so the text promises children."
+        },
+        {
+          "when": {
+            "malefic_aspect": true,
+            "benefic_aspect": false
+          },
+          "tone": "challenging",
+          "summary": "Virtuous and fond of friends. Malefics aspect the lord, so the text warns of difficulty having children; read the 5th house and Jupiter before raising it."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Virtuous and fond of friends. Whether children come depends on which planets aspect the lord, and this chart gives a mixed or neutral picture."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-54",
+      "verse": 54,
+      "lord_of": 5,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Strained relations with a child, or the text's harder outcomes: loss of children, or a child by adoption; read the 5th house and Jupiter before raising it."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-55",
+      "verse": 55,
+      "lord_of": 5,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Respected and righteous, with happiness from children and others, and devoted to helping people."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-56",
+      "verse": 56,
+      "lord_of": 5,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from children, chest and breathing trouble, irritability, and a general lack of contentment."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-57",
+      "verse": 57,
+      "lord_of": 5,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "A child rises to high standing, or the native becomes a well-known author and the pride of the family."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-58",
+      "verse": 58,
+      "lord_of": 5,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Forms a Raja Yoga: many comforts and wide fame."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-59",
+      "verse": 59,
+      "lord_of": 5,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Learned, well liked, an author, very skilled, with many children and wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-60",
+      "verse": 60,
+      "lord_of": 5,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from children, or a child by adoption; read the 5th house and Jupiter before raising it."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-61",
+      "verse": 61,
+      "lord_of": 6,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Prone to illness yet famous. Wealthy, proud, brave and capable, though often the native's own worst enemy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-62",
+      "verse": 62,
+      "lord_of": 6,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Brave, well known in the family, an able speaker, devoted to own work, and happy living abroad."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-63",
+      "verse": 63,
+      "lord_of": 6,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Short-tempered and lacking courage. A sibling acts like a rival, and employees are defiant."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-64",
+      "verse": 64,
+      "lord_of": 6,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Very wealthy and ambitious, but little happiness from the mother, with an envious, changeable and spiteful streak."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-65",
+      "verse": 65,
+      "lord_of": 6,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Wealth and possessions are unsteady, and there is friction with children and friends. Happy and compassionate, though self-centred."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-66",
+      "verse": 66,
+      "lord_of": 6,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Enmity within the family and community, friendships outside it, and moderate happiness and wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-67",
+      "verse": 67,
+      "lord_of": 6,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Little happiness in marriage, but famous, virtuous, proud, brave and wealthy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-68",
+      "verse": 68,
+      "lord_of": 6,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Prone to illness and at odds with learned people. The text also warns of coveting others' property, and about faithfulness in relationships."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-69",
+      "verse": 69,
+      "lord_of": 6,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Trades in wood, stone or similar goods, with gains and losses by turns."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-70",
+      "verse": 70,
+      "lord_of": 6,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Well known in the family line and happy abroad, but critical of and disrespectful toward the father."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-71",
+      "verse": 71,
+      "lord_of": 6,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Gains wealth from opponents. Virtuous, brave and respected, though happiness from children is lacking."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-72",
+      "verse": 72,
+      "lord_of": 6,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Spends constantly on vices, is hostile toward learned people, and has a streak of cruelty."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-73",
+      "verse": 73,
+      "lord_of": 7,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Clever yet impatient and ill-behaved, and prone to wind (vata) disorders. The text also warns about faithfulness in relationships."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-74",
+      "verse": 74,
+      "lord_of": 7,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Gains wealth through the spouse, but puts things off. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-75",
+      "verse": 75,
+      "lord_of": 7,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "The text warns of loss of children; a daughter may come, and a son only with effort. Read the 5th house and Jupiter before raising it."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-76",
+      "verse": 76,
+      "lord_of": 7,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Truthful, intelligent and principled, though the spouse is independent-minded and dental trouble is likely."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-77",
+      "verse": 77,
+      "lord_of": 7,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Proud, gifted, always cheerful, and master of much wealth."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-78",
+      "verse": 78,
+      "lord_of": 7,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "The spouse's health suffers, or there is friction with women. Short-tempered and not content."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-79",
+      "verse": 79,
+      "lord_of": 7,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from the spouse. Brave, discerning and intelligent, with only wind (vata) disorders to watch."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-80",
+      "verse": 80,
+      "lord_of": 7,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness in marriage; the spouse may be unwell, difficult and unaccommodating."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-81",
+      "verse": 81,
+      "lord_of": 7,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Absorbed in the spouse and takes on many ventures. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-82",
+      "verse": 82,
+      "lord_of": 7,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Principled, with wealth and children, though the spouse is independent-minded."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-83",
+      "verse": 83,
+      "lord_of": 7,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Gains wealth through marriage. Happiness from children is limited, with mainly daughters."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-84",
+      "verse": 84,
+      "lord_of": 7,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Short of money or tight-fisted, with an extravagant spouse. May earn through clothing or textiles."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-85",
+      "verse": 85,
+      "lord_of": 8,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little bodily comfort, prone to wounds or ulcers, and irreverent toward religion and learned people."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-86",
+      "verse": 86,
+      "lord_of": 8,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Lacks physical strength, has little money, and lost wealth is hard to recover."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-87",
+      "verse": 87,
+      "lord_of": 8,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from siblings. Lacks energy, help and stamina."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-88",
+      "verse": 88,
+      "lord_of": 8,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "The text warns about the mother's wellbeing. Little happiness from home and land, and a risk of betraying friends."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-89",
+      "verse": 89,
+      "lord_of": 8,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Slow to learn, with little wisdom, but long-lived and wealthy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-90",
+      "verse": 90,
+      "lord_of": 8,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Overcomes enemies, but health is troubled, with fears around snakes and water in childhood."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-91",
+      "verse": 91,
+      "lord_of": 8,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "malefic_conjunct": true
+          },
+          "tone": "challenging",
+          "summary": "Marriage needs a close look here. The text also mentions more than one partner; check the 7th house before reading this to a client. A malefic joins the lord, so the text also warns of losses in business."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Marriage needs a close look here. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-92",
+      "verse": 92,
+      "lord_of": 8,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "lord_strong": true
+          },
+          "tone": "favourable",
+          "summary": "Long life."
+        },
+        {
+          "when": {
+            "lord_strong": false
+          },
+          "tone": "challenging",
+          "summary": "The lord is weak, so the text gives an average lifespan and warns of dishonest and spiteful ways."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Long life when the lord is strong; when it is weak, the text gives an average lifespan and warns of dishonest ways."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-93",
+      "verse": 93,
+      "lord_of": 8,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "At odds with religion and tradition, with a difficult spouse. The text also warns of coveting others' property."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-94",
+      "verse": 94,
+      "lord_of": 8,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "benefic_aspect": false
+          },
+          "tone": "challenging",
+          "summary": "Little happiness from the father, a habit of speaking ill of others, and a lack of steady work. No benefic aspects the lord, so the text stresses these results."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Little happiness from the father, a habit of speaking ill of others, and a lack of steady work. A benefic aspects the lord, which the text says softens these results."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-95",
+      "verse": 95,
+      "lord_of": 8,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "malefic_conjunct": true,
+            "benefic_conjunct": false
+          },
+          "tone": "challenging",
+          "summary": "Childhood is unhappy and life improves later. Malefics join the lord, so the text warns of a lack of wealth."
+        },
+        {
+          "when": {
+            "benefic_conjunct": true,
+            "malefic_conjunct": false
+          },
+          "tone": "favourable",
+          "summary": "Childhood is unhappy and life improves later. Benefics join the lord, so the text promises a long life."
+        },
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Childhood is unhappy and life improves later."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-96",
+      "verse": 96,
+      "lord_of": 8,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {
+            "malefic_conjunct": true
+          },
+          "tone": "challenging",
+          "summary": "Spends constantly on ignoble things. Malefics join the lord, so the text stresses a concern about longevity; leave this out of a client reading."
+        },
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Spends constantly on ignoble things. The text raises a concern about longevity mainly when malefics join the lord, which is not the case here."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-97",
+      "verse": 97,
+      "lord_of": 9,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Very fortunate and honoured by those in power. Good character, good looks, learning and public respect."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-98",
+      "verse": 98,
+      "lord_of": 9,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Learned, well liked and wealthy, with strong desires and happiness from spouse and children."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-99",
+      "verse": 99,
+      "lord_of": 9,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from siblings. Wealthy, virtuous, good-looking and of good character."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-100",
+      "verse": 100,
+      "lord_of": 9,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from home and vehicles, wealth of every kind, and devotion to the mother."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-101",
+      "verse": 101,
+      "lord_of": 9,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Fortunate through children. Devoted to teachers, steady, righteous and learned."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-102",
+      "verse": 102,
+      "lord_of": 9,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little fortune, little happiness from maternal relatives, and constant trouble from opponents."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-103",
+      "verse": 103,
+      "lord_of": 9,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness through marriage. Virtuous and famous, with the learning and devotion of a true scholar."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-104",
+      "verse": 104,
+      "lord_of": 9,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Short of good fortune, with no happiness from elder siblings."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-105",
+      "verse": 105,
+      "lord_of": 9,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Abundant fortune, virtue and good looks, and much happiness from siblings."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-106",
+      "verse": 106,
+      "lord_of": 9,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Rises to high office as a leader, minister or commander. Virtuous and respected by the public."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-107",
+      "verse": 107,
+      "lord_of": 9,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealth grows day by day. Devoted to elders, virtuous and meritorious."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-108",
+      "verse": 108,
+      "lord_of": 9,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Fortune shrinks. Spends constantly on good causes and loses money through hospitality."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-109",
+      "verse": 109,
+      "lord_of": 10,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Learned, famous, wealthy and poetic. Health is delicate in childhood, then life improves and wealth grows day by day."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-110",
+      "verse": 110,
+      "lord_of": 10,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealthy and gifted, honoured by the government, generous, with happiness from the father."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-111",
+      "verse": 111,
+      "lord_of": 10,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness from siblings and helpers. Brave, virtuous, eloquent and truthful."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-112",
+      "verse": 112,
+      "lord_of": 10,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happy and devoted to the mother's welfare. Owns vehicles, land and houses, and is virtuous and wealthy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-113",
+      "verse": 113,
+      "lord_of": 10,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Learned in every subject, always cheerful, wealthy, and blessed with children."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-114",
+      "verse": 114,
+      "lord_of": 10,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from the father. Clever, yet short of money and troubled by opponents."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-115",
+      "verse": 115,
+      "lord_of": 10,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Happiness in marriage. High-minded, virtuous, eloquent, and devoted to truth and dharma."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-116",
+      "verse": 116,
+      "lord_of": 10,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Short of meaningful work. Long-lived, but given to criticising others."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-117",
+      "verse": 117,
+      "lord_of": 10,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Rises to royal standing, by birth or by merit, with wealth and children."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-118",
+      "verse": 118,
+      "lord_of": 10,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Skilled in every task and happy. Brave, truthful, and devoted to the guru."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-119",
+      "verse": 119,
+      "lord_of": 10,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealth and children, cheerful, virtuous and truthful, and always happy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-120",
+      "verse": 120,
+      "lord_of": 10,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Spends on government or official matters and lives with fear of opponents. Clever, but anxious."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-121",
+      "verse": 121,
+      "lord_of": 11,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Pure-minded, wealthy and happy. Fair in outlook, poetic and eloquent, with steady gains."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-122",
+      "verse": 122,
+      "lord_of": 11,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Wealth of every kind and every accomplishment. Generous, righteous and happy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-123",
+      "verse": 123,
+      "lord_of": 11,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Skilled in every undertaking and wealthy, with happiness from siblings. Occasional colic or abdominal pain."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-124",
+      "verse": 124,
+      "lord_of": 11,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Gains through the mother's family, pilgrimages, and happiness from home and land."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-125",
+      "verse": 125,
+      "lord_of": 11,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "The children are happy, learned and of good conduct. The native is righteous and happy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-126",
+      "verse": 126,
+      "lord_of": 11,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Prone to illness, harsh in thinking, restless in movement, and troubled by opponents."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-127",
+      "verse": 127,
+      "lord_of": 11,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Steady gains through the spouse's family. Generous, virtuous, passionate and devoted to the spouse."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-128",
+      "verse": 128,
+      "lord_of": 11,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Losses in undertakings. Long-lived, though the text raises a concern about the spouse's longevity; leave this out of a client reading."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-129",
+      "verse": 129,
+      "lord_of": 11,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Born fortunate. Clever, truthful, honoured by those in power, and wealthy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-130",
+      "verse": 130,
+      "lord_of": 11,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Honoured by those in power, gifted, true to own nature, intelligent, truthful and self-controlled."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-131",
+      "verse": 131,
+      "lord_of": 11,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Profit in every undertaking, with wisdom and happiness growing day by day."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-132",
+      "verse": 132,
+      "lord_of": 11,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Spends steadily on good causes and mixes with people from outside one's own culture. The text also mentions more than one partner; check the 7th house before reading this to a client."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-133",
+      "verse": 133,
+      "lord_of": 12,
+      "in_house": 1,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Spends freely, lacks physical strength, is prone to phlegm or cold disorders, and is short of wealth and learning."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-134",
+      "verse": 134,
+      "lord_of": 12,
+      "in_house": 2,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Spends steadily on good causes. Righteous, pleasant-spoken, gifted and happy."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-135",
+      "verse": 135,
+      "lord_of": 12,
+      "in_house": 3,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from siblings, at odds with others, and focused on own body and comfort."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-136",
+      "verse": 136,
+      "lord_of": 12,
+      "in_house": 4,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Little happiness from the mother, and steady losses through land, vehicles and houses."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-137",
+      "verse": 137,
+      "lord_of": 12,
+      "in_house": 5,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Short of children and education, spends on a child's behalf, and is drawn to pilgrimage. Read the 5th house and Jupiter before raising the matter of children."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-138",
+      "verse": 138,
+      "lord_of": 12,
+      "in_house": 6,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Creates friction with own people. Angry and unhappy. The text also warns about faithfulness in relationships."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-139",
+      "verse": 139,
+      "lord_of": 12,
+      "in_house": 7,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Constant spending caused by the spouse, little happiness in marriage, and a lack of strength and learning."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-140",
+      "verse": 140,
+      "lord_of": 12,
+      "in_house": 8,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "favourable",
+          "summary": "Steady gains, sweet speech, a medium lifespan, and many virtues."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-141",
+      "verse": 141,
+      "lord_of": 12,
+      "in_house": 9,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "At odds with teachers, friction even with friends, and intent on own interests."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-142",
+      "verse": 142,
+      "lord_of": 12,
+      "in_house": 10,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Expenses through the government or authorities, and little happiness from the father."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-143",
+      "verse": 143,
+      "lord_of": 12,
+      "in_house": 11,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "mixed",
+          "summary": "Gains slip away, though money held or kept by others sometimes comes to the native."
+        }
+      ]
+    },
+    {
+      "id": "bphs-24-144",
+      "verse": 144,
+      "lord_of": 12,
+      "in_house": 12,
+      "status": "draft",
+      "variants": [
+        {
+          "when": {},
+          "tone": "challenging",
+          "summary": "Heavy spending, little physical comfort, anger, and hostility toward others."
+        }
+      ]
+    }
+  ]
+}

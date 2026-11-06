@@ -534,7 +534,10 @@ def chat(
         system_prompt += f"\nThe person is looking at the {page_label} page. Start from that page when it fits the question.\n"
     system_prompt += _TOOL_GUIDE
 
-    from agents.chat_tools import TOOLS, tool_result_json
+    from agents.chat_tools import CLASSICAL_TOOL, CLASSICAL_GUIDE, active_tools, tool_result_json
+    tools = active_tools()
+    if CLASSICAL_TOOL in tools:
+        system_prompt += CLASSICAL_GUIDE
     from openai import APIError, AuthenticationError, RateLimitError
     try:
         client = OpenAI(api_key=api_key)
@@ -548,7 +551,7 @@ def chat(
                 model=MODEL,
                 max_tokens=TOKENS,
                 messages=thread,
-                tools=TOOLS,
+                tools=tools,
                 tool_choice="auto",
             )
             message = response.choices[0].message
@@ -561,7 +564,9 @@ def chat(
                 thread.append({
                     "role": "tool",
                     "tool_call_id": call.id,
-                    "content": tool_result_json(call.function.name, natal_chart, location),
+                    "content": tool_result_json(
+                        call.function.name, natal_chart, location, call.function.arguments or "",
+                    ),
                 })
             reply = message.content or reply
         return reply or "I could not finish that reading from the chart."
