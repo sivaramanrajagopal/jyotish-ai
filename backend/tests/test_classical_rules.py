@@ -102,6 +102,16 @@ def test_chart_a_dual_lordship_notes():
     assert "both results apply" in notes["Venus"]["note"]
 
 
+def test_fourth_lord_in_lagna_shows_the_source_correction():
+    # Taurus lagna with the Sun, lord of the 4th (Leo), in Taurus: verse 37 applies.
+    chart = calculate_natal_chart("1990-06-10", "05:30", 13.0827, 80.2707, "Asia/Kolkata")
+    facts = {f["house"]: f for f in lord_facts(chart)}
+    assert (facts[4]["lord"], facts[4]["lord_house"]) == ("Sun", 1)
+    match = next(m for m in match_rules(chart)["matches"] if m["lord_of"] == 4)
+    assert match["source"]["verse"] == 37
+    assert "dhanage" in match["source"]["source_note"]
+
+
 def test_lagna_lord_in_twelfth_is_held_back_by_benefic_support():
     rule = next(r for r in load_rules() if r["verse"] == 12)
     assert _pick_variant(rule, {"benefic_aspect_or_conjunct": False})["tone"] == "challenging"

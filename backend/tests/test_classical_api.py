@@ -89,6 +89,11 @@ def test_chat_tool_is_offered_and_narrows_by_house():
     assert {r["cite"] for r in tenth["rules"]} == {"BPHS 24.117"}
     assert all(r["why"] for r in tenth["rules"])
 
+    as_text = json.loads(tool_result_json("classical_rules", _chart_a(), arguments='{"house": "10"}'))
+    assert {r["cite"] for r in as_text["rules"]} == {"BPHS 24.117"}
+    out_of_range = json.loads(tool_result_json("classical_rules", _chart_a(), arguments='{"house": 40}'))
+    assert len(out_of_range["rules"]) == 12
+
     foreign = json.loads(tool_result_json("classical_rules", _chart_a(), arguments='{"topic": "foreign"}'))
     # The 12th lord by house, and the 6th lord in the 2nd because its summary says "abroad".
     assert {r["cite"] for r in foreign["rules"]} == {"BPHS 24.139", "BPHS 24.62"}

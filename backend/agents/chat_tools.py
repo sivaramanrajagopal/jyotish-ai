@@ -136,7 +136,12 @@ def run_chart_tool(name: str, chart: dict, location: str = "Chennai", args: dict
         if not classical_enabled():
             return {"error": "Classical rules are switched off."}
         args = args or {}
-        return _classical_rules(chart, args.get("house"), args.get("topic"))
+        try:
+            house = int(args.get("house") or 0)
+        except (TypeError, ValueError):
+            house = 0
+        topic = args.get("topic") if isinstance(args.get("topic"), str) else None
+        return _classical_rules(chart, house if 1 <= house <= 12 else None, topic)
     if name == "period_reading":
         reading = compute_period_reading(chart)
         return {

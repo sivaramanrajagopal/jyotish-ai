@@ -161,6 +161,7 @@ def match_rules(chart: dict, shadbala: dict | None = None) -> dict:
                 "translation": verse["translation"],
                 "sanskrit": verse["sanskrit"],
                 "transliteration": verse["transliteration"],
+                "source_note": verse.get("source_note"),
             },
         })
     return {

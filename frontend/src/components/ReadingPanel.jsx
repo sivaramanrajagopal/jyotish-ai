@@ -351,7 +351,7 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
         </div>
       )}
 
-      {data && <ClassicalCard data={classical.data} error={classical.error} />}
+      {data && <ClassicalCard data={classical.data} error={classical.error} loading={classical.loading} />}
     </section>
   )
 }

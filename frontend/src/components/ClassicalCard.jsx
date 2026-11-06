@@ -69,6 +69,11 @@ function Rule({ match }) {
               {match.source.cite} · original verse
             </p>
             <p className="m-0">{match.source.translation}</p>
+            {match.source.source_note && (
+              <p className="m-0 text-xs" style={{ color: 'var(--text-muted)' }}>
+                Note on the source: {match.source.source_note}
+              </p>
+            )}
             <p className="m-0" lang="sa" style={{ color: 'var(--text-secondary)' }}>{match.source.sanskrit}</p>
             <p className="m-0 italic whitespace-pre-line" style={{ color: 'var(--text-muted)' }}>
               {match.source.transliteration.replace(/\s*\.(?=\S)/g, '\n')}
@@ -80,10 +85,13 @@ function Rule({ match }) {
   )
 }
 
-export default function ClassicalCard({ data, error }) {
+export default function ClassicalCard({ data, error, loading }) {
   const [topic, setTopic] = useState('')
   if (error) {
     return <p className="text-sm" style={{ color: 'var(--orange)' }}>{error}</p>
+  }
+  if (loading) {
+    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Matching the classical rules…</p>
   }
   if (!data?.matches?.length) return null
 
