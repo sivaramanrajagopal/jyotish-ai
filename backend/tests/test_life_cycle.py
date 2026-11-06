@@ -61,6 +61,16 @@ def test_theme_status_and_next_window(lc):
     assert (nxt["start"], nxt["bhukti"]) == ("27 Nov 2027", "Venus")
 
 
+def test_next_window_can_fall_inside_the_running_bhukti(chart):
+    later = compute_life_cycle(chart, as_of=date(2027, 1, 10))
+    children = _theme(later, "children")
+    assert children["status"]["key"] == "waiting"
+    assert (children["next_live"]["start"], children["next_live"]["bhukti"]) == ("26 Jun 2027", "Venus")
+    for t in later["themes"]:
+        if t["next_live"]:
+            assert t["next_live"]["start_iso"] > "2027-01-10"
+
+
 def test_theme_remedies_one_per_lord(lc):
     wealth = _theme(lc, "wealth")
     assert [r["lord"] for r in wealth["remedies"]] == ["Jupiter"]

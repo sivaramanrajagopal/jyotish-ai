@@ -250,7 +250,7 @@ def compute_life_cycle(
             "fruit": [_fruit(chart, h) for h in t["key_houses"]],
             "status": {"key": status, "en": STATUS[status][0], "ta": STATUS[status][1]},
             "live_now": live_now,
-            "next_live": _next_live(upcoming, when),
+            "next_live": _next_live(windows, when),
             "windows": [w for w in windows if w["now"]] + upcoming[:WINDOWS_SHOWN],
             "more_windows": max(0, len(upcoming) - WINDOWS_SHOWN),
             "remedies": theme_remedies,
