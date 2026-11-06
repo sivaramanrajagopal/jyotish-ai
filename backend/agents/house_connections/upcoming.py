@@ -66,7 +66,8 @@ def sign_changes(segments: list[dict], asc: int) -> list[dict]:
     return out
 
 
-def _windows(segments: list[dict], start: date, end: date, asc: int, house: int, lord_seat: int) -> list[dict]:
+def double_runs(segments: list[dict], start: date, end: date, asc: int, house: int, lord_seat: int) -> list[list[date]]:
+    """Date runs inside start..end when Jupiter and Saturn both touch the house or its lord."""
     runs: list[list[date]] = []
     for seg in segments:
         lo, hi = max(seg["start"], start), min(seg["end"], end)
@@ -78,6 +79,11 @@ def _windows(segments: list[dict], start: date, end: date, asc: int, house: int,
                 runs[-1][1] = hi
             else:
                 runs.append([lo, hi])
+    return runs
+
+
+def _windows(segments: list[dict], start: date, end: date, asc: int, house: int, lord_seat: int) -> list[dict]:
+    runs = double_runs(segments, start, end, asc, house, lord_seat)
     return [{"start": _fmt(a), "end": _fmt(b)} for a, b in runs]
 
 
@@ -134,6 +140,8 @@ def compute_upcoming(chart: dict, houses: dict[int, dict], as_of: date, count: i
             "bhukti": planet,
             "start": _fmt(start),
             "end": _fmt(bhukti["end"].date()),
+            "start_iso": start.isoformat(),
+            "end_iso": bhukti["end"].date().isoformat(),
             "relation": relation,
             "houses": rows,
         })

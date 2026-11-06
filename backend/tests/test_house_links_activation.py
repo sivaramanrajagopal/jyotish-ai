@@ -48,6 +48,22 @@ def test_ketu_acts_for_its_sign_lord():
     assert main == {2, 11}  # Ketu in Pisces (2nd), Jupiter rules the 2nd and 11th
 
 
+def test_ketu_also_gives_the_moon_it_sits_with():
+    chart = _chart()
+    reasons = dasha_reasons("Ketu", "bhukti", chart["planet_positions"], chart["ascendant"]["sign_index"])
+    assert [r["level"] for r in reasons[6]] == ["side"]
+    assert "sits with Moon" in reasons[6][0]["en"]
+
+
+def test_node_star_lord_acts_through_its_sign_lord():
+    chart = _chart()
+    reasons = dasha_reasons("Venus", "bhukti", chart["planet_positions"], chart["ascendant"]["sign_index"])
+    # Venus in Swati (Rahu's star); Rahu in Virgo, so Mercury's 5th and 8th
+    for h in (5, 8):
+        assert reasons[h][0]["level"] == "side"
+        assert "sign lord Mercury" in reasons[h][0]["en"]
+
+
 def test_double_transit_chart_a():
     rows = _rows()
     # Jupiter in Leo (7th) aspects 11, 1, 3; Saturn in Pisces (2nd) aspects 4, 8, 11.

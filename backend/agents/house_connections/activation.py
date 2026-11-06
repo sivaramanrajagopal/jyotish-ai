@@ -2,7 +2,8 @@
 
 Dasha (Parashari): a running lord gives the results of the houses it rules and occupies
 (main), and of the houses it aspects or reaches through its nakshatra lord (side).
-Rahu and Ketu rule no sign, so they act for the lord of the sign they occupy.
+Rahu and Ketu rule no sign, so they act for the lord of the sign they occupy (main) and
+for the planets sitting with them (side). A node as star lord acts through its sign lord.
 
 Transit (double transit, from the lagna, whole-sign): a house is triggered when Jupiter
 and Saturn each occupy or aspect the house or the sign holding its lord. Aspects come
@@ -109,13 +110,30 @@ def dasha_reasons(planet: str, role: str, pp: dict, asc: int) -> dict[int, list[
     if seat:
         for h in _planet_aspects(planet, seat):
             add(h, "side", f"{planet}, the {role_en}, aspects this house", f"{role_ta} {planet} பார்வை")
+    if planet in NODES and seat:
+        for other in ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"):
+            if _seat(pp, other, asc) != seat:
+                continue
+            for h in houses_owned_by(other, asc):
+                if h in out:
+                    continue
+                add(h, "side", f"{planet}, the {role_en}, sits with {other}, who rules this house",
+                    f"{role_ta} {planet} {other} உடன், {other} இந்த வீட்டின் அதிபதி")
     star_lord = nakshatra_lord_for(pp.get(planet) or {})
     if star_lord and star_lord != planet:
-        for h in houses_owned_by(star_lord, asc):
+        acting = star_lord
+        if star_lord in NODES:
+            acting = SIGN_LORDS.get((pp.get(star_lord) or {}).get("sign", ""), "")
+        for h in houses_owned_by(acting, asc):
             if h in out:
                 continue
-            add(h, "side", f"{planet}'s star lord {star_lord} rules this house",
-                f"{planet} நட்சத்திர அதிபதி {star_lord} இந்த வீட்டின் அதிபதி")
+            if acting == star_lord:
+                en = f"{planet}'s star lord {star_lord} rules this house"
+                ta = f"{planet} நட்சத்திர அதிபதி {star_lord} இந்த வீட்டின் அதிபதி"
+            else:
+                en = f"{planet}'s star lord {star_lord} acts for its sign lord {acting}, who rules this house"
+                ta = f"{planet} நட்சத்திர அதிபதி {star_lord}, ராசி அதிபதி {acting} வழியாக இந்த வீடு"
+            add(h, "side", en, ta)
     return out
 
 
@@ -194,7 +212,12 @@ def _period(chart: dict, as_of: date) -> dict | None:
     nxt = bhuktis[index + 1] if index is not None and index + 1 < len(bhuktis) else None
 
     def span(row: dict) -> dict:
-        return {"planet": row["planet"], "start": _fmt(row["start"].date()), "end": _fmt(row["end"].date())}
+        return {
+            "planet": row["planet"],
+            "start": _fmt(row["start"].date()),
+            "end": _fmt(row["end"].date()),
+            "end_iso": row["end"].date().isoformat(),
+        }
 
     return {
         "mahadasha": span(maha),
@@ -231,12 +254,15 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
     jupiter_sign, saturn_sign = sky_sign("Jupiter"), sky_sign("Saturn")
     moon_sign = sky_sign("Moon")
     by_house: dict[int, list[str]] = {}
+    sky_now: dict[str, dict] = {}
     for planet, row in sky.items():
         idx = sky_sign(planet)
         if idx is None:
             continue
-        retro = row.get("retrograde") and planet not in ("Sun", "Moon", *NODES)
-        by_house.setdefault(whole_sign_house(idx, asc), []).append(f"{planet} (R)" if retro else planet)
+        retro = bool(row.get("retrograde")) and planet not in ("Sun", "Moon", *NODES)
+        at = whole_sign_house(idx, asc)
+        by_house.setdefault(at, []).append(f"{planet} (R)" if retro else planet)
+        sky_now[planet] = {"sign": SIGNS[idx], "house": at, "retrograde": retro}
 
     rows = []
     for h in range(1, 13):
@@ -302,5 +328,6 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
         "today": today,
         "now": [r["house"] for r in active[:4]],
         "sky_only": [r["house"] for r in rows if r["status"]["key"] == "sky"],
+        "sky": sky_now,
         "rows": rows,
     }
