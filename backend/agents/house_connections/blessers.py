@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from agents.house_connections.core import houses_owned_by, nakshatra_lord_for
-from agents.house_connections.themes import BENEFICS
-from agents.bhavat_bhavam.core import whole_sign_house, _lords_linked
+from agents.classical.facts import planet_natures
+from agents.house_connections.core import nakshatra_lord_for
 
 
 def rank_blessers(
@@ -58,16 +57,13 @@ def rank_blessers(
         pl = nakshatra_lord_for(pp.get(p) or {})
         bump(pl, 3, f"Pada lord of {p} in H{house_num}", f"{p} pada அதிபதி")
 
-    # Benefic dignity boost
+    # Benefic boost
+    natures = planet_natures(pp)
     for planet in list(scores.keys()):
         if planet.startswith("_reasons_"):
             continue
-        if planet in BENEFICS:
+        if natures.get(planet) == "benefic":
             scores[planet] += 2
-        pdata = pp.get(planet) or {}
-        sign = pdata.get("sign", "")
-        if sign in ("Cancer", "Taurus", "Sagittarius", "Pisces", "Libra"):
-            pass  # simplified — dignity already in house strength
 
     # Dasa activation
     for planet in list(scores.keys()):

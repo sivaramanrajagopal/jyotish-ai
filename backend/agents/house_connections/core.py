@@ -12,11 +12,10 @@ from agents.bhavat_bhavam.core import (
     _lord_strength_tags,
     _lords_linked,
 )
+from agents.classical.facts import planet_natures
 from agents.house_connections.themes import (
-    BENEFICS,
     DUSTHANA,
     KENDRA,
-    MALEFICS,
     POSITION_TYPE,
     TRIKONA,
     UPACHAYA,
@@ -86,8 +85,9 @@ def _house_strength(
     lp = pos_s.get(hfo, 50)
     ld = _dignity_score(_dignity(lord, lord_data.get("sign", "")))
 
-    ben = sum(1 for p in planets_in + planets_asp if p in BENEFICS)
-    mal = sum(1 for p in planets_in + planets_asp if p in MALEFICS)
+    natures = planet_natures(planet_positions)
+    ben = sum(1 for p in planets_in + planets_asp if natures.get(p) == "benefic")
+    mal = sum(1 for p in planets_in + planets_asp if natures.get(p) == "malefic")
     bs = min(100, ben * 30)
     mp = min(50, mal * 12)
 

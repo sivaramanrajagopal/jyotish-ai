@@ -28,9 +28,9 @@ def test_detail_context_for_h9_question():
     ctx = house_connections_context_for_narrator(_chart(), user_message="Explain my H9 house links")
     assert "HOW TO EXPLAIN HOUSE LINKS" in ctx
     assert "--- H9 Fortune & dharma" in ctx
-    assert "Channels IN (feeding H9): H1, H3, H4, H8" in ctx
+    assert "Channels IN (feeding H9): H1, H3, H4, H8, H10, H12" in ctx
     assert "Mars (H3 lord) placed in H9" in ctx
-    assert "Primary blesser: Venus (score 42.0)" in ctx
+    assert "Primary blesser: Venus (score 38.0)" in ctx
 
 
 def test_detail_includes_h7_h10_for_generic_house_links():

@@ -5,6 +5,8 @@ from __future__ import annotations
 from agents.bhavat_bhavam.core import bhavat_bhavam_house
 from agents.house_connections.themes import DUSTHANA
 
+TWO_WAY_KINDS = frozenset({"same_lord", "mutual_aspect", "lord_link", "exchange"})
+
 
 def dusthana_recovery_edges(house_num: int, houses: dict[int, dict]) -> list[dict]:
     """Bhavat Bhavam recovery note for dusthana houses only — not used in channel graph."""
@@ -33,9 +35,15 @@ def build_prediction_card(
     bhukti: str,
 ) -> dict:
     ha = houses[house_num]
-    incoming = [e for e in edges if e["to_house"] == house_num and e.get("supportive", True)]
-    outgoing = [e for e in edges if e["from_house"] == house_num]
-    stress = [e for e in edges if e["to_house"] == house_num and not e.get("supportive", True)]
+    # Two-way links are stored once (lower house first); read them from either end.
+    readable = edges + [
+        {**e, "from_house": e["to_house"], "to_house": e["from_house"]}
+        for e in edges
+        if e["kind"] in TWO_WAY_KINDS and house_num in (e["from_house"], e["to_house"])
+    ]
+    incoming = [e for e in readable if e["to_house"] == house_num and e.get("supportive", True)]
+    outgoing = [e for e in readable if e["from_house"] == house_num]
+    stress = [e for e in readable if e["to_house"] == house_num and not e.get("supportive", True)]
     recovery = dusthana_recovery_edges(house_num, houses)
 
     channels_in = sorted({e["from_house"] for e in incoming})[:6]

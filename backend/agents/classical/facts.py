@@ -1,6 +1,6 @@
 """Chart facts for each house lord, as the classical rules need them.
 
-Benefic and malefic follow BPHS here and only here; other tabs keep their own lists.
+Benefic and malefic follow BPHS here and in House Links; other tabs keep their own lists.
 - Jupiter and Venus are benefics.
 - The Moon is a benefic when waxing (Shukla paksha) and a malefic when waning.
 - Mercury is a benefic unless it shares a sign with a malefic.
