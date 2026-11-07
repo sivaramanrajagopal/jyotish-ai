@@ -294,9 +294,12 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
 
   const panchangamLocation = resolvePanchangamLocation(placeOfBirth, chart)
 
-  useEffect(() => {
+  // Each chart keeps its own thread; switch threads when the chart changes.
+  const [threadChart, setThreadChart] = useState(chart)
+  if (chart !== threadChart) {
+    setThreadChart(chart)
     if (chart) setMessages(loadChatMessages(chart))
-  }, [chart])
+  }
 
   useEffect(() => {
     if (!chart) return

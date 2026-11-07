@@ -3,7 +3,7 @@
  * Tap anywhere → Panchangam tab. Alert state for Rahu Kalam / Chandra Ashtama.
  */
 
-import { useState, useEffect, useCallback, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { fetchSkyToday } from '../lib/skyToday'
 
 function Segment({ children, accent }) {
@@ -25,26 +25,26 @@ export default function CosmosStrip({ location, chart, onOpenPanchangam }) {
   const [sky, setSky] = useState(null)
   const [err, setErr] = useState(false)
 
-  const load = useCallback(async (force = false) => {
-    try {
-      setErr(false)
-      const data = await fetchSkyToday({ location, chart, force })
-      setSky(data)
-    } catch {
-      setErr(true)
-    }
-  }, [location, chart])
-
   useEffect(() => {
+    let cancelled = false
+    const load = (force = false) => fetchSkyToday({ location, chart, force }).then(
+      (data) => {
+        if (cancelled) return
+        setSky(data)
+        setErr(false)
+      },
+      () => { if (!cancelled) setErr(true) },
+    )
     load()
     const id = setInterval(() => load(true), 30 * 60 * 1000)
     const onFocus = () => load(true)
     window.addEventListener('focus', onFocus)
     return () => {
+      cancelled = true
       clearInterval(id)
       window.removeEventListener('focus', onFocus)
     }
-  }, [load])
+  }, [location, chart])
 
   if (err || !sky) return null
 

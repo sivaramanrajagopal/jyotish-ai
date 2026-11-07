@@ -3,7 +3,7 @@
  * Personalised daily status: Tara Balam, Chandra Ashtama, Chandrabalam.
  */
 
-import { useState, useEffect } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import AvTriggerCard from './AvTriggerCard'
@@ -28,38 +28,31 @@ function fmt(isoStr) {
 }
 
 export default function PersonalPanchangamCard({ chart, userId, enabled = true }) {
-  const [data, setData]       = useState(null)
-  const [triggers, setTriggers] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-
   const nakIdx  = chart?.moon_nakshatra_index
   const rasiIdx = chart?.moon_rasi_index
 
-  useEffect(() => {
-    if (!enabled || !chart) return
-    setLoading(true)
-    setError('')
-    const tz = chart?.birth_data?.timezone || 'Asia/Kolkata'
-    const panchReq = userId
-      ? api.get(`/personal-panchangam/today/${userId}`)
-      : (nakIdx == null || rasiIdx == null
-        ? Promise.reject(new Error('missing indices'))
-        : api.get('/personal-panchangam/anonymous', {
-            params: { natal_nak_index: nakIdx, natal_rasi_index: rasiIdx, timezone: tz },
-          }))
-    const triggerReq = api.post('/ashtakavarga/triggers', chartPayload(chart, userId))
-      .then(r => r.data)
-      .catch(() => null)
-
-    Promise.all([panchReq, triggerReq])
-      .then(([panchRes, triggerData]) => {
-        setData(panchRes.data)
-        setTriggers(triggerData)
-      })
-      .catch(e => setError(e.response?.data?.detail || e.message || 'Could not load personal Panchangam.'))
-      .finally(() => setLoading(false))
-  }, [userId, nakIdx, rasiIdx, enabled, chart])
+  const req = useApiResult(
+    enabled && chart ? `${objectKey(chart)}|${userId}|${nakIdx}|${rasiIdx}` : null,
+    () => {
+      const tz = chart?.birth_data?.timezone || 'Asia/Kolkata'
+      const panchReq = userId
+        ? api.get(`/personal-panchangam/today/${userId}`)
+        : (nakIdx == null || rasiIdx == null
+          ? Promise.reject(new Error('missing indices'))
+          : api.get('/personal-panchangam/anonymous', {
+              params: { natal_nak_index: nakIdx, natal_rasi_index: rasiIdx, timezone: tz },
+            }))
+      const triggerReq = api.post('/ashtakavarga/triggers', chartPayload(chart, userId))
+        .then(r => r.data)
+        .catch(() => null)
+      return Promise.all([panchReq, triggerReq])
+        .then(([panchRes, triggerData]) => ({ panch: panchRes.data, triggers: triggerData }))
+    },
+  )
+  const { loading } = req
+  const data = req.data?.panch || null
+  const triggers = req.data?.triggers || null
+  const error = req.error ? errorText(req.error, req.error.message || 'Could not load personal Panchangam.') : ''
 
   if (!enabled) return null
 

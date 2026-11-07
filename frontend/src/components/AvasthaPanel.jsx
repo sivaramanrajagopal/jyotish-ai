@@ -2,7 +2,8 @@
  * AvasthaPanel — Sthula/Sukshma planetary state scorecard + Dasa–Bhukti synergy.
  * Plain-language meanings kept short so the tab stays light and intuitive.
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -168,37 +169,25 @@ function MeaningGlossary() {
 }
 
 export default function AvasthaPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [dasaLord, setDasaLord] = useState('')
-  const [bhuktiLord, setBhuktiLord] = useState('')
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/avastha/analyze', chartPayload(chart, userId)).then((r) => r.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load Avastha analysis.') : ''
+  // Dropdown picks belong to one result; a new chart starts again from its current period.
+  const [lordPick, setLordPick] = useState({ key: null, dasa: '', bhukti: '' })
+  const pick = lordPick.key === req.resultKey ? lordPick : { dasa: '', bhukti: '' }
+  const dasaLord = pick.dasa || data?.summary?.current_dasa || 'Jupiter'
+  const bhuktiLord = pick.bhukti || data?.summary?.current_bhukti || 'Venus'
+  const setDasaLord = (dasa) => setLordPick({ ...pick, key: req.resultKey, dasa })
+  const setBhuktiLord = (bhukti) => setLordPick({ ...pick, key: req.resultKey, bhukti })
   const [breakdownPlanet, setBreakdownPlanet] = useState(null)
   const drawerRef = useRef(null)
 
   useEffect(() => {
     if (breakdownPlanet) drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [breakdownPlanet])
-
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/avastha/analyze', chartPayload(chart, userId))
-      .then((r) => {
-        setData(r.data)
-        const s = r.data?.summary || {}
-        setDasaLord(s.current_dasa || 'Jupiter')
-        setBhuktiLord(s.current_bhukti || 'Venus')
-      })
-      .catch((e) => {
-        const detail = e.response?.data?.detail
-        setError(typeof detail === 'string' ? detail : 'Could not load Avastha analysis.')
-      })
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
-
-  useEffect(() => { load() }, [load])
 
   const byName = useMemo(() => {
     const map = {}

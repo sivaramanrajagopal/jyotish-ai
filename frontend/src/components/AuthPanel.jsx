@@ -81,16 +81,12 @@ export default function AuthPanel({
   const { configured, user, loading, email, signInWithMagicLink, signOut } = useAuth()
   const [inputEmail, setInputEmail] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => readAuthCallbackError()?.message || '')
   const [expanded, setExpanded] = useState(false)
   const [sentToEmail, setSentToEmail] = useState(null)
 
   useEffect(() => {
-    const callbackError = readAuthCallbackError()
-    if (callbackError) {
-      setError(callbackError.message)
-      clearAuthCallbackParams()
-    }
+    if (readAuthCallbackError()) clearAuthCallbackParams()
   }, [])
 
   const isCard = variant === 'card'

@@ -2,7 +2,8 @@
  * NadiPanel — twelve life questions read from a karaka planet's sign.
  * The board shows who sits where. The reason table says why. The timing table is the season.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -159,29 +160,13 @@ function TimingTable({ rows }) {
 }
 
 export default function NadiPanel({ chart, userId, gender = 'male', enabled = true }) {
-  const [data, setData] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [active, setActive] = useState('work')
-
-  useEffect(() => {
-    if (!chart || !enabled) return undefined
-    let cancel = false
-    setLoading(true)
-    setError('')
-    api.post('/nadi', chartPayload(chart, userId, { gender }))
-      .then((res) => {
-        if (!cancel) setData(res.data)
-      })
-      .catch((err) => {
-        const detail = err.response?.data?.detail
-        if (!cancel) setError(typeof detail === 'string' ? detail : 'Could not load the Nadi reading.')
-      })
-      .finally(() => {
-        if (!cancel) setLoading(false)
-      })
-    return () => { cancel = true }
-  }, [chart, userId, gender, enabled])
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}|${gender}` : null,
+    () => api.post('/nadi', chartPayload(chart, userId, { gender })).then((res) => res.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load the Nadi reading.') : ''
 
   if (!enabled) return null
 

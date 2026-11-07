@@ -3,8 +3,9 @@
  * Uses POST /forecast/links — no AI calls. For AI daily narrative, see Forecast tab.
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import api from '../api/client'
+import { useApiResult, objectKey } from '../hooks/useApiResult'
 import { forecastPayload } from '../lib/chartPayload'
 import { formatApiError } from '../lib/apiError'
 import { formatTransitMoment } from '../lib/formatMoment'
@@ -73,24 +74,21 @@ function scrollToDetail() {
 export default function GocharamTab({ chart, userId, enabled = true, onOpenForecast }) {
   const [transitDate, setTransitDate] = useState(todayISO)
   const [transitTime, setTransitTime] = useState('')
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [selectedHouse, setSelectedHouse] = useState(null)
-
-  useEffect(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    setSelectedHouse(null)
-    api.post('/forecast/links', forecastPayload(chart, userId, transitDate, transitTime || undefined))
-      .then(r => setData(r.data))
-      .catch(err => {
-        setError(formatApiError(err, 'Could not load Gochara.'))
-        setData(null)
-      })
-      .finally(() => setLoading(false))
-  }, [chart, transitDate, transitTime, userId, enabled])
+  const linksKey = chart && enabled
+    ? `${objectKey(chart)}|${userId}|${transitDate}|${transitTime}`
+    : null
+  const req = useApiResult(
+    linksKey,
+    () => api.post('/forecast/links', forecastPayload(chart, userId, transitDate, transitTime || undefined))
+      .then(r => r.data),
+  )
+  const { loading } = req
+  const data = req.error ? null : req.data
+  const error = req.error ? formatApiError(req.error, 'Could not load Gochara.') : ''
+  // A selection belongs to one chart and moment; changing either clears it.
+  const [selection, setSelection] = useState({ key: null, house: null })
+  const selectedHouse = selection.key === linksKey ? selection.house : null
+  const setSelectedHouse = (house) => setSelection({ key: linksKey, house })
 
   if (!enabled) {
     return (

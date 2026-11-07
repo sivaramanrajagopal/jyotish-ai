@@ -2,6 +2,7 @@
  * Native card — who, birth panchanga, three lords, and the open period.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { useApiResult, objectKey } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import { buildNativeDashboard, formatHotspotValue, formatTodayLine, formatTriggerItem, natalGandanta, transitGandanta } from '../lib/nativeDashboard'
@@ -81,25 +82,16 @@ export default function NativeDashboard({ chart, keyedName, keyedPlace, userId }
 
   const savedNaazhigai = chart?.birth_data?.naazhigai
   const savedVinazhigai = chart?.birth_data?.vinazhigai
-  const [tamilTime, setTamilTime] = useState(
-    savedNaazhigai != null ? { naazhigai: savedNaazhigai, vinazhigai: savedVinazhigai } : null,
+  const tamilReq = useApiResult(
+    savedNaazhigai == null && chart?.birth_data?.dob ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/tamil-time', chartPayload(chart, userId)).then((res) => res.data),
   )
+  const tamilTime = savedNaazhigai != null
+    ? { naazhigai: savedNaazhigai, vinazhigai: savedVinazhigai }
+    : (tamilReq.loading || tamilReq.error ? null : tamilReq.data)
   const [triggers, setTriggers] = useState(null)
   const [transitGandantaPoints, setTransitGandantaPoints] = useState([])
   const natalGandantaPoints = useMemo(() => natalGandanta(chart), [chart])
-
-  useEffect(() => {
-    if (savedNaazhigai != null) {
-      setTamilTime({ naazhigai: savedNaazhigai, vinazhigai: savedVinazhigai })
-      return undefined
-    }
-    if (!chart?.birth_data?.dob) return undefined
-    let cancelled = false
-    api.post('/tamil-time', chartPayload(chart, userId))
-      .then((res) => { if (!cancelled) setTamilTime(res.data) })
-      .catch(() => { if (!cancelled) setTamilTime(null) })
-    return () => { cancelled = true }
-  }, [chart, userId, savedNaazhigai, savedVinazhigai])
 
   useEffect(() => {
     if (!chart?.birth_data?.dob) return undefined

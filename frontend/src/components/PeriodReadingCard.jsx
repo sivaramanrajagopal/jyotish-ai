@@ -2,7 +2,7 @@
  * Combined period reading — Avastha, Shadbala, BAV, and SAV for the current dasha.
  * Lives on My Chart under the dasha summary. Not a separate tab.
  */
-import { useEffect, useState } from 'react'
+import { useApiResult, objectKey } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -43,18 +43,12 @@ function LordBlock({ lord }) {
 }
 
 export default function PeriodReadingCard({ chart, userId }) {
-  const [data, setData] = useState(null)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (!chart?.dasha?.mahadasha?.planet) return undefined
-    let cancelled = false
-    setError('')
-    api.post('/period-reading', chartPayload(chart, userId))
-      .then((res) => { if (!cancelled) setData(res.data) })
-      .catch(() => { if (!cancelled) setError('The period reading could not be calculated.') })
-    return () => { cancelled = true }
-  }, [chart, userId])
+  const req = useApiResult(
+    chart?.dasha?.mahadasha?.planet ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/period-reading', chartPayload(chart, userId)).then((res) => res.data),
+  )
+  const { data } = req
+  const error = req.error ? 'The period reading could not be calculated.' : ''
 
   if (!chart?.dasha?.mahadasha?.planet) return null
   if (error) {

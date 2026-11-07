@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { APP_NAME } from '../constants/brand'
 import { SHORT_DISCLAIMER } from '../constants/legal'
 import { saveLegalConsent } from '../lib/legalConsent'
@@ -7,12 +7,15 @@ export default function LegalAcceptModal({ open, onAccepted, onOpenTerms, onOpen
   const [ageOk, setAgeOk] = useState(false)
   const [termsOk, setTermsOk] = useState(false)
 
-  useEffect(() => {
+  // Closing the dialog clears both boxes, so each opening asks again.
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (!open) {
       setAgeOk(false)
       setTermsOk(false)
     }
-  }, [open])
+  }
 
   if (!open) return null
 

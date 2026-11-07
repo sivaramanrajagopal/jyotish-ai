@@ -6,13 +6,10 @@ import { trackEvent } from '../lib/analytics'
 export function useAuth() {
   const configured = isSupabaseConfigured()
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(configured)
+  const [loading, setLoading] = useState(configured && !!supabase)
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false)
-      return undefined
-    }
+    if (!supabase) return undefined
 
     let mounted = true
 

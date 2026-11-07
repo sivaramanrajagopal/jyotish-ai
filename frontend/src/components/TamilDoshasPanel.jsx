@@ -1,7 +1,8 @@
 /**
  * TamilDoshasPanel — natal predictive doshas dashboard (My Chart section).
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -200,24 +201,14 @@ function MudakkuSection({ data }) {
 }
 
 export default function TamilDoshasPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [shashtiVariant, setShashtiVariant] = useState('mesha_simha')
-
-  const load = useCallback((variant) => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/tamil-doshas', chartPayload(chart, userId, { shashti_variant: variant }))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load Tamil doshas.'))
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
-
-  useEffect(() => {
-    load(shashtiVariant)
-  }, [load, shashtiVariant])
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}|${shashtiVariant}` : null,
+    () => api.post('/tamil-doshas', chartPayload(chart, userId, { shashti_variant: shashtiVariant }))
+      .then(r => r.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load Tamil doshas.') : ''
 
   const handleShashtiChange = (variant) => {
     setShashtiVariant(variant)

@@ -1,7 +1,8 @@
 /**
  * InduLagnaPanel — three-layer wealth lagna: natal promise, tiered activation, meaning.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -258,23 +259,12 @@ function FastTransitsSection({ rows }) {
 }
 
 export default function InduLagnaPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/indu-lagna', chartPayload(chart, userId, { transit_years: 10 }))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load Indu Lagna.'))
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
-
-  useEffect(() => {
-    load()
-  }, [load])
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/indu-lagna', chartPayload(chart, userId, { transit_years: 10 })).then(r => r.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load Indu Lagna.') : ''
 
   if (!enabled) {
     return <div className="td-loading" style={{ opacity: 0.6 }}>Open My Chart to load Indu Lagna…</div>

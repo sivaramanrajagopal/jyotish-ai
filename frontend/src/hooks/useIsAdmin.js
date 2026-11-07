@@ -1,41 +1,20 @@
-import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { isOwnerEmail } from '../lib/isOwner'
+import { useApiResult } from './useApiResult'
 
 /**
  * True when the signed-in user is an app owner (ADMIN_EMAILS on Render).
  * Falls back to VITE_ADMIN_EMAILS for local dev before backend is updated.
  */
 export function useIsAdmin(userId, email) {
-  const [isAdmin, setIsAdmin] = useState(() => isOwnerEmail(email))
-  const [loading, setLoading] = useState(!!userId)
+  const req = useApiResult(
+    userId ? `${userId}|${email || ''}` : null,
+    () => api.get('/auth/me')
+      .then(({ data }) => data?.is_admin === true || isOwnerEmail(data?.email || email))
+      .catch(() => isOwnerEmail(email)),
+  )
 
-  useEffect(() => {
-    if (!userId) {
-      setIsAdmin(false)
-      setLoading(false)
-      return undefined
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    api.get('/auth/me')
-      .then(({ data }) => {
-        if (cancelled) return
-        const fromServer = data?.is_admin === true
-        const fromEnv = isOwnerEmail(data?.email || email)
-        setIsAdmin(fromServer || fromEnv)
-      })
-      .catch(() => {
-        if (!cancelled) setIsAdmin(isOwnerEmail(email))
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [userId, email])
-
-  return { isAdmin, loading }
+  if (!userId) return { isAdmin: false, loading: false }
+  const isAdmin = req.loading ? isOwnerEmail(email) : req.data === true
+  return { isAdmin, loading: req.loading }
 }

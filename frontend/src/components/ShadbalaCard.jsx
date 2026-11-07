@@ -2,7 +2,8 @@
  * Shadbala — ratio bars first, the segmented virupa table behind them.
  * Lives on My Chart. Not a separate tab.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -64,23 +65,13 @@ function formatValue(key, value) {
 
 export default function ShadbalaCard({ chart, userId }) {
   const embedded = chart?.shadbala?.planets ? chart.shadbala : null
-  const [data, setData] = useState(embedded)
-  const [error, setError] = useState('')
   const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (embedded) {
-      setData(embedded)
-      setError('')
-      return undefined
-    }
-    if (!chart) return undefined
-    let cancelled = false
-    api.post('/shadbala/analyze', chartPayload(chart, userId))
-      .then((res) => { if (!cancelled) setData(res.data) })
-      .catch(() => { if (!cancelled) setError('Shadbala could not be calculated.') })
-    return () => { cancelled = true }
-  }, [chart, userId, embedded])
+  const req = useApiResult(
+    !embedded && chart ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/shadbala/analyze', chartPayload(chart, userId)).then((res) => res.data),
+  )
+  const data = embedded || req.data
+  const error = !embedded && req.error ? 'Shadbala could not be calculated.' : ''
 
   if (error) {
     return <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{error}</p>

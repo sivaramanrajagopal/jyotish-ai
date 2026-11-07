@@ -1,7 +1,8 @@
 /**
  * CareerPanel — D1 + D10 charts, 10 rules, profession tags, Dasa timing.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
@@ -137,21 +138,12 @@ function FullTiming({ periods }) {
 }
 
 export default function CareerPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/career/predict', chartPayload(chart, userId))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load career prediction.'))
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
-
-  useEffect(() => { load() }, [load])
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/career/predict', chartPayload(chart, userId)).then(r => r.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load career prediction.') : ''
 
   if (!enabled) {
     return <div className="td-loading" style={{ opacity: 0.6 }}>Open Career tab after calculating your chart…</div>

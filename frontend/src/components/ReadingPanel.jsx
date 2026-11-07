@@ -1,7 +1,8 @@
 /**
  * ReadingPanel — one sitting, spoken in order after the chart is calculated.
  */
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import { getNativeNote, saveNativeNote } from '../lib/nativeNote'
@@ -167,34 +168,27 @@ function Timeline({ timeline }) {
 }
 
 export default function ReadingPanel({ chart, userId, gender = 'male', enabled = true }) {
-  const [data, setData] = useState(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [openIds, setOpenIds] = useState([])
   const [note, setNote] = useState(getNativeNote)
   const classical = useClassicalRules(chart, userId, enabled)
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}|${gender}|${note}` : null,
+    () => api.post('/reading', chartPayload(chart, userId, { gender, note }))
+      .then((res) => ({ data: res.data, note })),
+  )
+  const { loading } = req
+  const data = req.data?.data || null
+  const error = req.error ? errorText(req.error, 'Could not load the reading.') : ''
 
-  useEffect(() => {
-    if (!chart || !enabled) return undefined
-    let cancel = false
-    setLoading(true)
-    setError('')
-    api.post('/reading', chartPayload(chart, userId, { gender, note }))
-      .then((res) => {
-        if (cancel) return
-        setData(res.data)
-        const ids = (res.data.life || []).filter((row) => row.open).map((row) => row.id)
-        if (note === 'work' && !ids.includes('work')) ids.unshift('work')
-        setOpenIds(note === 'married' ? ids.filter((id) => id !== 'marriage') : ids)
-      })
-      .catch((err) => {
-        if (!cancel) setError(err.response?.data?.detail || 'Could not load the reading.')
-      })
-      .finally(() => {
-        if (!cancel) setLoading(false)
-      })
-    return () => { cancel = true }
-  }, [chart, userId, gender, note, enabled])
+  // Sections open by default come from each result; the user's toggles last until the next one.
+  const defaultOpenIds = useMemo(() => {
+    const ids = (data?.life || []).filter((row) => row.open).map((row) => row.id)
+    const forNote = req.data?.note
+    if (forNote === 'work' && !ids.includes('work')) ids.unshift('work')
+    return forNote === 'married' ? ids.filter((id) => id !== 'marriage') : ids
+  }, [data, req.data?.note])
+  const [toggled, setToggled] = useState({ key: null, ids: [] })
+  const openIds = toggled.key === req.resultKey ? toggled.ids : defaultOpenIds
+  const setOpenIds = (update) => setToggled({ key: req.resultKey, ids: update(openIds) })
 
   const chooseNote = (value) => {
     setNote(saveNativeNote(value))

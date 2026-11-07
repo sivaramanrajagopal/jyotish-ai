@@ -2,7 +2,7 @@
  * PrashnaTab.jsx — Category + question dropdowns, rule-based engine, Phase 2 AI narration.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import { formatPrashnaMoment } from '../lib/formatMoment'
@@ -330,12 +330,12 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
   const now = useLiveClock()
   const [categories, setCategories] = useState(PRASHNA_CATALOG)
   const [category, setCategory] = useState('career')
-  const [questionId, setQuestionId] = useState(() => firstQuestionId(PRASHNA_CATALOG, 'career'))
+  const [pickedQuestionId, setQuestionId] = useState(() => firstQuestionId(PRASHNA_CATALOG, 'career'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState(() => loadPrashnaHistory())
-  const [location, setLocation] = useState(null)
+  const [gpsLocation, setLocation] = useState(null)
   const [locLoading, setLocLoading] = useState(false)
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata'
@@ -364,27 +364,19 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
     setQuestionId(firstQuestionId(categories, nextKey))
   }
 
-  useEffect(() => {
-    const qs = categories.find(c => c.key === category)?.questions || []
-    if (qs.length && !qs.some(q => q.id === questionId)) {
-      setQuestionId(qs[0].id)
-    }
-  }, [categories, category, questionId])
+  // A pick that is not in the current category (e.g. after the catalog loads) falls back to its first question.
+  const questionId = questions.some(q => q.id === pickedQuestionId)
+    ? pickedQuestionId
+    : (questions[0]?.id ?? pickedQuestionId)
 
   const selectedQuestion = questions.find(q => q.id === questionId)?.text || ''
 
-  const defaultFromChart = useCallback(() => {
+  const birthLocation = useMemo(() => {
     const bd = chart?.birth_data
     if (bd?.lat == null || bd?.lon == null) return null
     return { lat: bd.lat, lon: bd.lon, place: placeOfBirth || 'Birth place' }
   }, [chart, placeOfBirth])
-
-  useEffect(() => {
-    if (!location && chart) {
-      const d = defaultFromChart()
-      if (d) setLocation(d)
-    }
-  }, [chart, location, defaultFromChart])
+  const location = gpsLocation || birthLocation
 
   const requestLocation = () => {
     if (!navigator.geolocation) {

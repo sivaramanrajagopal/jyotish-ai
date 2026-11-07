@@ -23,9 +23,12 @@ export default function AskFloater({ chart, userId, placeOfBirth, page }) {
   const bottomRef = useRef(null)
   const location = resolvePanchangamLocation(placeOfBirth, chart)
 
-  useEffect(() => {
+  // Each chart keeps its own thread; switch threads when the chart changes.
+  const [threadChart, setThreadChart] = useState(chart)
+  if (chart !== threadChart) {
+    setThreadChart(chart)
     setMessages(visibleThread(loadChatMessages(chart)))
-  }, [chart])
+  }
 
   useEffect(() => {
     if (!chart || !messages.length) return

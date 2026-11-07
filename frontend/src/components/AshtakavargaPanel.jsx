@@ -1,7 +1,8 @@
 /**
  * AshtakavargaPanel — Prokerala-style South Indian BAV/SAV grids.
  */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useApiResult, objectKey, errorText } from '../hooks/useApiResult'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import { BavSouthGrid, SavSouthGrid } from './AshtakavargaSouthGrid'
@@ -73,21 +74,14 @@ function MatrixTable({ planet, matrix, ascRasi, houseWise }) {
 }
 
 export default function AshtakavargaPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [view, setView] = useState('sav')
   const [showMatrix, setShowMatrix] = useState(false)
-
-  useEffect(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/ashtakavarga', chartPayload(chart, userId))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load Ashtakavarga.'))
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
+  const req = useApiResult(
+    chart && enabled ? `${objectKey(chart)}|${userId}` : null,
+    () => api.post('/ashtakavarga', chartPayload(chart, userId)).then(r => r.data),
+  )
+  const { data, loading } = req
+  const error = req.error ? errorText(req.error, 'Could not load Ashtakavarga.') : ''
 
   if (!enabled) {
     return <div className="av-pro-loading" style={{ opacity: 0.6 }}>Open My Chart to load Ashtakavarga…</div>

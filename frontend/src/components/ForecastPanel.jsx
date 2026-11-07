@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useApiResult, objectKey } from '../hooks/useApiResult'
 import api from '../api/client'
 import { formatTransitMoment } from '../lib/formatMoment'
 import LanguageToggle from './LanguageToggle'
@@ -261,9 +262,6 @@ const chipStyle = {
 export default function ForecastPanel({ chart, gender = 'male', showDatePicker = false, userId, enabled = true }) {
   const [transitDate,  setTransitDate]  = useState(todayISO)
   const [transitTime,  setTransitTime]  = useState('')
-  const [data,           setData]           = useState(null)
-  const [dataLoading,    setDataLoading]    = useState(false)
-  const [dataError,      setDataError]      = useState('')
   const [selectedHouse,  setSelectedHouse]  = useState(null)
   const [insightLoading, setInsightLoading] = useState(false)
   const [insightError,   setInsightError]   = useState('')
@@ -288,22 +286,25 @@ export default function ForecastPanel({ chart, gender = 'male', showDatePicker =
   const insightKey = (houseNum) => `${houseNum}:${transitDate}:${transitTime || 'auto'}:${language}`
 
   // House status — refetch on chart/date/time only (not language)
-  useEffect(() => {
-    if (!chart || !enabled) return
-    setDataLoading(true)
-    setDataError('')
+  const linksKey = chart && enabled
+    ? `${objectKey(chart)}|${userId}|${transitDate}|${transitTime}`
+    : null
+  const [seenLinksKey, setSeenLinksKey] = useState(linksKey)
+  if (linksKey !== seenLinksKey) {
+    setSeenLinksKey(linksKey)
     setSelectedHouse(null)
     setInsightCache({})
     setReadingExpanded(false)
     setDailyReading(null)
-    api.post('/forecast/links', forecastPayload(chart, userId, transitDate, transitTime || undefined))
-      .then(r => setData(r.data))
-      .catch(err => {
-        setDataError(formatApiError(err, 'Could not load the forecast.'))
-        setData(null)
-      })
-      .finally(() => setDataLoading(false))
-  }, [chart, transitDate, transitTime, userId, enabled])
+  }
+  const links = useApiResult(
+    linksKey,
+    () => api.post('/forecast/links', forecastPayload(chart, userId, transitDate, transitTime || undefined))
+      .then(r => r.data),
+  )
+  const data = links.error ? null : links.data
+  const dataLoading = links.loading
+  const dataError = links.error ? formatApiError(links.error, 'Could not load the forecast.') : ''
 
   const loadDailyReading = () => {
     if (!chart || !enabled || readingLoading || dailyReading?.reading) return

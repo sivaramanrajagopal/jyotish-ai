@@ -3,8 +3,8 @@
  * Requires sign-in as an email listed in VITE_ADMIN_EMAILS.
  */
 
-import { useState, useEffect } from 'react'
 import api from '../api/client'
+import { useApiResult, errorText } from '../hooks/useApiResult'
 
 function StatCard({ label, value, sub }) {
   return (
@@ -47,46 +47,34 @@ function eventLabel(name) {
 }
 
 export default function AdminPanel() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [overview, setOverview] = useState(null)
-  const [users, setUsers] = useState([])
-  const [locations, setLocations] = useState({ birth_places: [], current_cities: [] })
-  const [aiUsage, setAiUsage] = useState([])
-  const [signups, setSignups] = useState([])
-  const [appEvents, setAppEvents] = useState(null)
-
-  const load = () => {
-    setLoading(true)
-    setError('')
-    Promise.all([
-      api.get('/admin/overview'),
-      api.get('/admin/users', { params: { limit: 50 } }),
-      api.get('/admin/locations'),
-      api.get('/admin/ai-usage', { params: { days: 14 } }),
-      api.get('/admin/signups', { params: { days: 30 } }),
-      api.get('/admin/app-events', { params: { days: 14 } }),
-    ])
-      .then(([ov, us, loc, ai, su, ev]) => {
-        setOverview(ov.data)
-        setUsers(us.data.users || [])
-        setLocations(loc.data)
-        setAiUsage(ai.data.days || [])
-        setSignups(su.data.signups || [])
-        setAppEvents(ev.data)
-      })
-      .catch((err) => {
-        const status = err.response?.status
-        if (status === 403) {
-          setError('Admin access denied. Sign in with your owner email and set ADMIN_EMAILS on Render.')
-        } else {
-          setError(err.response?.data?.detail || 'Could not load admin dashboard.')
-        }
-      })
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { load() }, [])
+  const req = useApiResult('admin', () => Promise.all([
+    api.get('/admin/overview'),
+    api.get('/admin/users', { params: { limit: 50 } }),
+    api.get('/admin/locations'),
+    api.get('/admin/ai-usage', { params: { days: 14 } }),
+    api.get('/admin/signups', { params: { days: 30 } }),
+    api.get('/admin/app-events', { params: { days: 14 } }),
+  ]).then(([ov, us, loc, ai, su, ev]) => ({
+    overview: ov.data,
+    users: us.data.users || [],
+    locations: loc.data,
+    aiUsage: ai.data.days || [],
+    signups: su.data.signups || [],
+    appEvents: ev.data,
+  })))
+  const { loading, reload: load } = req
+  const error = !req.error ? ''
+    : req.error.response?.status === 403
+      ? 'Admin access denied. Sign in with your owner email and set ADMIN_EMAILS on Render.'
+      : errorText(req.error, 'Could not load admin dashboard.')
+  const {
+    overview = null,
+    users = [],
+    locations = { birth_places: [], current_cities: [] },
+    aiUsage = [],
+    signups = [],
+    appEvents = null,
+  } = req.data || {}
 
   if (loading) {
     return (

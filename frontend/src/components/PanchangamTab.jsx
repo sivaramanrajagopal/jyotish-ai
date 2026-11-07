@@ -11,7 +11,8 @@
  *   Mobile:  Panchangam data stacked, then Transit chart below
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useApiResult } from '../hooks/useApiResult'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import HoraiPanel from './HoraiPanel'
@@ -485,53 +486,31 @@ function skyError(err, fallback) {
 
 export default function PanchangamTab({ chart = null }) {
   const todayStr = localISODate()
-  const requestRef = useRef(0)
 
   const [date, setDate]           = useState(todayStr)
   const [location, setLocation]   = useState('Chennai')
-  const [panch, setPanch]         = useState(null)
-  const [transit, setTransit]     = useState(null)
-  const [loadingP, setLoadingP]   = useState(false)
-  const [loadingT, setLoadingT]   = useState(false)
-  const [errorP, setErrorP]       = useState('')
-  const [errorT, setErrorT]       = useState('')
 
   // Fetch both panchangam and transit chart whenever date/location changes.
   // A dropped phone connection retries once. An older request cannot overwrite a newer one.
-  const fetchAll = useCallback(async () => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
-    const id = requestRef.current + 1
-    requestRef.current = id
-    setLoadingP(true)
-    setLoadingT(true)
-    setErrorP('')
-    setErrorT('')
-
-    const [panchResult, transitResult] = await Promise.allSettled([
-      loadSky('/panchangam/date', { date, location }),
-      loadSky('/transit-chart', { date, location }),
-    ])
-    if (id !== requestRef.current) return
-
-    if (panchResult.status === 'fulfilled') {
-      setPanch(panchResult.value.data)
-      setErrorP('')
-    } else {
-      setPanch(null)
-      setErrorP(skyError(panchResult.reason, 'Could not load Panchangam.'))
-    }
-    if (transitResult.status === 'fulfilled') {
-      setTransit(transitResult.value.data)
-      setErrorT('')
-    } else {
-      setTransit(null)
-      setErrorT(skyError(transitResult.reason, 'Could not load transit chart.'))
-    }
-    setLoadingP(false)
-    setLoadingT(false)
-  }, [date, location])
-
-  useEffect(() => { fetchAll() }, [fetchAll])
+  const skyKey = /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}|${location}` : null
+  const panchReq = useApiResult(
+    skyKey,
+    () => loadSky('/panchangam/date', { date, location }).then((r) => r.data),
+  )
+  const transitReq = useApiResult(
+    skyKey,
+    () => loadSky('/transit-chart', { date, location }).then((r) => r.data),
+  )
+  const panch = panchReq.error ? null : panchReq.data
+  const transit = transitReq.error ? null : transitReq.data
+  const loadingP = panchReq.loading
+  const loadingT = transitReq.loading
+  const errorP = panchReq.error ? skyError(panchReq.error, 'Could not load Panchangam.') : ''
+  const errorT = transitReq.error ? skyError(transitReq.error, 'Could not load transit chart.') : ''
+  const fetchAll = () => {
+    panchReq.reload()
+    transitReq.reload()
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
