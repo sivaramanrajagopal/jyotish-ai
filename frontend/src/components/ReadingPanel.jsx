@@ -184,7 +184,7 @@ export default function ReadingPanel({ chart, userId, gender = 'male', enabled =
     const ids = (data?.life || []).filter((row) => row.open).map((row) => row.id)
     const forNote = req.data?.note
     if (forNote === 'work' && !ids.includes('work')) ids.unshift('work')
-    return forNote === 'married' ? ids.filter((id) => id !== 'marriage') : ids
+    return forNote === 'married' ? ids.filter((id) => !id.startsWith('marriage')) : ids
   }, [data, req.data?.note])
   const [toggled, setToggled] = useState({ key: null, ids: [] })
   const openIds = toggled.key === req.resultKey ? toggled.ids : defaultOpenIds

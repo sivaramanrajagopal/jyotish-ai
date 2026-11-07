@@ -1742,7 +1742,7 @@ def nadi_endpoint(
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     gender = _sanitise(req.gender or "", 20).lower()
-    if gender in ("male", "female"):
+    if gender in ("male", "female", "other"):
         birth = dict(chart.get("birth_data") or {})
         birth["gender"] = gender
         chart = {**chart, "birth_data": birth}
@@ -1778,7 +1778,7 @@ def reading_endpoint(
     gender = _sanitise(req.gender or "", 20).lower()
     note = _sanitise(req.note or "", 20).lower()
     birth = dict(chart.get("birth_data") or {})
-    if gender in ("male", "female"):
+    if gender in ("male", "female", "other"):
         birth["gender"] = gender
     if note in ("married", "work"):
         birth["note"] = note

@@ -566,19 +566,32 @@ def _seasons(intervals: list[tuple[int, date, date]], targets: set[int], limit: 
 
 def _gender(chart: dict) -> str:
     raw = str((chart.get("birth_data") or {}).get("gender") or "male").lower()
-    return raw if raw in ("male", "female") else "male"
+    return raw if raw in ("male", "female", "other") else "male"
 
 
-def _question_spec(spec: dict, gender: str) -> dict:
+def _question_specs(spec: dict, gender: str) -> list[dict]:
     if spec["id"] != "marriage":
-        return spec
+        return [spec]
     if gender == "female":
-        intro = "This is a female chart, so marriage starts from Mars."
-        karaka = "Mars"
-    else:
-        intro = "This is a male chart, so marriage starts from Venus."
-        karaka = "Venus"
-    return {**spec, "karaka": karaka, "intro": intro}
+        return [{**spec, "karaka": "Mars", "intro": "This is a female chart, so marriage starts from Mars."}]
+    if gender == "other":
+        return [
+            {
+                **spec,
+                "id": "marriage_venus",
+                "label": "Marriage · Venus",
+                "karaka": "Venus",
+                "intro": "This chart is marked Other, so marriage is also read from Venus, as for a male chart.",
+            },
+            {
+                **spec,
+                "id": "marriage_mars",
+                "label": "Marriage · Mars",
+                "karaka": "Mars",
+                "intro": "This chart is marked Other, so marriage is also read from Mars, as for a female chart.",
+            },
+        ]
+    return [{**spec, "karaka": "Venus", "intro": "This is a male chart, so marriage starts from Venus."}]
 
 
 def compute_nadi(chart: dict, as_of: date | None = None) -> dict:
@@ -591,48 +604,48 @@ def compute_nadi(chart: dict, as_of: date | None = None) -> dict:
     calendar = _calendar(when)
     readings = []
     for spec in QUESTIONS:
-        item = _question_spec(spec, gender)
-        chain = _chain(item["karaka"], planets, grouped)
-        extra = ""
-        extra_signs: set[int] = set()
-        timing = {chain["sign"], chain["follows"]}
-        if item.get("extra") == "jupiter_second":
-            extra, extra_signs = _money_extra(chain, grouped, planets)
-            timing |= extra_signs
-        absent = [
-            name for name in item["helpers"]
-            if name != item["karaka"]
-            and next(p["sign"] for p in planets if p["planet"] == name) not in chain["linked"]
-        ]
-        slow = []
-        for name in SLOW:
-            found = _seasons(calendar[name], timing, limit=2)
-            for season in found:
-                slow.append({"planet": name, **season, "label": f"{name} · {season['label']}"})
-        sharper = []
-        for name in NODES:
-            found = _seasons(calendar[name], timing, limit=1)
-            for season in found:
-                sharper.append({"planet": name, **season, "label": f"{name} · {season['label']}"})
-        readings.append({
-            "id": item["id"],
-            "label": item["label"],
-            "karaka": item["karaka"],
-            "significator": item["karaka"],
-            "family": {"name": chain["element"], "line": _family_line(chain)},
-            "past": _box(chain["past"], grouped[chain["past"]]),
-            "now": _box(chain["sign"], grouped[chain["sign"]]),
-            "follows": _box(chain["follows"], grouped[chain["follows"]]),
-            "opposite": _box(chain["opposite"], grouped[chain["opposite"]]),
-            "analysis": _analysis(item["intro"], chain, absent, extra),
-            "today": _today_line(today, chain, timing),
-            "season_status": _season_status(when, slow),
-            "board": _board(grouped, chain, extra_signs),
-            "reasons": _reasons(chain, absent, extra, extra_signs),
-            "timing": [_timing_row(row, "Season") for row in slow] + [_timing_row(row, "Sharper") for row in sharper],
-            "seasons": slow,
-            "sharper": sharper,
-        })
+        for item in _question_specs(spec, gender):
+            chain = _chain(item["karaka"], planets, grouped)
+            extra = ""
+            extra_signs: set[int] = set()
+            timing = {chain["sign"], chain["follows"]}
+            if item.get("extra") == "jupiter_second":
+                extra, extra_signs = _money_extra(chain, grouped, planets)
+                timing |= extra_signs
+            absent = [
+                name for name in item["helpers"]
+                if name != item["karaka"]
+                and next(p["sign"] for p in planets if p["planet"] == name) not in chain["linked"]
+            ]
+            slow = []
+            for name in SLOW:
+                found = _seasons(calendar[name], timing, limit=2)
+                for season in found:
+                    slow.append({"planet": name, **season, "label": f"{name} · {season['label']}"})
+            sharper = []
+            for name in NODES:
+                found = _seasons(calendar[name], timing, limit=1)
+                for season in found:
+                    sharper.append({"planet": name, **season, "label": f"{name} · {season['label']}"})
+            readings.append({
+                "id": item["id"],
+                "label": item["label"],
+                "karaka": item["karaka"],
+                "significator": item["karaka"],
+                "family": {"name": chain["element"], "line": _family_line(chain)},
+                "past": _box(chain["past"], grouped[chain["past"]]),
+                "now": _box(chain["sign"], grouped[chain["sign"]]),
+                "follows": _box(chain["follows"], grouped[chain["follows"]]),
+                "opposite": _box(chain["opposite"], grouped[chain["opposite"]]),
+                "analysis": _analysis(item["intro"], chain, absent, extra),
+                "today": _today_line(today, chain, timing),
+                "season_status": _season_status(when, slow),
+                "board": _board(grouped, chain, extra_signs),
+                "reasons": _reasons(chain, absent, extra, extra_signs),
+                "timing": [_timing_row(row, "Season") for row in slow] + [_timing_row(row, "Sharper") for row in sharper],
+                "seasons": slow,
+                "sharper": sharper,
+            })
     return {
         "method": METHOD,
         "view": VIEW,

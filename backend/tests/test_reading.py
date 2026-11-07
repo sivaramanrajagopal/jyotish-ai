@@ -140,3 +140,18 @@ def test_timeline_note_and_watch():
     chart["birth_data"]["note"] = "work"
     focused = compute_reading(chart, as_of=AS_OF)
     assert focused["life"][0]["id"] == "work"
+
+
+def test_other_gender_sitting_has_both_marriage_rows():
+    chart = _chennai()
+    chart["birth_data"]["gender"] = "other"
+    reading = compute_reading(chart, as_of=AS_OF)
+    ids = [row["id"] for row in reading["life"]]
+    assert "marriage_venus" in ids and "marriage_mars" in ids
+    assert "marriage" not in ids
+    assert "Marriage is read from Venus and from Mars" in reading["voice"]["sentence"]
+    by_id = {row["id"]: row for row in reading["life"]}
+    assert by_id["marriage_venus"]["significator"] == "Venus"
+    assert by_id["marriage_mars"]["significator"] == "Mars"
+    assert any("Venus is the marriage significator" in line for line in by_id["marriage_venus"]["house"]["lines"])
+    assert any("Mars is the marriage significator" in line for line in by_id["marriage_mars"]["house"]["lines"])

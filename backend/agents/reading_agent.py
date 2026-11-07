@@ -30,7 +30,19 @@ def _birth(chart: dict) -> dict:
 
 def _gender(chart: dict) -> str:
     raw = str(_birth(chart).get("gender") or "male").lower()
-    return raw if raw in ("male", "female") else "male"
+    return raw if raw in ("male", "female", "other") else "male"
+
+
+def _is_marriage(question_id: str) -> bool:
+    return question_id in ("marriage", "marriage_venus", "marriage_mars")
+
+
+def _house_question(question_id: str, gender: str) -> tuple[str, str]:
+    if question_id == "marriage_venus":
+        return "marriage", "male"
+    if question_id == "marriage_mars":
+        return "marriage", "female"
+    return question_id, gender
 
 
 def _note(chart: dict) -> str:
@@ -101,6 +113,7 @@ def _who(chart: dict) -> dict:
 def _voice(chart: dict, dasha_lord: str, bhukti_lord: str, avastha: dict) -> dict:
     gender = _gender(chart)
     karaka = "Mars" if gender == "female" else "Venus"
+    karakas = ("Venus", "Mars") if gender == "other" else (karaka,)
     strength = {row["planet"]: row for row in compute_shadbala_for_chart(chart)["planets"]}
     condition = {row["planet"]: row for row in avastha.get("planets") or []}
     ranked = sorted(strength.values(), key=lambda row: row["rank"])
@@ -132,6 +145,11 @@ def _voice(chart: dict, dasha_lord: str, bhukti_lord: str, avastha: dict) -> dic
             f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
             "The marriage matter is already lived, so this sitting does not lead with it."
         )
+    elif gender == "other":
+        parts.append(
+            f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
+            "Marriage is read from Venus and from Mars."
+        )
     else:
         parts.append(
             f"{_cap(_named(karaka))} {held} and is {sthula} in condition. "
@@ -139,7 +157,7 @@ def _voice(chart: dict, dasha_lord: str, bhukti_lord: str, avastha: dict) -> dic
         )
 
     wanted = []
-    for name in leaders + short + [dasha_lord, bhukti_lord, karaka]:
+    for name in leaders + short + [dasha_lord, bhukti_lord, *karakas]:
         if name and name not in wanted and name in strength:
             wanted.append(name)
     wanted.sort(key=lambda name: strength[name]["rank"])
@@ -345,14 +363,14 @@ def _life(chart: dict, as_of: date) -> list[dict]:
             "analysis": reading.get("analysis") or "",
             "today": reading.get("today") or "",
             "season_status": reading.get("season_status") or "",
-            "house": house_giving(chart, reading["id"], gender),
+            "house": house_giving(chart, *_house_question(reading["id"], gender)),
         })
     note = _note(chart)
 
     def _rank(row: dict) -> tuple:
         if note == "work" and row["id"] == "work":
             group = -1
-        elif note == "married" and row["id"] == "marriage":
+        elif note == "married" and _is_marriage(row["id"]):
             group = 2
         else:
             group = 0 if row["open"] else 1
@@ -387,7 +405,7 @@ def _snags(chart: dict) -> dict:
 def _closed_ahead(life: list[dict], note: str) -> list[dict]:
     closed = [row for row in life if not row["open"] and row.get("start")]
     if note == "married":
-        closed = [row for row in closed if row["id"] != "marriage"]
+        closed = [row for row in closed if not _is_marriage(row["id"])]
     closed.sort(key=lambda row: row["start"])
     return closed
 
@@ -395,7 +413,7 @@ def _closed_ahead(life: list[dict], note: str) -> list[dict]:
 def _timeline(chapter: dict, life: list[dict], note: str) -> dict:
     open_rows = [row for row in life if row["open"]]
     if note == "married":
-        open_rows = [row for row in open_rows if row["id"] != "marriage"]
+        open_rows = [row for row in open_rows if not _is_marriage(row["id"])]
     today_names = _join([row["label"] for row in open_rows]) or "No season is open"
     today = (
         f"Open: {today_names}. "
@@ -441,7 +459,7 @@ def _next(chapter: dict, life: list[dict], note: str = "") -> dict:
         parts.append(f"{_join(names)} {verb} next: {soonest}.")
     open_rows = [row for row in life if row["open"] and row.get("when")]
     if note == "married":
-        open_rows = [row for row in open_rows if row["id"] != "marriage"]
+        open_rows = [row for row in open_rows if not _is_marriage(row["id"])]
     if open_rows:
         named = [
             f"{row['label']} until {row['when'].split('–')[-1].strip()}"

@@ -75,3 +75,16 @@ def test_marriage_follows_gender():
     assert female["karaka"] == "Mars"
     assert "female chart" in female["analysis"]
     assert female["now"]["sign"] == "Libra"
+
+
+def test_other_gender_has_both_marriage_readings():
+    payload = compute_nadi(_chennai("other"), as_of=AS_OF)
+    ids = [row["id"] for row in payload["readings"]]
+    assert "marriage_venus" in ids and "marriage_mars" in ids
+    assert "marriage" not in ids
+    venus = _reading(payload, "marriage_venus")
+    mars = _reading(payload, "marriage_mars")
+    assert venus["karaka"] == "Venus"
+    assert mars["karaka"] == "Mars"
+    assert "Venus" in venus["analysis"]
+    assert "Mars" in mars["analysis"]
