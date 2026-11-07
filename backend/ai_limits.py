@@ -238,6 +238,47 @@ def check_ai_quota(
         logger.warning("AI quota check skipped: %s", exc)
 
 
+def refund_ai_quota(
+    user_id: Optional[str],
+    kind: str,
+    client_ip: Optional[str] = None,
+) -> None:
+    """Give back one use when the AI request failed, so failures do not eat the daily quota."""
+    col = _usage_column(kind)
+    today = today_ist().isoformat()
+    if user_id:
+        table, key_col, key_val = "ai_usage", "user_id", user_id
+    elif client_ip:
+        table, key_col, key_val = "anon_ai_usage", "ip_hash", _hash_ip(client_ip)
+    else:
+        return
+
+    if not _SB:
+        if not user_id:
+            counts = _mem_anon.get((key_val, today))
+            if counts and counts.get(col, 0) > 0:
+                counts[col] -= 1
+        return
+
+    try:
+        sb = get_supabase()
+        row = (
+            sb.table(table)
+            .select("chat_count, forecast_count")
+            .eq(key_col, key_val)
+            .eq("usage_date", today)
+            .maybe_single()
+            .execute()
+        )
+        data = (row.data or {}) if row else {}
+        current = int(data.get(col) or 0)
+        if current <= 0:
+            return
+        sb.table(table).update({col: current - 1}).eq(key_col, key_val).eq("usage_date", today).execute()
+    except Exception as exc:
+        logger.warning("AI quota refund skipped: %s", exc)
+
+
 def get_ai_usage(user_id: str) -> dict:
     """Return today's AI usage counts for an authenticated user."""
     today = today_ist().isoformat()

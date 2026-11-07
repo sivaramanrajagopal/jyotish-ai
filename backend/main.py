@@ -58,7 +58,13 @@ from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
 from chart_utils import round_score, assert_chart_not_stale, ensure_dasha, refresh_dasha
-from ai_limits import OPENAI_BILLING_DETAIL, check_ai_quota, is_openai_billing_error, moderate_messages
+from ai_limits import (
+    OPENAI_BILLING_DETAIL,
+    check_ai_quota,
+    is_openai_billing_error,
+    moderate_messages,
+    refund_ai_quota,
+)
 from analytics import track_event
 from security import (
     IS_PRODUCTION,
@@ -193,6 +199,37 @@ async def limit_request_body_size(request: Request, call_next):
     if request.method in ("POST", "PUT", "PATCH"):
         check_content_length(request)
     return await call_next(request)
+
+
+_AI_CHARGES = "ai_quota_charges"
+
+
+def charge_ai_quota(request: Request, auth_user: Optional[AuthUser], kind: str) -> None:
+    """Count one AI use now; `refund_failed_ai_quota` gives it back if the request then fails."""
+    uid = auth_user.id if auth_user else None
+    ip = client_ip(request)
+    check_ai_quota(uid, kind, ip)
+    request.scope.setdefault(_AI_CHARGES, []).append((uid, kind, ip))
+
+
+def release_ai_quota(request: Request) -> None:
+    """Refund this request's AI charges now (for a request that succeeds without an AI answer)."""
+    for uid, kind, ip in request.scope.pop(_AI_CHARGES, []):
+        refund_ai_quota(uid, kind, ip)
+
+
+@app.middleware("http")
+async def refund_failed_ai_quota(request: Request, call_next):
+    from starlette.concurrency import run_in_threadpool
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        await run_in_threadpool(release_ai_quota, request)
+        raise
+    if response.status_code >= 400 and request.scope.get(_AI_CHARGES):
+        await run_in_threadpool(release_ai_quota, request)
+    return response
 
 # ── Security headers middleware ────────────────────────────────────────────────
 # NOTE: @app.middleware("http") wraps outermost — runs before CORS.
@@ -861,7 +898,7 @@ def forecast(
     Requires ANTHROPIC_API_KEY in backend/.env.
     Get a key at: https://console.anthropic.com
     """
-    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+    charge_ai_quota(request, auth_user, "forecast")
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     try:
@@ -1054,7 +1091,7 @@ def chat_endpoint(
     Pass the full conversation history with each request.
     Requires OPENAI_API_KEY in backend/.env.
     """
-    check_ai_quota(auth_user.id if auth_user else None, "chat", client_ip(request))
+    charge_ai_quota(request, auth_user, "chat")
     # Enforce message count and content length caps (cost control + DoS prevention)
     MAX_MESSAGES = 40
     MAX_MSG_LEN  = 2000
@@ -1204,7 +1241,7 @@ def forecast_house_insight(
     if not 1 <= req.house_num <= 12:
         raise HTTPException(status_code=400, detail="house_num must be 1–12.")
 
-    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+    charge_ai_quota(request, auth_user, "forecast")
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     chart = ensure_dasha(chart)
@@ -1326,7 +1363,7 @@ def forecast_daily_reading(
     Synthesise natal chart + Dasha + Gochara + Tara Balam into a
     3-5 sentence daily reading with a Dasha-Transit correlation score.
     """
-    check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+    charge_ai_quota(request, auth_user, "forecast")
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
     chart = ensure_dasha(chart)
@@ -2052,7 +2089,7 @@ def prashna_analyze(
         )
 
         if req.include_ai:
-            check_ai_quota(auth_user.id if auth_user else None, "forecast", client_ip(request))
+            charge_ai_quota(request, auth_user, "forecast")
             from agents.prashna.ai_narrator import narrate_prashna
             ai_reading = narrate_prashna(result, req.language or "english")
             if ai_reading:
@@ -2061,6 +2098,8 @@ def prashna_analyze(
                 result["interpretation"]["ai_note"] = (
                     "AI narration below is based solely on the computed testimonies above."
                 )
+            else:
+                release_ai_quota(request)
 
         track_event("prashna_analyze", properties={"category": cat, "question_id": qid})
         return result
