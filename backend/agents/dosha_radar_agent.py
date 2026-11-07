@@ -8,6 +8,7 @@ import datetime
 
 from agents.dosha_radar.afflictions import check_combustion, check_critical_obstruction, check_gandanta
 from agents.dosha_radar.obstruction import (
+    _NO_DOSHA,
     build_obstruction_profile,
     compute_live_transit_status,
     scan_all_dosha_transits,
@@ -54,16 +55,21 @@ def _build_natal_afflictions(natal_chart: dict, soonya_rasis: list[int]) -> dict
         if sign_idx is None:
             sign_idx = int(lon / 30) % 12
 
+        node = pname in ("Rahu", "Ketu")
         combust = (
             check_combustion(sun_lon, lon, pname, retro)
-            if pname != "Sun"
+            if pname != "Sun" and not node
             else {"combust": False, "deep": False, "orb": 0.0, "cross_sign": False}
         )
         gandanta = check_gandanta(lon)
         pushkara = check_pushkara(lon)
-        crit = check_critical_obstruction(
-            {"sign_idx": sign_idx, "combust": combust, "gandanta": gandanta, "pushkara": pushkara},
-            soonya_rasis,
+        crit = (
+            _NO_DOSHA.copy()
+            if node
+            else check_critical_obstruction(
+                {"sign_idx": sign_idx, "combust": combust, "gandanta": gandanta, "pushkara": pushkara},
+                soonya_rasis,
+            )
         )
         out[pname] = {
             "sign": pdata.get("sign"),
@@ -179,10 +185,10 @@ def compute_dosha_radar_analysis(natal_chart: dict) -> dict:
 
     ref_dt = _transit_ref_dt(natal_chart)
     natal_afflictions = _build_natal_afflictions(natal_chart, soonya_rasis)
-    transit = compute_live_transit_status(natal_chart, profile, ref_dt)
     tz_name = (natal_chart.get("birth_data") or {}).get("timezone") or "Asia/Kolkata"
+    transit = compute_live_transit_status(natal_chart, profile, ref_dt, tz_name=tz_name)
     forecast = scan_all_dosha_transits(profile, ref_dt, days_ahead=90, tz_name=tz_name)
-    pushkara_transits = scan_all_pushkara_transits(reference_dt=ref_dt, days_ahead=180)
+    pushkara_transits = scan_all_pushkara_transits(reference_dt=ref_dt, days_ahead=180, tz_name=tz_name)
 
     pushkara_natal = [
         {"planet": p, "pushkara": d["pushkara"].get("pushkara"), "zone": d["pushkara"].get("zone", "")}

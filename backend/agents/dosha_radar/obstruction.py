@@ -165,6 +165,7 @@ def compute_live_transit_status(
     natal_chart: dict,
     profile: dict,
     ref_dt: datetime.datetime | None = None,
+    tz_name: str = "Asia/Kolkata",
 ) -> dict:
     if ref_dt is None:
         ref_dt = datetime.datetime.now(datetime.timezone.utc)
@@ -239,7 +240,7 @@ def compute_live_transit_status(
         }
 
     return {
-        "transit_date": _iso_date(ref_dt),
+        "transit_date": _jd_to_local(jd, tz_name).date().isoformat(),
         "planets": status,
     }
 
@@ -249,17 +250,27 @@ def _moon_sign_at(jd: float) -> int:
     return int(lon / 30) % 12
 
 
-def _sign_change_jd(jd_a: float, jd_b: float) -> float:
-    """First moment in (jd_a, jd_b] where the Moon's sign differs from its sign at jd_a."""
-    sign_a = _moon_sign_at(jd_a)
+def _crossing_jd(jd_a: float, jd_b: float, value_at) -> float:
+    """First moment in (jd_a, jd_b], to the minute, where value_at differs from its value at jd_a."""
+    start = value_at(jd_a)
     lo, hi = jd_a, jd_b
     while hi - lo > 1.0 / 1440:
         mid = (lo + hi) / 2
-        if _moon_sign_at(mid) == sign_a:
+        if value_at(mid) == start:
             lo = mid
         else:
             hi = mid
     return hi
+
+
+def _sign_change_jd(jd_a: float, jd_b: float) -> float:
+    """First moment in (jd_a, jd_b] where the Moon's sign differs from its sign at jd_a."""
+    return _crossing_jd(jd_a, jd_b, _moon_sign_at)
+
+
+def _nak_at(jd: float, planet_name: str) -> int:
+    lon, _ = _lon_at(jd, planet_name)
+    return int(lon / _NAK_SPAN) % 27
 
 
 def _jd_to_local(jd: float, tz_name: str) -> datetime.datetime:
@@ -331,110 +342,100 @@ def scan_all_dosha_transits(
     janma_nak_idx = profile["janma_nak_idx"]
 
     ref_jd = _jd(ref_dt)
-    prev_nak: dict[str, int] = {}
-    seed_jd = ref_jd - 1
-    for p_name in _PLANET_IDS:
-        lon, _ = _lon_at(seed_jd, p_name)
-        prev_nak[p_name] = int(lon / _NAK_SPAN) % 27
-    rahu_lon, _ = _lon_at(seed_jd, "Rahu")
-    prev_nak["Rahu"] = int(rahu_lon / _NAK_SPAN) % 27
-    prev_nak["Ketu"] = int(((rahu_lon + 180) % 360) / _NAK_SPAN) % 27
+    end_jd = ref_jd + days_ahead
+
+    def local_date(jd: float) -> str:
+        return _jd_to_local(jd, tz_name).date().isoformat()
+
+    def days_away(jd: float) -> int:
+        return max(0, int(jd - ref_jd))
 
     red_zone_entries: list[dict] = []
     critical_windows: list[dict] = []
     tara_windows: list[dict] = []
 
-    prev_moon_tara = 0
+    moon_nak = _nak_at(ref_jd, "Moon")
+    tara_now = get_tara(moon_nak, janma_nak_idx)
+    if tara_now["tara_num"] in _FAVORABLE_TARAS:
+        tara_windows.append({
+            "tara_num": tara_now["tara_num"],
+            "tara_name": tara_now["tara_name"],
+            "tara_nature": tara_now["tara_nature"],
+            "nak_name": NAKSHATRA_ORDER[moon_nak],
+            "entry_date": local_date(ref_jd),
+            "days_away": 0,
+        })
 
-    for d in range(days_ahead + 1):
-        jd = ref_jd + d
-        day_date = ref_dt + datetime.timedelta(days=d)
-
-        sun_xx, _ = swe.calc_ut(jd, SUN, _FLAGS)
-        sun_lon = sun_xx[0]
-
-        for p_name in _PLANET_IDS:
-            p_lon, p_retro = _lon_at(jd, p_name)
-            curr_nak = int(p_lon / _NAK_SPAN) % 27
-            curr_sign = int(p_lon / 30)
-
-            if p_name == "Moon":
-                moon_tara = get_tara(curr_nak, janma_nak_idx)
-                if moon_tara["tara_num"] != prev_moon_tara:
-                    if moon_tara["tara_num"] in _FAVORABLE_TARAS:
-                        tara_windows.append({
-                            "tara_num": moon_tara["tara_num"],
-                            "tara_name": moon_tara["tara_name"],
-                            "tara_nature": moon_tara["tara_nature"],
-                            "nak_name": NAKSHATRA_ORDER[curr_nak],
-                            "entry_date": _iso_date(day_date),
-                            "days_away": d,
-                        })
-                    prev_moon_tara = moon_tara["tara_num"]
-
-            if curr_nak != prev_nak[p_name]:
+    # Entries from the last day count as current. The Moon can cross a whole
+    # nakshatra (13°20') in under a day, so it is stepped every 2 hours.
+    for p_name in (*_PLANET_IDS, "Rahu", "Ketu"):
+        step = 1.0 / 12 if p_name == "Moon" else 1.0
+        jd = ref_jd - 1
+        prev = _nak_at(jd, p_name)
+        while jd < end_jd:
+            nxt = min(jd + step, end_jd)
+            curr = _nak_at(nxt, p_name)
+            if curr != prev:
+                t = _crossing_jd(jd, nxt, lambda x: _nak_at(x, p_name))
+                curr = _nak_at(t, p_name)
                 for nak_idx, nak_type in (
                     (vadhai_nak_idx, "Vadhai"),
                     (vainasikam_nak_idx, "Vainasikam"),
                 ):
-                    if curr_nak == nak_idx:
-                        pk = check_pushkara(p_lon)
+                    if curr == nak_idx:
+                        pk = check_pushkara(_lon_at(t, p_name)[0])
                         red_zone_entries.append({
                             "planet": p_name,
                             "type": nak_type,
                             "nak_name": NAKSHATRA_ORDER[nak_idx],
-                            "entry_date": _iso_date(day_date),
-                            "days_away": d,
+                            "entry_date": local_date(t),
+                            "days_away": days_away(t),
                             "severity": "CRITICAL" if nak_type == "Vainasikam" else "WARNING",
                             "has_pushkara": pk.get("pushkara", False),
                             "pushkara_zone": pk.get("zone", ""),
                         })
-            prev_nak[p_name] = curr_nak
-
-            if p_name in _MALEFICS and curr_sign in soonya_rasis:
-                combust = check_combustion(sun_lon, p_lon, p_name, p_retro)
-                gandanta = check_gandanta(p_lon)
-                pushkara = check_pushkara(p_lon)
-                is_hard = combust.get("deep") or gandanta.get("gandanta")
-                if is_hard:
-                    prev_lon, _ = _lon_at(jd - 1, p_name) if d > 0 else (p_lon, p_retro)
-                    prev_sign = int(prev_lon / 30)
-                    if d == 0 or prev_sign != curr_sign:
-                        aff_type = (
-                            "Deep Combust + Gandanta"
-                            if combust.get("deep") and gandanta.get("gandanta")
-                            else ("Gandanta" if gandanta.get("gandanta") else "Deep Combust")
-                        )
-                        critical_windows.append({
-                            "planet": p_name,
-                            "soonya_sign": RASI_ORDER[curr_sign],
-                            "affliction_type": aff_type,
-                            "has_divine": pushkara.get("pushkara", False),
-                            "date": _iso_date(day_date),
-                            "days_away": d,
+                if p_name == "Moon" and t > ref_jd:
+                    tara = get_tara(curr, janma_nak_idx)
+                    if tara["tara_num"] in _FAVORABLE_TARAS:
+                        tara_windows.append({
+                            "tara_num": tara["tara_num"],
+                            "tara_name": tara["tara_name"],
+                            "tara_nature": tara["tara_nature"],
+                            "nak_name": NAKSHATRA_ORDER[curr],
+                            "entry_date": local_date(t),
+                            "days_away": days_away(t),
                         })
+            prev = curr
+            jd = nxt
 
-        for node_name in ("Rahu", "Ketu"):
-            node_lon, _ = _lon_at(jd, node_name)
-            curr_nak = int(node_lon / _NAK_SPAN) % 27
-            if curr_nak != prev_nak[node_name]:
-                for nak_idx, nak_type in (
-                    (vadhai_nak_idx, "Vadhai"),
-                    (vainasikam_nak_idx, "Vainasikam"),
-                ):
-                    if curr_nak == nak_idx:
-                        pk = check_pushkara(node_lon)
-                        red_zone_entries.append({
-                            "planet": node_name,
-                            "type": nak_type,
-                            "nak_name": NAKSHATRA_ORDER[nak_idx],
-                            "entry_date": _iso_date(day_date),
-                            "days_away": d,
-                            "severity": "CRITICAL",
-                            "has_pushkara": pk.get("pushkara", False),
-                            "pushkara_zone": pk.get("zone", ""),
-                        })
-            prev_nak[node_name] = curr_nak
+    # A malefic in a Soonya sign turning deep combust or gandanta opens a window.
+    was_hard: dict[str, bool] = {}
+    for d in range(days_ahead + 1):
+        jd = ref_jd + d
+        sun_lon = swe.calc_ut(jd, SUN, _FLAGS)[0][0]
+        for p_name in _PLANET_IDS:
+            if p_name not in _MALEFICS:
+                continue
+            p_lon, p_retro = _lon_at(jd, p_name)
+            curr_sign = int(p_lon / 30)
+            combust = check_combustion(sun_lon, p_lon, p_name, p_retro)
+            gandanta = check_gandanta(p_lon)
+            is_hard = curr_sign in soonya_rasis and bool(combust.get("deep") or gandanta.get("gandanta"))
+            if is_hard and not was_hard.get(p_name):
+                aff_type = (
+                    "Deep Combust + Gandanta"
+                    if combust.get("deep") and gandanta.get("gandanta")
+                    else ("Gandanta" if gandanta.get("gandanta") else "Deep Combust")
+                )
+                critical_windows.append({
+                    "planet": p_name,
+                    "soonya_sign": RASI_ORDER[curr_sign],
+                    "affliction_type": aff_type,
+                    "has_divine": check_pushkara(p_lon).get("pushkara", False),
+                    "date": local_date(jd),
+                    "days_away": d,
+                })
+            was_hard[p_name] = is_hard
 
     chandrashtama_windows = find_chandrashtama_windows(
         chandrashtama_sign_idx, ref_jd, days_ahead, tz_name,

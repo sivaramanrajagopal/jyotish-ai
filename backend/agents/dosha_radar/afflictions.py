@@ -23,8 +23,10 @@ def check_combustion(
         return {"combust": False, "deep": False, "orb": 0.0, "cross_sign": False}
 
     orb_limit = COMBUSTION_ORB.get(planet_name, 14.0)
-    if planet_name == "Mercury" and is_retrograde:
+    if is_retrograde and planet_name == "Mercury":
         orb_limit = 12.0
+    elif is_retrograde and planet_name == "Venus":
+        orb_limit = 8.0
 
     dist = _angular_distance(sun_deg, planet_deg)
     sun_sign = int(sun_deg / 30) % 12

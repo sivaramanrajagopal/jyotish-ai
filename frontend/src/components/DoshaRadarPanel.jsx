@@ -180,7 +180,7 @@ function TransitTable({ planets }) {
             if (d.red_zone) flags.push(d.red_zone)
             if (d.pushkara?.pushkara) flags.push('Pushkara')
             const crit = d.critical_obstruction?.severity
-            if (crit && crit !== 'none') flags.push(crit)
+            if (crit && crit !== 'none') flags.push(crit.replace('_', ' '))
             return (
               <tr key={name}>
                 <td>{name}</td>
@@ -295,7 +295,7 @@ function PushkaraTransitList({ items }) {
           <ul className="dr-forecast-list">
             {upcoming.map(p => (
               <li key={p.planet}>
-                <strong>{p.planet}</strong> in {p.next_entry_days}d ({p.next_entry_date})
+                <strong>{p.planet}</strong> {p.next_entry_days === 0 ? 'today' : `in ${p.next_entry_days}d`} ({p.next_entry_date})
               </li>
             ))}
           </ul>
@@ -316,7 +316,10 @@ export default function DoshaRadarPanel({ chart, userId, enabled = true }) {
     setError('')
     api.post('/dosha-radar/analyze', chartPayload(chart, userId))
       .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load Dosha Radar.'))
+      .catch(e => {
+        const detail = e.response?.data?.detail
+        setError(typeof detail === 'string' ? detail : 'Could not load Dosha Radar.')
+      })
       .finally(() => setLoading(false))
   }, [chart, userId, enabled])
 

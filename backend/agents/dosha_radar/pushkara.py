@@ -59,6 +59,11 @@ _PUSHKARA_ZONES = [
     {"start": 336.67, "end": 340.00, "sign": "Pisces", "nakshatra": "Uttara Bhadrapada", "pada": 2, "nak_lord": "Saturn"},
 ]
 
+# Each zone is one navamsa pada of exactly 3°20'; snap the two-decimal limits to it.
+for _z in _PUSHKARA_ZONES:
+    _n = round(_z["start"] * 3 / 10)
+    _z["start"], _z["end"] = _n * 10 / 3, (_n + 1) * 10 / 3
+
 
 def check_pushkara(planet_lon: float) -> dict:
     lon = float(planet_lon) % 360.0
@@ -121,17 +126,32 @@ def _lon_at(jd: float, planet_name: str) -> float:
     return xx[0] % 360
 
 
+def _local_date(jd: float, tz_name: str) -> str:
+    from zoneinfo import ZoneInfo
+
+    y, m, d, h = swe.revjul(jd)
+    utc = datetime.datetime(y, m, d, tzinfo=datetime.timezone.utc) + datetime.timedelta(hours=h)
+    try:
+        return utc.astimezone(ZoneInfo(tz_name)).date().isoformat()
+    except Exception:
+        return utc.date().isoformat()
+
+
 def scan_pushkara_transit(
     planet_name: str,
     reference_dt: datetime.datetime | None = None,
     days_ahead: int = 180,
+    tz_name: str = "Asia/Kolkata",
 ) -> dict:
     if reference_dt is None:
         reference_dt = datetime.datetime.now(datetime.timezone.utc)
     ref_jd = swe.julday(
         reference_dt.year, reference_dt.month, reference_dt.day,
-        reference_dt.hour + reference_dt.minute / 60.0,
+        reference_dt.hour + reference_dt.minute / 60.0 + reference_dt.second / 3600.0,
     )
+    end_jd = ref_jd + days_ahead
+    # A pada is 3°20'; the Moon crosses one in about 6 hours, so it is stepped hourly.
+    step = 1.0 / 24 if planet_name == "Moon" else 1.0
 
     def _pk_at(jd: float) -> dict:
         return check_pushkara(_lon_at(jd, planet_name))
@@ -141,20 +161,24 @@ def scan_pushkara_transit(
     exits_in_days = None
     next_entry_days = next_entry_date = next_entry_zone = None
 
-    if currently_in:
-        for d in range(1, days_ahead + 1):
-            if not _pk_at(ref_jd + d).get("pushkara"):
-                exits_in_days = d
-                break
-        scan_from = (exits_in_days + 1) if exits_in_days is not None else days_ahead + 1
-    else:
-        scan_from = 1
+    today = datetime.date.fromisoformat(_local_date(ref_jd, tz_name))
 
-    for d in range(scan_from, days_ahead + 1):
-        p = _pk_at(ref_jd + d)
+    def calendar_days(jd: float) -> int:
+        return (datetime.date.fromisoformat(_local_date(jd, tz_name)) - today).days
+
+    jd = ref_jd
+    if currently_in:
+        while jd < end_jd and _pk_at(jd).get("pushkara"):
+            jd += step
+        if jd < end_jd:
+            exits_in_days = calendar_days(jd)
+
+    while jd < end_jd:
+        jd += step
+        p = _pk_at(jd)
         if p.get("pushkara"):
-            next_entry_days = d
-            next_entry_date = (reference_dt + datetime.timedelta(days=d)).strftime("%Y-%m-%d")
+            next_entry_days = calendar_days(jd)
+            next_entry_date = _local_date(jd, tz_name)
             next_entry_zone = p.get("zone", "")
             break
 
@@ -172,8 +196,9 @@ def scan_pushkara_transit(
 def scan_all_pushkara_transits(
     reference_dt: datetime.datetime | None = None,
     days_ahead: int = 180,
+    tz_name: str = "Asia/Kolkata",
 ) -> list[dict]:
     return [
-        scan_pushkara_transit(p, reference_dt=reference_dt, days_ahead=days_ahead)
+        scan_pushkara_transit(p, reference_dt=reference_dt, days_ahead=days_ahead, tz_name=tz_name)
         for p in SCAN_PLANETS
     ]

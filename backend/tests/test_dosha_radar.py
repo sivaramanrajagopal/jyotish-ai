@@ -1,9 +1,19 @@
 """Dosha Radar — canonical fixture tests."""
 
+import datetime
+
+from agents.dosha_radar.afflictions import check_combustion
 from agents.dosha_radar.pushkara import check_pushkara, scan_pushkara_transit
-from agents.dosha_radar.obstruction import get_mudakku_rasi, get_vadhai_vainasikam
+from agents.dosha_radar.obstruction import (
+    build_obstruction_profile,
+    compute_live_transit_status,
+    get_mudakku_rasi,
+    get_vadhai_vainasikam,
+    scan_all_dosha_transits,
+)
 from agents.dosha_radar_agent import compute_dosha_radar_analysis, dosha_radar_context_for_narrator
 from agents.natal_agent import calculate_natal_chart
+from agents.tamil_dosha_agent import compute_tamil_doshas
 
 CHENNAI = {
     "dob": "1978-09-18",
@@ -78,6 +88,87 @@ def test_dosha_radar_analysis_structure():
     assert out["forecast"]["days_ahead"] == 90
     assert isinstance(out["pushkara_transits"], list)
     assert out["summary"]["transit_date"]
+
+
+REF = datetime.datetime(2026, 11, 6, 20, 0, tzinfo=datetime.timezone.utc)
+
+
+def swe_julday(dt: datetime.datetime) -> float:
+    import ephemeris as swe
+
+    return swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60.0)
+
+
+def _profile():
+    chart = _chart()
+    return build_obstruction_profile(chart, compute_tamil_doshas(chart))
+
+
+def test_moon_nakshatra_entries_are_not_skipped():
+    from agents.dosha_radar.obstruction import _FAVORABLE_TARAS, _jd, _nak_at, get_tara
+
+    profile = _profile()
+    out = scan_all_dosha_transits(profile, REF, days_ahead=90)
+    moon = [e for e in out["red_zone_entries"] if e["planet"] == "Moon"]
+    # 90 days is about 3.3 lunar months: one Vadhai and one Vainasikam entry each month.
+    assert sum(e["type"] == "Vadhai" for e in moon) in (3, 4)
+    assert sum(e["type"] == "Vainasikam" for e in moon) in (3, 4)
+
+    def favourable(nak: int) -> bool:
+        return get_tara(nak, profile["janma_nak_idx"])["tara_num"] in _FAVORABLE_TARAS
+
+    ref_jd = _jd(REF)
+    prev = _nak_at(ref_jd, "Moon")
+    expected = int(favourable(prev))
+    for hour in range(1, 90 * 24 + 1):
+        nak = _nak_at(ref_jd + hour / 24, "Moon")
+        if nak != prev and favourable(nak):
+            expected += 1
+        prev = nak
+    assert len(out["tara_windows"]) == expected
+
+
+def test_dates_are_in_the_chart_timezone():
+    # 20:00 UTC on 6 Nov is 01:30 IST on 7 Nov.
+    transit = compute_live_transit_status(_chart(), _profile(), REF, tz_name="Asia/Kolkata")
+    assert transit["transit_date"] == "2026-11-07"
+
+
+def test_moon_pushkara_entry_matches_an_hourly_search():
+    from agents.dosha_radar.pushkara import _local_date, _lon_at
+
+    out = scan_pushkara_transit("Moon", REF, tz_name="Asia/Kolkata")
+    def inside(jd: float) -> bool:
+        return check_pushkara(_lon_at(jd, "Moon"))["pushkara"]
+
+    jd = swe_julday(REF)
+    while inside(jd):
+        jd += 1 / 24
+    jd += 1 / 24
+    while not inside(jd):
+        jd += 1 / 24
+    assert out["next_entry_date"] == _local_date(jd, "Asia/Kolkata")
+    # 20:00 UTC on 6 Nov is already 7 Nov in India, so days count from 7 Nov.
+    assert out["next_entry_days"] == (
+        datetime.date.fromisoformat(out["next_entry_date"]) - datetime.date(2026, 11, 7)
+    ).days
+
+
+def test_pushkara_zone_edges_are_exact():
+    assert check_pushkara(36.667)["pushkara"] is True
+    assert check_pushkara(23.334)["pushkara"] is False
+
+
+def test_nodes_are_never_combust_in_the_birth_chart():
+    natal = compute_dosha_radar_analysis(_chart())["natal_afflictions"]
+    for node in ("Rahu", "Ketu"):
+        assert natal[node]["combust"]["combust"] is False
+        assert natal[node]["critical_obstruction"]["severity"] == "none"
+
+
+def test_retrograde_venus_uses_the_eight_degree_orb():
+    assert check_combustion(0.0, 9.0, "Venus", False)["combust"] is True
+    assert check_combustion(0.0, 9.0, "Venus", True)["combust"] is False
 
 
 def test_dosha_radar_narrator_context():
