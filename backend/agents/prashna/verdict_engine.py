@@ -18,7 +18,7 @@ def compute_verdict(testimonies: dict, moon_outcome: str) -> dict:
     neg = testimonies["counts"]["negative"]
     total = testimonies["counts"]["total"]
 
-    if pos + neg < 3:
+    if pos + neg < 3 and abs(pos - neg) < 2:
         result = "unclear"
         explanation = (
             "Too few supportive or challenging testimonies were found to form a clear judgment. "

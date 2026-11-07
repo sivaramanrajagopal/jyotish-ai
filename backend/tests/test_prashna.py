@@ -64,6 +64,14 @@ def test_verdict_unclear_when_mostly_neutral():
     assert compute_verdict(testimonies, "neutral")["result"] == "unclear"
 
 
+def test_two_clear_testimonies_still_lean():
+    testimonies = {
+        "counts": {"positive": 2, "negative": 0, "neutral": 5, "total": 7},
+        "positive": [], "negative": [], "neutral": [],
+    }
+    assert compute_verdict(testimonies, "neutral")["result"] == "likely_yes"
+
+
 def test_new_categories():
     from agents.prashna.constants import CATEGORY_HOUSE, resolve_question
     assert CATEGORY_HOUSE["lost_and_found"] == 4
