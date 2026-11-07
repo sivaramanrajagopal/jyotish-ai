@@ -2,7 +2,7 @@
  * PrashnaTab.jsx — Category + question dropdowns, rule-based engine, Phase 2 AI narration.
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import { formatPrashnaMoment } from '../lib/formatMoment'
@@ -337,6 +337,7 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
   const [history, setHistory] = useState(() => loadPrashnaHistory())
   const [gpsLocation, setLocation] = useState(null)
   const [locLoading, setLocLoading] = useState(false)
+  const gpsAsked = useRef(false)
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata'
 
@@ -378,13 +379,13 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
   }, [chart, placeOfBirth])
   const location = gpsLocation || birthLocation
 
-  const requestLocation = () => {
+  const requestLocation = useCallback((quiet = false) => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported in this browser.')
+      if (!quiet) setError('Geolocation is not supported in this browser.')
       return
     }
     setLocLoading(true)
-    setError('')
+    if (!quiet) setError('')
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude, place: 'Current location' })
@@ -392,11 +393,17 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
       },
       () => {
         setLocLoading(false)
-        setError('Could not get GPS. Using birth place or Chennai — analysis still works.')
+        if (!quiet) setError('Could not get GPS. Using birth place or Chennai — analysis still works.')
       },
       { timeout: 10000, maximumAge: 60000 },
     )
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!enabled || gpsAsked.current) return
+    gpsAsked.current = true
+    requestLocation(true)
+  }, [enabled, requestLocation])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -508,11 +515,19 @@ export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth 
         </div>
 
         <div className="prashna-location-row">
-          <span>📍 {location?.place || 'Chennai (default)'}</span>
-          <button type="button" onClick={requestLocation} disabled={locLoading} className="prashna-link-btn">
-            {locLoading ? 'Locating…' : 'Use my location'}
+          <span>
+            📍{' '}
+            {gpsLocation
+              ? gpsLocation.place
+              : birthLocation
+                ? `Birth place · ${birthLocation.place}`
+                : 'Chennai (default)'}
+          </span>
+          <button type="button" onClick={() => requestLocation(false)} disabled={locLoading} className="prashna-link-btn">
+            {locLoading ? 'Locating…' : gpsLocation ? 'Update location' : 'Use my location'}
           </button>
         </div>
+        <p className="prashna-location-hint">The query chart is cast for this place.</p>
 
         {error && (
           <div className="prashna-error" role="alert">⚠️ {error}</div>
