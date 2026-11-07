@@ -203,11 +203,14 @@ def health_context_for_narrator(natal_chart: dict) -> str:
         f"D3 Lagna: {s['d3_lagna']} · Overall: {s['overall_risk']}",
         f"Dasa: {s['maha_dasa']}–{s['bhukti']} ({s['dasa_period']})",
         f"Lagna body part: {s['lagna_body_en']}",
+        "Body parts: the planet's house from the birth lagna, read in the body section set by "
+        "the lagna's decan (Brihat Jataka 5.25). D3 houses 6/8/12 only raise awareness.",
         f"Transits as of: {s.get('transit_date', 'today')}",
     ]
     for f in (fg.get("d3_natal") or [])[:4]:
         reasons = "; ".join(f.get("reasons_en") or [])
-        lines.append(f"• D3 {f['body_part_en']}: {reasons}")
+        who = f"{f['planet']} → " if f.get("planet") else ""
+        lines.append(f"• {who}{f['body_part_en']}: {reasons}")
     for d in (fg.get("dasa") or [])[:2]:
         lines.append(f"• Dasa: {d['text_en']}")
     for t in (fg.get("transit") or [])[:3]:

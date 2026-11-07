@@ -799,6 +799,8 @@ def score_all_houses(
             "planets_in_house":   hl.get("planets_in_house", []),    # natal planets
             "planets_aspecting":  hl.get("planets_aspecting", []),   # natal aspects
             "transit_planets":    transit_activity,                   # direct transit only
+            "transit_in":         direct_in,
+            "transit_aspecting":  direct_asp,
             "house_sign":         hl.get("house_sign", ""),
             "house_sign_en":      hl.get("house_sign_en", ""),
             # Lord gochara detail for narrator context
@@ -996,45 +998,58 @@ def dasha_transit_correlation(scores: dict, dasha: dict) -> dict:
 # Compact Gochara summary for chat system prompt injection
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _ordinal(n) -> str:
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return "?"
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def compact_gochara_summary(scores: dict, dasha: dict) -> str:
     """
     Returns a compact multi-line block suitable for injecting into the
     chat system prompt.  Designed to be concise — ~600 tokens max.
     """
-    oh   = scores["overall_health"]
-    dtc  = dasha_transit_correlation(scores, dasha)
     moon = scores.get("natal_moon_en", "?")
     date = scores.get("transit_date", "today")
+    md_planet = (dasha.get("mahadasha") or {}).get("planet", "")
+    bh_planet = (dasha.get("bhukti") or {}).get("planet", "")
 
     lines = [
-        f"=== GOCHARA TRANSIT SCORES — {date} (ref: {moon} natal Moon) ===",
-        f"Overall transit health: {round_score(oh['average_score'])}/100 [{oh['rag']['label']}]  "
-        f"({oh['green_count']}🟢 {oh['amber_count']}🟡 {oh['red_count']}🔴)",
-        "",
-        f"DASHA-TRANSIT CORRELATION ({dtc['rag']['label']} — {round_score(dtc['correlation_score'])}/100):",
-        dtc["summary"],
-        dtc["overall"],
-        "",
-        "12-HOUSE SCORES (55% natal + 35% Gochara + 10% SAV):",
+        f"=== GOCHARA (transits from the natal Moon, {moon}) — {date} ===",
+        "Facts only. House Links decides which houses are live; use these to colour the answer.",
+        "TRANSITS (sign · count from natal Moon · classical Gochara result):",
     ]
+    for d in scores.get("transit_analysis", []):
+        planet = d.get("planet", "")
+        if not planet:
+            continue
+        role = (" — Mahadasha lord" if planet == md_planet
+                else " — Bhukti lord" if planet == bh_planet else "")
+        result = str(d.get("result", "")).lower()
+        if d.get("vedha_blocked"):
+            result = f"favourable but blocked by Vedha from {d.get('vedha_by', '')}"
+        lines.append(
+            f"  {planet}: {d.get('transit_sign_en', '')} · {_ordinal(d.get('pos_from_moon'))} from Moon · "
+            f"{result}{role}"
+        )
 
+    lines += ["", "HOUSES (transits from the lagna):"]
     for h in range(1, 13):
         hd = scores["houses"].get(h, {})
-        lord = hd.get("lord", "?")
-        lpos = hd.get("lord_gochara_pos", "?")
-        lres = hd.get("lord_gochara_result", "?")
-        rag  = hd.get("rag", {}).get("emoji", "")
-        tp   = ", ".join(hd.get("transit_planets", [])) or "none"
-        lines.append(
-            f"  H{h:02d} {hd.get('name',''):<28} {rag} {round_score(hd.get('score', 0)):5d}  "
-            f"lord={lord} pos{lpos}→{lres}  direct_transit=[{tp}]"
-            + (f"  SAV={hd.get('sav_points', '?')}" if hd.get('sav_points') is not None else "")
-        )
+        parts = [f"lord {hd.get('lord', '?')} is {_ordinal(hd.get('lord_gochara_pos'))} from Moon "
+                 f"({str(hd.get('lord_gochara_result', '')).lower()})"]
+        if hd.get("transit_in"):
+            parts.append("in the house: " + ", ".join(hd["transit_in"]))
+        if hd.get("transit_aspecting"):
+            parts.append("aspecting: " + ", ".join(hd["transit_aspecting"]))
+        lines.append(f"  H{h} {hd.get('name', '')}: " + " · ".join(parts))
 
     lines += [
         "",
-        "Use these scores + Gochara positions to give SPECIFIC, TIMELY answers.",
-        "When asked about a life area, cite the house score, lord position, and Dasha correlation.",
+        "Never quote a score or percentage for transits.",
     ]
 
     return "\n".join(lines)

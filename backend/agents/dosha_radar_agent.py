@@ -180,7 +180,8 @@ def compute_dosha_radar_analysis(natal_chart: dict) -> dict:
     ref_dt = _transit_ref_dt(natal_chart)
     natal_afflictions = _build_natal_afflictions(natal_chart, soonya_rasis)
     transit = compute_live_transit_status(natal_chart, profile, ref_dt)
-    forecast = scan_all_dosha_transits(profile, ref_dt, days_ahead=90)
+    tz_name = (natal_chart.get("birth_data") or {}).get("timezone") or "Asia/Kolkata"
+    forecast = scan_all_dosha_transits(profile, ref_dt, days_ahead=90, tz_name=tz_name)
     pushkara_transits = scan_all_pushkara_transits(reference_dt=ref_dt, days_ahead=180)
 
     pushkara_natal = [
@@ -257,7 +258,11 @@ def dosha_radar_context_for_narrator(natal_chart: dict) -> str:
     lines.append("")
     lines.append("UPCOMING 90-DAY WINDOWS (next 5 each):")
     for w in fc["chandrashtama_windows"][:3]:
-        lines.append(f"  Chandrashtama: {w['start_date']} → {w['end_date']} ({w['duration_days']}d)")
+        now = " (NOW)" if w.get("active_now") else ""
+        lines.append(
+            f"  Chandrashtama: {w['start_time'][:16].replace('T', ' ')} → "
+            f"{w['end_time'][:16].replace('T', ' ')} ({w['duration_days']}d){now}"
+        )
     for e in fc["red_zone_entries"][:3]:
         tag = "Transformational/Pushkara" if e.get("has_pushkara") else e["type"]
         lines.append(f"  {e['planet']} → {tag} ({e['nak_name']}) on {e['entry_date']}")

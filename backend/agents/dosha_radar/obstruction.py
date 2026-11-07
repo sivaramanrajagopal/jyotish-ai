@@ -244,10 +244,85 @@ def compute_live_transit_status(
     }
 
 
+def _moon_sign_at(jd: float) -> int:
+    lon, _ = _lon_at(jd, "Moon")
+    return int(lon / 30) % 12
+
+
+def _sign_change_jd(jd_a: float, jd_b: float) -> float:
+    """First moment in (jd_a, jd_b] where the Moon's sign differs from its sign at jd_a."""
+    sign_a = _moon_sign_at(jd_a)
+    lo, hi = jd_a, jd_b
+    while hi - lo > 1.0 / 1440:
+        mid = (lo + hi) / 2
+        if _moon_sign_at(mid) == sign_a:
+            lo = mid
+        else:
+            hi = mid
+    return hi
+
+
+def _jd_to_local(jd: float, tz_name: str) -> datetime.datetime:
+    from zoneinfo import ZoneInfo
+    y, m, d, h = swe.revjul(jd)
+    utc = datetime.datetime(y, m, d, tzinfo=datetime.timezone.utc) + datetime.timedelta(hours=h)
+    try:
+        return utc.astimezone(ZoneInfo(tz_name)).replace(second=0, microsecond=0)
+    except Exception:
+        return utc.replace(second=0, microsecond=0)
+
+
+def find_chandrashtama_windows(
+    sign_idx: int, ref_jd: float, days_ahead: int, tz_name: str = "Asia/Kolkata",
+) -> list[dict]:
+    """Moon-in-the-8th-from-natal-Moon spans, from exact sign entry to exact exit."""
+    step = 0.25
+    spans: list[tuple[float, float]] = []
+    start = None
+    if _moon_sign_at(ref_jd) == sign_idx:
+        back = ref_jd
+        while _moon_sign_at(back - step) == sign_idx:
+            back -= step
+        start = _sign_change_jd(back - step, back)
+    jd = ref_jd
+    end_jd = ref_jd + days_ahead
+    while jd < end_jd:
+        nxt = jd + step
+        a, b = _moon_sign_at(jd), _moon_sign_at(nxt)
+        if a != b:
+            t = _sign_change_jd(jd, nxt)
+            if b == sign_idx:
+                start = t
+            elif a == sign_idx and start is not None:
+                spans.append((start, t))
+                start = None
+        jd = nxt
+    if start is not None:
+        nxt = start
+        while _moon_sign_at(nxt) == sign_idx:
+            nxt += step
+        spans.append((start, _sign_change_jd(nxt - step, nxt)))
+
+    out = []
+    for s, e in spans:
+        s_dt, e_dt = _jd_to_local(s, tz_name), _jd_to_local(e, tz_name)
+        out.append({
+            "start_date": s_dt.date().isoformat(),
+            "end_date": e_dt.date().isoformat(),
+            "start_time": s_dt.isoformat(),
+            "end_time": e_dt.isoformat(),
+            "days_away": max(0, int(s - ref_jd)),
+            "duration_days": round(e - s, 1),
+            "active_now": s <= ref_jd < e,
+        })
+    return out
+
+
 def scan_all_dosha_transits(
     profile: dict,
     ref_dt: datetime.datetime,
     days_ahead: int = 90,
+    tz_name: str = "Asia/Kolkata",
 ) -> dict:
     chandrashtama_sign_idx = profile["chandrashtama_sign_idx"]
     vadhai_nak_idx = profile["vadhai_nak_idx"]
@@ -265,13 +340,10 @@ def scan_all_dosha_transits(
     prev_nak["Rahu"] = int(rahu_lon / _NAK_SPAN) % 27
     prev_nak["Ketu"] = int(((rahu_lon + 180) % 360) / _NAK_SPAN) % 27
 
-    chandrashtama_windows: list[dict] = []
     red_zone_entries: list[dict] = []
     critical_windows: list[dict] = []
     tara_windows: list[dict] = []
 
-    in_chandra = False
-    chandra_start_day = 0
     prev_moon_tara = 0
 
     for d in range(days_ahead + 1):
@@ -299,19 +371,6 @@ def scan_all_dosha_transits(
                             "days_away": d,
                         })
                     prev_moon_tara = moon_tara["tara_num"]
-
-                if curr_sign == chandrashtama_sign_idx:
-                    if not in_chandra:
-                        in_chandra = True
-                        chandra_start_day = d
-                elif in_chandra:
-                    in_chandra = False
-                    chandrashtama_windows.append({
-                        "start_date": _iso_date(ref_dt + datetime.timedelta(days=chandra_start_day)),
-                        "end_date": _iso_date(day_date),
-                        "days_away": chandra_start_day,
-                        "duration_days": d - chandra_start_day,
-                    })
 
             if curr_nak != prev_nak[p_name]:
                 for nak_idx, nak_type in (
@@ -377,13 +436,9 @@ def scan_all_dosha_transits(
                         })
             prev_nak[node_name] = curr_nak
 
-    if in_chandra:
-        chandrashtama_windows.append({
-            "start_date": _iso_date(ref_dt + datetime.timedelta(days=chandra_start_day)),
-            "end_date": _iso_date(ref_dt + datetime.timedelta(days=days_ahead)),
-            "days_away": chandra_start_day,
-            "duration_days": days_ahead - chandra_start_day,
-        })
+    chandrashtama_windows = find_chandrashtama_windows(
+        chandrashtama_sign_idx, ref_jd, days_ahead, tz_name,
+    )
 
     red_zone_entries.sort(key=lambda x: x["days_away"])
     critical_windows.sort(key=lambda x: x["days_away"])

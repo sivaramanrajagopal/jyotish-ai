@@ -21,6 +21,20 @@ ANON_DAILY_CHAT_LIMIT = int(os.getenv("AI_ANON_DAILY_CHAT_LIMIT", "8"))
 ANON_DAILY_FORECAST_LIMIT = int(os.getenv("AI_ANON_DAILY_FORECAST_LIMIT", "5"))
 _ANON_IP_SALT = os.getenv("ANON_IP_HASH_SALT", "jyotish-anon-quota")
 
+OPENAI_BILLING_DETAIL = (
+    "OpenAI account has no active billing or credits. Add credits in the OpenAI billing page, then try again."
+)
+_BILLING_MARKERS = (
+    "insufficient_quota", "no credits", "credit_balance", "billing_not_active", "account is not active",
+)
+
+
+def is_openai_billing_error(exc: Exception) -> bool:
+    """OpenAI sends billing problems as 429s; tell them apart from a real rate limit."""
+    text = str(exc).lower()
+    return any(marker in text for marker in _BILLING_MARKERS)
+
+
 _BLOCKED_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.I),
     re.compile(r"disregard\s+(the\s+)?(system|above)", re.I),

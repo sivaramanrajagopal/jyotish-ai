@@ -230,6 +230,14 @@ function NatalAfflictionList({ afflictions }) {
   )
 }
 
+// "2026-11-07T17:20:00+05:30" → "7 Nov 17:20" (keeps the chart's own clock time)
+function fmtWindowTime(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(iso || '')
+  if (!m) return ''
+  const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1]
+  return `${Number(m[3])} ${mon} ${m[4]}`
+}
+
 function ForecastList({ forecast }) {
   if (!forecast) return null
   const ch = forecast.chandrashtama_windows || []
@@ -246,7 +254,8 @@ function ForecastList({ forecast }) {
     <ul className="dr-forecast-list">
       {ch.slice(0, 4).map((w, i) => (
         <li key={`ch-${i}`}>
-          <strong>Chandrashtama</strong> {w.start_date} → {w.end_date} ({w.duration_days}d)
+          <strong>Chandrashtama</strong> {fmtWindowTime(w.start_time) || w.start_date} → {fmtWindowTime(w.end_time) || w.end_date} ({w.duration_days}d)
+          {w.active_now ? ' · now' : ''}
         </li>
       ))}
       {rz.slice(0, 6).map((e, i) => (

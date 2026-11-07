@@ -16,5 +16,6 @@ def test_chat_prompt_includes_health():
     }
     block = _build_gochara_block(chart, {})
     assert "Health awareness" in block
-    assert "DISCLAIMER" in block
+    assert "DISCLAIMER" not in block
+    assert "Lagna body part" in block
     assert "D3" in block

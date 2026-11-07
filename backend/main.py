@@ -58,7 +58,7 @@ from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
 from chart_utils import round_score, assert_chart_not_stale, ensure_dasha, refresh_dasha
-from ai_limits import check_ai_quota, moderate_messages
+from ai_limits import OPENAI_BILLING_DETAIL, check_ai_quota, is_openai_billing_error, moderate_messages
 from analytics import track_event
 from security import (
     IS_PRODUCTION,
@@ -1279,7 +1279,9 @@ def forecast_house_insight(
         insight = response.choices[0].message.content or ""
     except AuthenticationError:
         raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
-    except RateLimitError:
+    except RateLimitError as exc:
+        if is_openai_billing_error(exc):
+            raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
         raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
     except Exception as exc:
         import logging, traceback
@@ -1437,7 +1439,9 @@ def forecast_daily_reading(
         reading = response.choices[0].message.content or ""
     except AuthenticationError:
         raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
-    except RateLimitError:
+    except RateLimitError as exc:
+        if is_openai_billing_error(exc):
+            raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
         raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
     except Exception as exc:
         import logging, traceback

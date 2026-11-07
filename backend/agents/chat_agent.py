@@ -9,7 +9,7 @@ answer is grounded in their specific chart.
 from __future__ import annotations
 
 import datetime
-from time_utils import today_ist
+from time_utils import today_in
 import os
 from typing import Optional
 
@@ -24,7 +24,6 @@ from agents.tara_engine import (
 from agents.transit_score_agent import (
     score_all_houses,
     compact_gochara_summary,
-    dasha_transit_correlation,
 )
 from agents.ashtakavarga_agent import bav_context_for_narrator
 from agents.tamil_dosha_agent import dosha_context_for_narrator
@@ -54,7 +53,11 @@ You are speaking with {name}. Their natal chart and today's Panchangam are below
 Answer their questions with specific, chart-grounded insights. \
 Be warm, direct, and concise (3–5 sentences per answer). \
 Name specific planets, signs, houses, or dashas from their chart. \
-Never give vague generic advice. Never add disclaimers.
+Never give vague generic advice. Do not add general disclaimers. \
+On health questions only, close with one short line to see a doctor for any symptoms.
+Whether a house is live or quiet comes from the HOUSE CONNECTIONS block; the GOCHARA block adds transit detail. \
+Never quote a 0–100 score for transits, houses or periods.
+When naming body parts, use plain anatomical words and a calm, respectful tone.
 
 CRITICAL DASHA RULES (never violate):
 - Mahadasha and Bhukti are different. Bhukti = sub-period WITHIN the current Mahadasha only.
@@ -122,12 +125,13 @@ Mahadasha timeline table (markdown — copy when user asks about next Mahadasha 
 FULL DASA CYCLE — high level (markdown — copy exactly when user asks for full Vimshottari dasa/bhukti cycle):
 {full_dasha_cycle}
 
-=== TODAY'S PANCHANGAM ({today} · {location}) ===
+=== TODAY'S PANCHANGAM ({today} · {location}, times in {location_tz}; limbs at sunrise) ===
+Sunrise   : {sunrise} · Sunset: {sunset}
 Vaaram    : {vaaram} (lord: {vaaram_lord})
-Tithi     : {tithi_paksha} {tithi}
-Nakshatra : {nakshatra} (lord: {nakshatra_lord})
-Yogam     : {yogam}
-Karanam   : {karanam}
+Tithi     : {tithi_paksha} {tithi}{tithi_end}
+Nakshatra : {nakshatra} (lord: {nakshatra_lord}){nakshatra_end}
+Yogam     : {yogam}{yogam_end}
+Karanam   : {karanam}{karanam_end}
 Rahu Kalam: {rahu_start} – {rahu_end}
 
 === PERSONAL PANCHANGAM ===
@@ -141,29 +145,26 @@ Chandra Ashtama      : {ashtama_status}
 (Use this to answer questions about panchangam for upcoming dates)
 {week_panch}
 
-=== TARA BALAM CALENDAR — {tara_month} ===
+=== TARA BALAM CALENDAR — next 30 days ({tara_month}) ===
 (GOOD = benefic tara, BAD = malefic, ~ = neutral Janma)
 Use this table to give EXACT dates when asked about good/bad days.
 {tara_calendar}
 """
 
 
-def _build_tara_calendar(natal_nak_index: int, year: int, month: int,
+def _build_tara_calendar(natal_nak_index: int, start: datetime.date, days: int = 30,
                          timezone: str = "Asia/Kolkata") -> tuple[str, str]:
     """
-    Compute Tara Balam for every day of the given month.
-    Returns (month_label, calendar_block_string).
+    Tara Balam for each day from `start` (Moon's nakshatra at 06:00 local).
+    Returns (range_label, calendar_block_string).
     """
     from zoneinfo import ZoneInfo
-    import calendar as cal_mod
 
     tz = ZoneInfo(timezone)
-    days_in_month = cal_mod.monthrange(year, month)[1]
-    month_name = datetime.date(year, month, 1).strftime("%B %Y")
-
     lines = []
-    for day in range(1, days_in_month + 1):
-        dt = datetime.datetime(year, month, day, 6, 0, 0, tzinfo=tz)
+    for i in range(days):
+        day = start + datetime.timedelta(days=i)
+        dt = datetime.datetime(day.year, day.month, day.day, 6, 0, 0, tzinfo=tz)
         jd  = _dt_to_jd(dt)
         lon = _moon_longitude(jd)
         nak = _nak_index(lon)
@@ -171,12 +172,14 @@ def _build_tara_calendar(natal_nak_index: int, year: int, month: int,
         nature = tara["nature"]
         marker = "GOOD" if nature == "benefic" else ("BAD " if nature == "malefic" else "~   ")
         lines.append(
-            f"  {month_name[:3]} {day:02d} [{marker}] "
+            f"  {day.strftime('%b %d')} [{marker}] "
             f"{tara['name']:<12} (Tara {tara['position']}) "
             f"Moon in {NAKSHATRAS[nak]}"
         )
 
-    return month_name, "\n".join(lines)
+    end = start + datetime.timedelta(days=days - 1)
+    label = f"{start.strftime('%-d %b')} → {end.strftime('%-d %b %Y')}"
+    return label, "\n".join(lines)
 
 
 def _build_system(natal_chart, location: str = "Chennai", user_message: str = "") -> str:
@@ -216,22 +219,33 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
             + (" ← current" if is_cur else "")
         )
 
+    loc = location if location in LOCATIONS else (next(iter(LOCATIONS)) if LOCATIONS else "")
+    loc_tz = (LOCATIONS.get(loc) or {}).get("tz") or "Asia/Kolkata"
+    loc_today = today_in(loc_tz)
+
     # ── helpers ──────────────────────────────────────────────────────────────
-    def _fmt_iso(iso_str: str | None) -> str:
-        """Format an ISO timestamp to human-readable IST time."""
+    def _fmt_iso(iso_str: str | None, with_day: bool = False) -> str:
+        """Format an ISO timestamp as clock time in the location's timezone."""
         if not iso_str:
             return "—"
         try:
             from dateutil.parser import parse as _dp
             from zoneinfo import ZoneInfo as _ZI
-            return _dp(iso_str).astimezone(_ZI("Asia/Kolkata")).strftime("%I:%M %p IST")
+            local = _dp(iso_str).astimezone(_ZI(loc_tz))
+            return local.strftime("%-d %b %I:%M %p %Z" if with_day else "%I:%M %p %Z")
         except Exception:
             return iso_str
 
+    def _ends(end_key: str, next_key: str) -> str:
+        end = panch.get(end_key)
+        if not end:
+            return ""
+        nxt = panch.get(next_key)
+        return f" — ends {_fmt_iso(end, with_day=True)}" + (f", then {nxt}" if nxt else "")
+
     # Today's panchangam
-    today = today_ist().isoformat()
+    today = loc_today.isoformat()
     panch: dict = {}
-    loc = location if location in LOCATIONS else (next(iter(LOCATIONS)) if LOCATIONS else "")
     if loc:
         try:
             panch = calculate_panchangam(today, loc)
@@ -245,7 +259,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
             import contextlib as _cl, io as _io
             lines = []
             for i in range(1, 8):
-                d = (today_ist() + datetime.timedelta(days=i)).isoformat()
+                d = (loc_today + datetime.timedelta(days=i)).isoformat()
                 with _cl.redirect_stdout(_io.StringIO()), _cl.redirect_stderr(_io.StringIO()):
                     p = calculate_panchangam(d, loc)
                 rahu = f"{_fmt_iso(p.get('rahu_kalam_start'))}–{_fmt_iso(p.get('rahu_kalam_end'))}"
@@ -266,7 +280,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
         try:
             from zoneinfo import ZoneInfo
             tz_id = birth.get("timezone", "Asia/Kolkata")
-            td    = today_ist()
+            td    = today_in(tz_id)
             dt    = datetime.datetime(td.year, td.month, td.day, 12, 0, 0,
                                       tzinfo=ZoneInfo(tz_id))
             raw = compute_personal_panchangam(int(nak_idx), int(rasi_idx), dt, tz_id)
@@ -278,22 +292,15 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
     ashtama = pp.get("chandra_ashtama", {})
     cb      = pp.get("chandrabalam", {})
 
-    # Tara Balam calendar — current month + next month
+    # Tara Balam calendar — the next 30 days
     _tara_month_label = ""
     _tara_cal_block   = "(not available)"
     if nak_idx is not None:
         try:
             tz_id  = birth.get("timezone", "Asia/Kolkata")
-            td     = today_ist()
-            # current month
-            m_label, m_cal = _build_tara_calendar(int(nak_idx), td.year, td.month, tz_id)
-            # next month
-            if td.month == 12:
-                nm_label, nm_cal = _build_tara_calendar(int(nak_idx), td.year + 1, 1, tz_id)
-            else:
-                nm_label, nm_cal = _build_tara_calendar(int(nak_idx), td.year, td.month + 1, tz_id)
-            _tara_month_label = f"{m_label} + {nm_label}"
-            _tara_cal_block   = m_cal + "\n" + nm_cal
+            _tara_month_label, _tara_cal_block = _build_tara_calendar(
+                int(nak_idx), today_in(tz_id), 30, tz_id,
+            )
         except Exception as e:
             print(f"[chat_agent] tara calendar error: {e}")
 
@@ -359,14 +366,21 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
         ),
         today          = today,
         location       = loc,
+        location_tz    = loc_tz,
+        sunrise        = _fmt_iso(panch.get("sunrise")),
+        sunset         = _fmt_iso(panch.get("sunset")),
         vaaram         = panch.get("vaaram_name", ""),
         vaaram_lord    = panch.get("vaaram_lord", ""),
         tithi          = panch.get("tithi_name", ""),
+        tithi_end      = _ends("tithi_end_time", "next_tithi_name"),
         tithi_paksha   = panch.get("tithi_paksha", ""),
         nakshatra      = panch.get("nakshatra_name", ""),
+        nakshatra_end  = _ends("nakshatra_end_time", "next_nakshatra_name"),
         nakshatra_lord = panch.get("nakshatra_lord", ""),
         yogam          = panch.get("yogam_name", ""),
+        yogam_end      = _ends("yogam_end_time", "next_yogam_name"),
         karanam        = panch.get("karanam_name", ""),
+        karanam_end    = _ends("karanam_end_time", "next_karanam_name"),
         rahu_start     = _fmt_iso(panch.get("rahu_kalam_start")),
         rahu_end       = _fmt_iso(panch.get("rahu_kalam_end")),
         natal_nak      = pp.get("natal_nak_name", ""),
@@ -448,10 +462,18 @@ def _build_gochara_block(natal_chart: dict, dasha: dict, user_message: str = "")
         except Exception:
             life_cycle_ctx = ""
 
-    return (
+    block = (
         ("\n\n" + gochara if gochara else "")
         + bav_ctx + dosha_ctx + indu_ctx + career_ctx + health_ctx + bhavam_ctx + radar_ctx + house_ctx
         + life_cycle_ctx
+    )
+    return _strip_disclaimers(block)
+
+
+def _strip_disclaimers(text: str) -> str:
+    """The chat has one disclaimer rule in the system prompt; drop per-block DISCLAIMER lines."""
+    return "\n".join(
+        line for line in text.split("\n") if not line.lstrip().startswith("DISCLAIMER")
     )
 
 
@@ -547,17 +569,18 @@ def chat(
             *messages,
         ]
         reply = ""
-        for _ in range(3):
+        for round_no in range(4):
+            last_round = round_no == 3
             response = client.chat.completions.create(
                 model=MODEL,
                 max_tokens=TOKENS,
                 messages=thread,
                 tools=tools,
-                tool_choice="auto",
+                tool_choice="none" if last_round else "auto",
             )
             message = response.choices[0].message
             tool_calls = message.tool_calls or []
-            if not tool_calls:
+            if not tool_calls or last_round:
                 reply = message.content or ""
                 break
             thread.append(message.model_dump(exclude_none=True))
@@ -574,8 +597,8 @@ def chat(
     except AuthenticationError:
         raise RuntimeError("OpenAI API key is invalid. Please check server configuration.")
     except RateLimitError as exc:
-        text = str(exc).lower()
-        if "insufficient_quota" in text or "no credits" in text or "credit_balance" in text:
+        from ai_limits import is_openai_billing_error
+        if is_openai_billing_error(exc):
             raise RuntimeError(
                 "OpenAI account has no credits remaining. Add credits in the OpenAI billing page."
             )
