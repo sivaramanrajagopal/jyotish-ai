@@ -46,6 +46,13 @@ const STHULA_MEANING = {
   Kala: 'Dark / debilitated',
 }
 
+const NODES = new Set(['Rahu', 'Ketu'])
+
+function sthulaMeaning(planet, name) {
+  if (NODES.has(planet) && name === 'Heenasakstha') return 'Neutral (shadow planet)'
+  return STHULA_MEANING[name] || ''
+}
+
 const SUKSHMA_MEANING = {
   Sayana: 'Resting — slow to deliver',
   Upaveshana: 'Seated — preparing',
@@ -299,11 +306,11 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
                   </button>
                 </td>
                 <td>
-                  <div className="av-state-cell" title={STHULA_MEANING[p.sthula.name] || ''}>
+                  <div className="av-state-cell" title={sthulaMeaning(p.planet, p.sthula.name) || ''}>
                     <span>{p.sthula.name}</span>
                   </div>
                   <span className="av-state-cell__hint">
-                    {STHULA_MEANING[p.sthula.name] || p.sign_dignity}
+                    {sthulaMeaning(p.planet, p.sthula.name) || p.sign_dignity}
                   </span>
                 </td>
                 <td>
@@ -401,7 +408,7 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
           </div>
           <p className="av-drawer__sthula">
             Capacity: <strong>{breakdownRow.sthula.name}</strong>
-            {' '}— {STHULA_MEANING[breakdownRow.sthula.name] || breakdownRow.sthula.reason}
+            {' '}— {sthulaMeaning(breakdownRow.planet, breakdownRow.sthula.name) || breakdownRow.sthula.reason}
           </p>
           <ol className="av-drawer__steps">
             <li>

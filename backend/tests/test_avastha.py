@@ -261,7 +261,9 @@ def test_full_chart_chennai_native():
 def test_functional_benefic_gem_gate():
     assert is_functional_benefic("Jupiter", 1) is True   # Aries: 9th
     assert is_functional_benefic("Sun", 1) is True       # Aries: 5th
-    assert is_functional_benefic("Mars", 1) is False     # Aries: 1st + 8th
+    assert is_functional_benefic("Mars", 1) is True      # Aries lagna lord (also 8th)
+    assert is_functional_benefic("Saturn", 11) is True   # Aquarius lagna lord (also 12th)
+    assert is_functional_benefic("Venus", 2) is True     # Taurus lagna lord (also 6th)
     assert is_functional_benefic("Saturn", 2) is True    # Taurus yogakaraka
     assert is_functional_benefic("Saturn", 3) is False   # Gemini: 8th + 9th
     assert is_functional_benefic("Jupiter", 5) is True   # Leo: 5th, natural benefic

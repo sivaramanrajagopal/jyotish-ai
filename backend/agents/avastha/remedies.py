@@ -194,7 +194,7 @@ def is_functional_benefic(planet: str, lagna_rasi_index: int) -> bool:
     yogakaraka = trikona and bool(houses & KENDRA)
     if yogakaraka:
         return True
-    if 1 in houses and not (houses & DUSTHANA):
+    if 1 in houses:
         return True
     if trikona and 8 in houses and planet not in NATURAL_BENEFICS:
         return False
