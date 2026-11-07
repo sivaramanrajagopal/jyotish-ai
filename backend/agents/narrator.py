@@ -14,12 +14,11 @@ import os
 import re
 from typing import Optional
 
-from openai import OpenAI
+from ai_client import ai_client, ai_extra, ai_model
 
 
 # ── Model config ─────────────────────────────────────────────────────────────
 
-MODEL  = "gpt-4o-mini"   # fast + cheap; swap to "gpt-4o" for deeper analysis
 TOKENS = 1200
 
 
@@ -95,7 +94,6 @@ def _build_prompt(ctx: dict) -> str:
 
     return f"""\
 === NATIVE ===
-Name        : {native.get('name', 'unknown')}
 DOB         : {native.get('dob', '')}
 Ascendant   : {native.get('ascendant_sign')} ({native.get('ascendant_element')} / {native.get('ascendant_quality')})
 Moon Sign   : {native.get('moon_sign')}  [nakshatra: {native.get('moon_nakshatra')}]
@@ -181,19 +179,20 @@ def generate_forecast(context: dict) -> dict:
             "Get a key at https://platform.openai.com/api-keys and add it to backend/.env"
         )
 
-    client = OpenAI(api_key=api_key)
+    client = ai_client(api_key)
 
     response = client.chat.completions.create(
-        model=MODEL,
+        model=ai_model(),
         max_tokens=TOKENS,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": _build_prompt(context)},
         ],
+        **ai_extra(),
     )
 
     raw = response.choices[0].message.content or ""
     sections = _parse_xml(raw)
-    sections["model"] = MODEL
+    sections["model"] = ai_model()
     sections["raw"]   = raw
     return sections

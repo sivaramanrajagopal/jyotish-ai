@@ -117,7 +117,7 @@ export const PRIVACY_SECTIONS = [
     body:
       'Data is stored using Supabase (PostgreSQL). Guest chart data may be held in browser session ' +
       'storage for up to 24 hours. We use hosting providers (e.g. Vercel, Render), Supabase, and ' +
-      'OpenAI for AI features. These processors handle data under their respective terms.',
+      'an AI provider (OpenAI or Google Gemini) for AI features. These processors handle data under their respective terms.',
   },
   {
     title: '5. Retention',

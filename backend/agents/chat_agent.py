@@ -42,7 +42,6 @@ from dasha_core import (
     format_upcoming_bhuktis_block,
 )
 
-MODEL  = "gpt-4o-mini"
 TOKENS = 1200   # room for dasha cycle tables + brief interpretation
 
 SYSTEM_TEMPLATE = """\
@@ -328,7 +327,7 @@ def _build_system(natal_chart, location: str = "Chennai", user_message: str = ""
         )
 
     return SYSTEM_TEMPLATE.format(
-        name           = birth.get("name", "the native"),
+        name           = "the person",
         ascendant      = asc.get("sign", ""),
         asc_nak        = asc.get("nakshatra", ""),
         asc_pada       = asc.get("pada", ""),
@@ -562,8 +561,10 @@ def chat(
     if CLASSICAL_TOOL in tools:
         system_prompt += CLASSICAL_GUIDE
     from openai import APIError, AuthenticationError, RateLimitError
+    from ai_client import ai_base_url, ai_extra, ai_model
+    from ai_limits import AI_KEY_INVALID_DETAIL, ai_error_detail
     try:
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=api_key, base_url=ai_base_url())
         thread = [
             {"role": "system", "content": system_prompt},
             *messages,
@@ -572,11 +573,12 @@ def chat(
         for round_no in range(4):
             last_round = round_no == 3
             response = client.chat.completions.create(
-                model=MODEL,
+                model=ai_model(),
                 max_tokens=TOKENS,
                 messages=thread,
                 tools=tools,
                 tool_choice="none" if last_round else "auto",
+                **ai_extra(),
             )
             message = response.choices[0].message
             tool_calls = message.tool_calls or []
@@ -595,13 +597,8 @@ def chat(
             reply = message.content or reply
         return reply or "I could not finish that reading from the chart."
     except AuthenticationError:
-        raise RuntimeError("OpenAI API key is invalid. Please check server configuration.")
+        raise RuntimeError(AI_KEY_INVALID_DETAIL)
     except RateLimitError as exc:
-        from ai_limits import is_openai_billing_error
-        if is_openai_billing_error(exc):
-            raise RuntimeError(
-                "OpenAI account has no credits remaining. Add credits in the OpenAI billing page."
-            )
-        raise RuntimeError("OpenAI rate limit reached. Please try again in a moment.")
+        raise RuntimeError(ai_error_detail(exc) or "AI rate limit reached. Please try again in a moment.")
     except APIError as e:
-        raise RuntimeError(f"OpenAI API error: {e}")
+        raise RuntimeError(ai_error_detail(e) or f"AI API error: {e}")

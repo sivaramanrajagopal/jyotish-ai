@@ -59,12 +59,15 @@ from auth import AuthUser, get_current_user, get_current_user_optional, resolve_
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
 from chart_utils import assert_chart_not_stale, ensure_dasha, refresh_dasha
 from ai_limits import (
+    AI_FREE_LIMIT_DETAIL,
+    AI_KEY_INVALID_DETAIL,
     OPENAI_BILLING_DETAIL,
+    ai_error_detail,
     check_ai_quota,
-    is_openai_billing_error,
     moderate_messages,
     refund_ai_quota,
 )
+from ai_client import ai_client, ai_extra, ai_model
 from analytics import track_event
 from security import (
     IS_PRODUCTION,
@@ -1125,16 +1128,15 @@ def chat_endpoint(
             page=_sanitise(req.page, 40),
         )
         track_event("chat_sent", user_id=auth_user.id if auth_user else None, properties={"language": req.language})
-        return {"reply": reply, "model": "gpt-4o-mini"}
+        return {"reply": reply, "model": ai_model()}
     except RuntimeError as exc:
         msg = str(exc)
+        if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL):
+            raise HTTPException(status_code=503, detail=msg)
         if "no credits" in msg.lower():
-            raise HTTPException(
-                status_code=503,
-                detail="OpenAI account has no credits left. Add credits in the OpenAI billing page, then try again.",
-            )
+            raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
         if "rate limit" in msg.lower():
-            raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again in a minute.")
+            raise HTTPException(status_code=503, detail="AI rate limit. Try again in a minute.")
         if "api key" in msg.lower():
             raise HTTPException(status_code=503, detail=msg)
         import logging
@@ -1247,6 +1249,33 @@ def forecast_links_endpoint(
         raise HTTPException(status_code=500, detail="Forecast failed.")
 
 
+def _ai_complete(api_key: str, system: str, user_prompt: str, max_tokens: int, label: str) -> str:
+    from openai import AuthenticationError, RateLimitError
+
+    try:
+        response = ai_client(api_key).chat.completions.create(
+            model=ai_model(),
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": user_prompt},
+            ],
+            **ai_extra(),
+        )
+        return response.choices[0].message.content or ""
+    except AuthenticationError:
+        raise HTTPException(status_code=503, detail=AI_KEY_INVALID_DETAIL)
+    except RateLimitError as exc:
+        raise HTTPException(status_code=503, detail=ai_error_detail(exc) or "AI rate limit. Try again shortly.")
+    except Exception as exc:
+        import logging, traceback
+        detail = ai_error_detail(exc)
+        if detail:
+            raise HTTPException(status_code=503, detail=detail)
+        logging.getLogger(__name__).error("%s AI: %s\n%s", label, exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
+
+
 @app.post("/forecast/house")
 @limiter.limit("20/minute")
 def forecast_house_insight(
@@ -1320,28 +1349,7 @@ def forecast_house_insight(
         "3. CAUTION (what to avoid or watch)"
     )
 
-    try:
-        from openai import OpenAI, APIError, AuthenticationError, RateLimitError
-        client   = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=350,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": user_prompt},
-            ],
-        )
-        insight = response.choices[0].message.content or ""
-    except AuthenticationError:
-        raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
-    except RateLimitError as exc:
-        if is_openai_billing_error(exc):
-            raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
-        raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
-    except Exception as exc:
-        import logging, traceback
-        logging.getLogger(__name__).error("forecast/house AI: %s\n%s", exc, traceback.format_exc())
-        raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
+    insight = _ai_complete(api_key, system, user_prompt, 350, "forecast/house")
 
     row = next(r for r in links["houses"] if r["house"] == req.house_num)
     return {
@@ -1457,28 +1465,7 @@ def forecast_daily_reading(
         "mention a notable Ashtakavarga-strong or weak house if it is live, then practical guidance for the day."
     )
 
-    try:
-        from openai import OpenAI, AuthenticationError, RateLimitError
-        client   = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=300,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": user_prompt},
-            ],
-        )
-        reading = response.choices[0].message.content or ""
-    except AuthenticationError:
-        raise HTTPException(status_code=503, detail="OpenAI API key is invalid.")
-    except RateLimitError as exc:
-        if is_openai_billing_error(exc):
-            raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
-        raise HTTPException(status_code=503, detail="OpenAI rate limit. Try again shortly.")
-    except Exception as exc:
-        import logging, traceback
-        logging.getLogger(__name__).error("forecast/house AI: %s\n%s", exc, traceback.format_exc())
-        raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
+    reading = _ai_complete(api_key, system, user_prompt, 300, "forecast/daily-reading")
 
     return {
         "reading":        reading,

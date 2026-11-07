@@ -79,15 +79,15 @@ def narrate_prashna(result: dict, language: str = "english") -> str | None:
     )
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        from ai_client import ai_client, ai_extra, ai_model
+        response = ai_client(api_key).chat.completions.create(
+            model=ai_model(),
             max_tokens=280,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
+            **ai_extra(),
         )
         return (response.choices[0].message.content or "").strip() or None
     except Exception:

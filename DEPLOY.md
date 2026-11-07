@@ -69,7 +69,8 @@ In Render dashboard → your service → **Environment** tab, add these:
 ```
 SUPABASE_URL          = https://your-project-id.supabase.co
 SUPABASE_SERVICE_KEY  = eyJ...your-service-role-key...
-OPENAI_API_KEY        = sk-proj-...
+OPENAI_API_KEY        = sk-proj-...  (or a free Gemini key, AIza..., from aistudio.google.com)
+AI_MODEL              = optional, e.g. gemini-2.5-flash-lite
 ANTHROPIC_API_KEY     = sk-ant-...  (if using Claude narrator)
 ALLOWED_ORIGINS       = https://your-frontend.vercel.app  ← update after Step 3 below
 APP_ENV               = production
