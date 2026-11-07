@@ -6911,3 +6911,16 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .av-synergy__result { flex-direction: column; align-items: stretch; }
   .av-gauge { margin: 0 auto; }
 }
+
+/* 44px tap targets: Avastha, Dosha Radar, Panchangam (Horai), Prashna */
+.av-primer__summary { padding-block: 0.8rem; }
+.av-planet-btn { min-height: 44px; padding: 0.4rem 0; justify-content: center; }
+.av-select select { min-height: 44px; }
+.av-drawer__close { min-height: 44px; min-width: 44px; }
+.dr-section__summary,
+.dr-primer__summary,
+.hr-primer__summary { display: flex; align-items: center; min-height: 44px; }
+.hr-section__summary { min-height: 44px; align-content: center; }
+.td-link-dosha-radar,
+.hr-banner__link { display: inline-flex; align-items: center; min-height: 44px; }
+.prashna-audit-toggle { min-height: 44px; }

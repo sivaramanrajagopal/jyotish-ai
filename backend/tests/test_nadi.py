@@ -20,7 +20,7 @@ def _reading(payload, key):
 
 def test_work_and_foreign_chains_for_chennai():
     payload = compute_nadi(_chennai(), as_of=AS_OF)
-    assert "does not name a job" in payload["view"]
+    assert "broad theme and its season" in payload["view"]
     assert "fire, earth, air, or water" in payload["method"]
 
     work = _reading(payload, "work")
@@ -55,8 +55,9 @@ def test_work_and_foreign_chains_for_chennai():
     assert "Saturn" in foreign["past"]["label"] and "Mercury" in foreign["past"]["label"]
     assert foreign["follows"]["sign"] == "Libra"
     assert foreign["opposite"]["sign"] == "Pisces"
-    assert "Because Rahu is retrograde" in foreign["analysis"]
-    assert any(row["planets"] == "the Sun and retrograde Rahu (significator)" for row in foreign["reasons"])
+    # The mean node is always retrograde, so it is never called retrograde.
+    assert "retrograde" not in foreign["analysis"]
+    assert any(row["planets"] == "the Sun and Rahu (significator)" for row in foreign["reasons"])
     assert "the Moon is not in this chain" not in foreign["analysis"]
 
     jupiter = next(row for row in foreign["seasons"] if row["planet"] == "Jupiter")

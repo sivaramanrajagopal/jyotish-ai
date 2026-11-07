@@ -20,7 +20,7 @@ def generate_interpretation(
         f"For your {category_label.lower()} question, the Prashna chart cast at the moment "
         f"of inquiry indicates a verdict of \"{verdict['label']}\". "
         f"{verdict['explanation']} "
-        "This is a traditional rule-based reading, not a guarantee."
+        "This is a traditional rule-based reading of tendencies."
     )
 
     positive_factors = [t["description"] for t in pos[:6]] or [
@@ -58,7 +58,7 @@ def _practical_guidance(verdict_result: str, moon_outcome: str, category: str) -
         ),
         "delayed": (
             "Patience is advised. Use the waiting period to strengthen preparation "
-            "rather than forcing an outcome."
+            "and let the matter ripen."
         ),
         "obstructed": (
             "Identify concrete obstacles. Address Saturn- or Mars-type challenges "

@@ -48,6 +48,26 @@ def test_conjunction_orb():
     assert _in_conjunction(chart, "Mercury", "Sun") is False
 
 
+def test_conjunction_needs_same_sign():
+    chart = {
+        "planet_positions": {
+            "Mercury": {"longitude": 88.0, "sign": "Gemini", "house": 3},
+            "Sun": {"longitude": 92.0, "sign": "Cancer", "house": 4},
+        }
+    }
+    assert _in_conjunction(chart, "Mercury", "Sun") is False
+
+
+def test_prashna_keeps_seconds_and_rejects_bad_timezone():
+    import pytest
+    from agents.prashna.chart_engine import cast_prashna_chart
+    a = cast_prashna_chart("2026-06-06T14:30:00", "Asia/Kolkata", 13.08, 80.27)
+    b = cast_prashna_chart("2026-06-06T14:30:50", "Asia/Kolkata", 13.08, 80.27)
+    assert a["planet_positions"]["Moon"]["longitude"] != b["planet_positions"]["Moon"]["longitude"]
+    with pytest.raises(ValueError):
+        cast_prashna_chart("2026-06-06T14:30:00", "Mars/Olympus", 13.08, 80.27)
+
+
 def test_moon_nakshatra_testimony_friend():
     moon = {
         "moon_nakshatra": "Pushya",

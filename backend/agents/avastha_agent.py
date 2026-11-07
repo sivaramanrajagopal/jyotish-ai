@@ -26,25 +26,22 @@ PLANET_ORDER = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
 ]
 
-# Classical mean daily motions (°/day) for Athi Vega detection
-MEAN_DAILY_MOTION: dict[str, float] = {
-    "Sun": 0.9856,
-    "Moon": 13.1764,
-    "Mars": 0.5240,
-    "Mercury": 1.3830,
-    "Jupiter": 0.0831,
-    "Venus": 1.2070,
-    "Saturn": 0.0335,
-    "Rahu": 0.0529,
-    "Ketu": 0.0529,
+# Athi Vega: direct motion near each planet's top speed (°/day). Sun, Moon and the
+# nodes have no Chesta (motional) state, so they are never Athi Vega.
+ATHI_VEGA_SPEED: dict[str, float] = {
+    "Mars": 0.72,
+    "Mercury": 1.9,
+    "Jupiter": 0.22,
+    "Venus": 1.24,
+    "Saturn": 0.115,
 }
 
 # (sign, deg_from, deg_to) — inclusive start, exclusive end except 30°
 MOOLATRIKONA: dict[str, tuple[str, float, float]] = {
     "Sun": ("Leo", 0.0, 20.0),
-    "Moon": ("Taurus", 4.0, 30.0),
+    "Moon": ("Taurus", 3.0, 30.0),
     "Mars": ("Aries", 0.0, 12.0),
-    "Mercury": ("Virgo", 16.0, 20.0),
+    "Mercury": ("Virgo", 15.0, 20.0),
     "Jupiter": ("Sagittarius", 0.0, 10.0),
     "Venus": ("Libra", 0.0, 15.0),
     "Saturn": ("Aquarius", 0.0, 20.0),
@@ -150,6 +147,9 @@ def classify_sign_dignity(planet: str, sign: str, degree_in_sign: float) -> str:
 
     if _is_moolatrikona(planet, sign, degree_in_sign):
         return "Moolatrikona"
+    # BPHS: Mercury in Virgo is exalted to 15°, Moolatrikona to 20°, then its own sign.
+    if planet == "Mercury" and sign == "Virgo" and float(degree_in_sign) >= 20.0:
+        return "Own"
 
     state, _ = planetary_state(planet, sign, degree_in_sign)
     if state == "Debilitated":
@@ -172,27 +172,23 @@ def classify_sign_dignity(planet: str, sign: str, degree_in_sign: float) -> str:
 
 
 def _planet_speeds(jd: float) -> dict[str, float]:
-    """Absolute sidereal daily motion °/day for Athi Vega."""
+    """Signed sidereal daily motion °/day (negative = retrograde)."""
     flags = swe.FLG_SIDEREAL | swe.FLG_SPEED
     speeds: dict[str, float] = {}
     for name, pid in _PLANET_SWE_IDS.items():
         xx, _ = swe.calc_ut(jd, pid, flags)
-        speeds[name] = abs(float(xx[3]))
-    # Mean node speed for Rahu; Ketu same magnitude
+        speeds[name] = float(xx[3])
     from ephemeris import RAHU_NODE
     xx, _ = swe.calc_ut(jd, RAHU_NODE, flags)
-    node_spd = abs(float(xx[3]))
-    speeds["Rahu"] = node_spd
-    speeds["Ketu"] = node_spd
+    speeds["Rahu"] = float(xx[3])
+    speeds["Ketu"] = float(xx[3])
     return speeds
 
 
 def _is_accelerated(planet: str, speed: float) -> bool:
-    """Athi Vega: daily motion clearly above classical mean (≥ 1.25×)."""
-    mean = MEAN_DAILY_MOTION.get(planet)
-    if mean is None or mean <= 0:
-        return False
-    return float(speed) >= mean * 1.25
+    """Athi Vega: moving direct at close to the planet's top speed."""
+    limit = ATHI_VEGA_SPEED.get(planet)
+    return limit is not None and float(speed) >= limit
 
 
 def compute_avastha_analysis(natal_chart: dict) -> dict:
@@ -212,8 +208,12 @@ def compute_avastha_analysis(natal_chart: dict) -> dict:
     if not dob or not tob or lat is None or lon is None:
         raise ValueError("birth_data.dob, tob, lat, lon required for Avastha.")
 
-    moon = pp.get("Moon") or {}
-    moon_lon = float(moon.get("longitude") or 0.0)
+    missing = [p for p in PLANET_ORDER if (pp.get(p) or {}).get("longitude") is None]
+    if missing:
+        raise ValueError(f"Chart is missing planet longitudes: {', '.join(missing)}.")
+
+    moon = pp["Moon"]
+    moon_lon = float(moon["longitude"])
     _, _, moon_nak_0 = get_nakshatra(moon_lon)
     # Prefer chart field when present (0-based)
     if natal_chart.get("moon_nakshatra_index") is not None:
@@ -230,16 +230,16 @@ def compute_avastha_analysis(natal_chart: dict) -> dict:
     jd = _to_jd(birth_dt)
     speeds = _planet_speeds(jd)
 
-    sun_lon = float((pp.get("Sun") or {}).get("longitude") or 0.0)
+    sun_lon = float(pp["Sun"]["longitude"])
 
     planets_out: list[dict] = []
     by_name: dict[str, dict] = {}
 
     for pname in PLANET_ORDER:
-        pdata = pp.get(pname) or {}
-        lon = float(pdata.get("longitude") or 0.0)
-        sign = pdata.get("sign") or SIGNS[int(pdata.get("sign_index") or 0)]
-        deg = float(pdata.get("degree_in_sign") or (lon % 30))
+        pdata = pp[pname]
+        lon = float(pdata["longitude"]) % 360
+        sign = pdata.get("sign") or SIGNS[int(lon // 30) % 12]
+        deg = float(pdata["degree_in_sign"]) if pdata.get("degree_in_sign") is not None else lon % 30
         sign_idx0 = pdata.get("sign_index")
         if sign_idx0 is None:
             sign_idx0 = SIGNS.index(sign) if sign in SIGNS else int(lon // 30) % 12
@@ -270,7 +270,7 @@ def compute_avastha_analysis(natal_chart: dict) -> dict:
             birth_nazhikai_after_sunrise=nazhikai,
         )
         row["sign"] = sign
-        row["speed_deg_per_day"] = round(speed, 4)
+        row["speed_deg_per_day"] = round(abs(speed), 4)
         functional = is_functional_benefic(pname, lagna_rasi_1)
         row["functional_benefic"] = functional
         row["remedy"] = get_remedies_for_planet(
@@ -328,15 +328,14 @@ def compute_avastha_analysis(natal_chart: dict) -> dict:
         "dasa_bhukti": synergy,
         "hero": {
             "headline": (
-                f"Peak condition: {peak['planet']} at {peak['manifestation']['net']}% "
+                f"Strongest: {peak['planet']} "
                 f"({peak['sthula']['name']} / {peak['sukshma']['name']}). "
-                f"Current Dasa–Bhukti {maha}–{bhukti}: {synergy['combinedScore']}% "
-                f"({synergy['manifestationClass']})."
+                f"Current Dasa–Bhukti {maha}–{bhukti}: {synergy['manifestationClass']}."
             ),
         },
         "disclaimer": {
-            "en": "Analytical aid only — scores quantify classical Sthula/Sukshma planetary states. Not medical, legal, or financial advice.",
-            "ta": "பகுப்பாய்வு உதவி மட்டும் — ஸ்தூல/சூக்ஷ்ம அவஸ்தா மதிப்பெண்கள். மருத்துவ/சட்ட/நிதி ஆலோசனை அல்ல.",
+            "en": "Analytical aid describing classical Sthula and Sukshma planetary states. For medical, legal or financial matters, consult a qualified professional.",
+            "ta": "ஸ்தூல, சூக்ஷ்ம அவஸ்தா நிலைகளை விளக்கும் பகுப்பாய்வு உதவி. மருத்துவ, சட்ட, நிதி விஷயங்களுக்குத் தகுந்த நிபுணரை அணுகவும்.",
         },
         "scoring_legend": {
             "sthula_capacity": {

@@ -7,7 +7,29 @@ import {
   buildHoraiDay,
   HORAI_MODES,
   expandPlanetSequence,
+  slotFractionFromLocalMinutes,
+  secondsUntilSlotEnd,
 } from './horai.js'
+
+describe('uba position and countdown', () => {
+  it('sunrise mode uses the fraction of a long day slot', () => {
+    // Day 6:00–19:00 → 65-minute slots; 6:39 is 39/65 = 0.6 into slot 0.
+    const f = slotFractionFromLocalMinutes(6 * 60 + 39, HORAI_MODES.SUNRISE, 6 * 60, 19 * 60)
+    expect(f).toBeCloseTo(0.6, 5)
+    expect(Math.floor(f * 5)).toBe(3)
+  })
+
+  it('fixed mode uses minutes in the hour', () => {
+    expect(slotFractionFromLocalMinutes(7 * 60 + 30, HORAI_MODES.FIXED)).toBeCloseTo(0.5, 5)
+  })
+
+  it('counts seconds to the slot end, past midnight too', () => {
+    const local = { ymd: '2026-06-18', localMinutes: 10 * 60 + 15, second: 20 }
+    expect(secondsUntilSlotEnd(11 * 60, local, '2026-06-18')).toBe(44 * 60 + 40)
+    const after = { ymd: '2026-06-19', localMinutes: 30, second: 0 }
+    expect(secondsUntilSlotEnd(25 * 60, after, '2026-06-18')).toBe(30 * 60)
+  })
+})
 
 describe('horai midnight rule (fixed 6 AM)', () => {
   it('before 6 AM uses previous calendar day as owner', () => {

@@ -144,6 +144,35 @@ export function slotIndexFromLocalMinutes(localMinutes, mode, sunriseMinutes, su
   return hour - 6
 }
 
+/** Fraction 0–1 of the current slot already elapsed (sunrise-mode slots are not 60 minutes). */
+export function slotFractionFromLocalMinutes(localMinutes, mode, sunriseMinutes, sunsetMinutes) {
+  if (mode === HORAI_MODES.SUNRISE && sunriseMinutes != null && sunsetMinutes != null) {
+    const nightSpan = (24 * 60 - sunsetMinutes) + sunriseMinutes
+    let pos
+    if (localMinutes < sunriseMinutes) {
+      pos = ((localMinutes + (24 * 60 - sunsetMinutes)) / nightSpan) * SLOTS_PER_HALF
+    } else if (localMinutes < sunsetMinutes) {
+      pos = ((localMinutes - sunriseMinutes) / (sunsetMinutes - sunriseMinutes)) * SLOTS_PER_HALF
+    } else {
+      pos = ((localMinutes - sunsetMinutes) / nightSpan) * SLOTS_PER_HALF
+    }
+    return Math.min(0.9999, Math.max(0, pos - Math.floor(pos)))
+  }
+  return (localMinutes % 60) / 60
+}
+
+/**
+ * Seconds until `endMin` (minutes on `displayYmd`, may run past midnight)
+ * from a local moment `{ ymd, localMinutes, second }`.
+ */
+export function secondsUntilSlotEnd(endMin, local, displayYmd) {
+  if (endMin == null || !local) return null
+  let nowMin = local.localMinutes
+  if (local.ymd === addDaysYmd(displayYmd, 1)) nowMin += 24 * 60
+  const diff = endMin * 60 - (nowMin * 60 + (local.second || 0))
+  return Math.max(0, diff)
+}
+
 export function getUbaPlanet(mainPlanet, minuteInHour) {
   const seq = UBA_SEQUENCES[mainPlanet] || UBA_SEQUENCES.Sun
   const idx = Math.min(4, Math.floor((minuteInHour % 60) / 12))
@@ -170,6 +199,7 @@ export function isoToLocalParts(iso, timeZone) {
     ymd: `${get('year')}-${get('month')}-${get('day')}`,
     hour: hour === 24 ? 0 : hour,
     minute,
+    second: Number(get('second')) || 0,
     localMinutes: (hour === 24 ? 0 : hour) * 60 + minute,
   }
 }
@@ -301,8 +331,8 @@ export function computeLiveHorai({
   const sequence = expandPlanetSequence(ownerWeekday)
   const slotIndex = slotIndexFromLocalMinutes(local.localMinutes, mode, sunriseMin, sunsetMin)
   const planet = sequence[slotIndex]
-  const minuteInHour = local.minute
-  const ubaPlanet = getUbaPlanet(planet, minuteInHour)
+  const fraction = slotFractionFromLocalMinutes(local.localMinutes, mode, sunriseMin, sunsetMin)
+  const ubaPlanet = getUbaPlanet(planet, fraction * 60)
 
   const beforeSixAm = mode === HORAI_MODES.FIXED && local.localMinutes < FIXED_DAY_START_MIN
   const beforeSunrise = mode === HORAI_MODES.SUNRISE && sunriseMin != null && local.localMinutes < sunriseMin

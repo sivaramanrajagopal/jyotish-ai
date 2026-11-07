@@ -18,10 +18,10 @@ def compute_verdict(testimonies: dict, moon_outcome: str) -> dict:
     neg = testimonies["counts"]["negative"]
     total = testimonies["counts"]["total"]
 
-    if total < 3:
+    if pos + neg < 3:
         result = "unclear"
         explanation = (
-            "Insufficient astrological testimonies were found to form a clear judgment. "
+            "Too few supportive or challenging testimonies were found to form a clear judgment. "
             "Consider rephrasing the question or consulting a qualified astrologer."
         )
     elif moon_outcome == "obstructive" and neg >= pos + 2:
@@ -57,7 +57,7 @@ def compute_verdict(testimonies: dict, moon_outcome: str) -> dict:
     else:
         result = "delayed"
         explanation = (
-            "Mixed testimonies with delay factors — progress is indicated but not immediate."
+            "Mixed testimonies with delay factors — progress is indicated, and it may take time."
         )
 
     return {

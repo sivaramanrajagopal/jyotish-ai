@@ -507,12 +507,8 @@ export default function PanchangamTab({ chart = null }) {
     setErrorP('')
     setErrorT('')
 
-    const isToday = date === todayStr
     const [panchResult, transitResult] = await Promise.allSettled([
-      loadSky(
-        isToday ? '/panchangam/today' : '/panchangam/date',
-        isToday ? { location } : { date, location },
-      ),
+      loadSky('/panchangam/date', { date, location }),
       loadSky('/transit-chart', { date, location }),
     ])
     if (id !== requestRef.current) return
@@ -533,7 +529,7 @@ export default function PanchangamTab({ chart = null }) {
     }
     setLoadingP(false)
     setLoadingT(false)
-  }, [date, location, todayStr])
+  }, [date, location])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -569,7 +565,7 @@ export default function PanchangamTab({ chart = null }) {
         <CalendarSubscribe location={location} natalNak={Number.isInteger(chart?.moon_nakshatra_index) ? chart.moon_nakshatra_index : null} />
       </div>
 
-      {panch && panch.date === new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()) && (
+      {panch && panch.date === new Intl.DateTimeFormat('en-CA', { timeZone: panch.timezone || 'Asia/Kolkata' }).format(new Date()) && (
         <DesktopLine panch={panch} />
       )}
 

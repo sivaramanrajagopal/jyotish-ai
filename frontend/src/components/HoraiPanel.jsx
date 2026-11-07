@@ -12,6 +12,7 @@ import {
   computeLiveHorai,
   isSlotActive,
   nowInTimezone,
+  secondsUntilSlotEnd,
   weekdaySunZeroFromVaaram,
   weekdaySunZeroFromYmd,
 } from '../lib/horai'
@@ -25,15 +26,16 @@ function useNowTick(intervalMs = 1000) {
   return now
 }
 
-function Countdown({ endMin, localMinutes, timeZone, displayYmd }) {
-  if (endMin == null || localMinutes == null) return null
-  let diff = endMin - localMinutes
-  if (diff < 0) diff += 24 * 60
-  const mins = Math.floor(diff % 60)
-  const secs = 59 - (new Date().getSeconds())
+function Countdown({ endMin, local, displayYmd }) {
+  const left = secondsUntilSlotEnd(endMin, local, displayYmd)
+  if (left == null) return null
+  const hours = Math.floor(left / 3600)
+  const mins = Math.floor((left % 3600) / 60)
+  const secs = left % 60
+  const pad = (n) => String(n).padStart(2, '0')
   return (
     <span className="hr-countdown">
-      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+      {hours > 0 ? `${hours}:` : ''}{pad(mins)}:{pad(secs)}
     </span>
   )
 }
@@ -201,8 +203,7 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
               Next horai in{' '}
               <Countdown
                 endMin={activeSlot.endMin}
-                localMinutes={localNow.localMinutes}
-                timeZone={timeZone}
+                local={localNow}
                 displayYmd={displayDate}
               />
             </div>

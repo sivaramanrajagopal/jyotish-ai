@@ -52,7 +52,7 @@ METHOD = (
 )
 VIEW = (
     "This explains who the story starts from, who sits with them, and which season "
-    "can bring it forward. It does not name a job, and it does not pick a single day."
+    "can bring it forward. It reads the broad theme and its season."
 )
 
 # helpers are named only when they are absent from the chain.
@@ -100,7 +100,8 @@ def _plain(name: str) -> str:
 
 def _phrase(planet: dict) -> str:
     name = _plain(planet["planet"])
-    if not planet["retrograde"]:
+    # The mean node always moves backward, so "retrograde" says nothing about the chart.
+    if not planet["retrograde"] or planet["planet"] in NODES:
         return name
     if name.startswith("the "):
         return "the retrograde " + name[4:]
@@ -419,7 +420,7 @@ def _analysis(intro: str, chain: dict, absent: list[str], extra: str) -> str:
         parts.append(extra)
     if absent:
         parts.append(_absent_sentence(absent))
-    if chain["karaka"]["retrograde"]:
+    if chain["karaka"]["retrograde"] and chain["karaka"]["planet"] not in NODES:
         parts.append(
             f"Because {_plain(chain['karaka']['planet'])} is retrograde, "
             "this story looks back, repeats, or arrives late."
@@ -456,6 +457,14 @@ def _today_line(today: dict[str, int], chain: dict, timing: set[int]) -> str:
             "Neither stands on this story."
         )
     return "Today " + " ".join(notes)
+
+
+def _today_in(chart: dict) -> date:
+    try:
+        tz = ZoneInfo((chart.get("birth_data") or {}).get("timezone") or "Asia/Kolkata")
+    except Exception:
+        tz = TZ
+    return datetime.now(tz).date()
 
 
 def _sky(day: date) -> dict[str, int]:
@@ -573,10 +582,10 @@ def _question_spec(spec: dict, gender: str) -> dict:
 
 
 def compute_nadi(chart: dict, as_of: date | None = None) -> dict:
-    """Twelve Nadi readings for one natal chart, timed from as_of (Kolkata today)."""
+    """Twelve Nadi readings for one natal chart, timed from as_of (today in the birth timezone)."""
     planets = _placements(chart)
     grouped = _by_sign(planets)
-    when = as_of or datetime.now(TZ).date()
+    when = as_of or _today_in(chart)
     gender = _gender(chart)
     today = _today_signs(when)
     calendar = _calendar(when)

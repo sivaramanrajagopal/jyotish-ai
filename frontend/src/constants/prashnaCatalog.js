@@ -136,7 +136,6 @@ export const PRASHNA_CATALOG = [
       { id: 'h10_career', text: 'H10 Career — Is professional success indicated?' },
       { id: 'h11_gains', text: 'H11 Gains — Will wishes and income manifest?' },
       { id: 'h12_spiritual', text: 'H12 Spiritual — Is foreign or spiritual path favourable?' },
-      { id: 'most_favourable', text: 'Which life area looks most favourable overall?' },
     ],
   },
   {

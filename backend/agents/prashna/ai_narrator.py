@@ -69,6 +69,7 @@ def narrate_prashna(result: dict, language: str = "english") -> str | None:
         "Use words like 'indicates', 'suggests', 'shows potential'. "
         "NEVER claim guaranteed outcomes. NEVER invent planetary positions, houses, or testimonies "
         "not present in the context. NEVER contradict the verdict. "
+        "State things directly; avoid contrastive 'X, not Y' phrasing. "
         f"{lang_note}"
     )
 

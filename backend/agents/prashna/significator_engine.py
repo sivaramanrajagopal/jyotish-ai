@@ -13,9 +13,10 @@ def _angular_distance(lon_a: float, lon_b: float) -> float:
 
 
 def _in_conjunction(chart: dict, p1: str, p2: str, orb: float = CONJUNCTION_ORB) -> bool:
-    lon1 = chart["planet_positions"][p1]["longitude"]
-    lon2 = chart["planet_positions"][p2]["longitude"]
-    return _angular_distance(lon1, lon2) <= orb
+    """Close conjunction: same sign (whole-sign houses) and within the orb."""
+    a = chart["planet_positions"][p1]
+    b = chart["planet_positions"][p2]
+    return a["sign"] == b["sign"] and _angular_distance(a["longitude"], b["longitude"]) <= orb
 
 
 def _connection_strength(lagna_lord: str, matter_lord: str, chart: dict) -> tuple[str, str]:

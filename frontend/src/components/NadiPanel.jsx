@@ -174,7 +174,8 @@ export default function NadiPanel({ chart, userId, gender = 'male', enabled = tr
         if (!cancel) setData(res.data)
       })
       .catch((err) => {
-        if (!cancel) setError(err.response?.data?.detail || 'Could not load the Nadi reading.')
+        const detail = err.response?.data?.detail
+        if (!cancel) setError(typeof detail === 'string' ? detail : 'Could not load the Nadi reading.')
       })
       .finally(() => {
         if (!cancel) setLoading(false)
@@ -191,7 +192,7 @@ export default function NadiPanel({ chart, userId, gender = 'male', enabled = tr
       <header>
         <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Nadi</h2>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)', overflowWrap: 'break-word' }}>
-          {data?.method || 'A reading from the planet that carries each question, not from a house number.'}
+          {data?.method || 'A reading that starts from the planet that carries each question.'}
         </p>
       </header>
 
@@ -214,7 +215,7 @@ export default function NadiPanel({ chart, userId, gender = 'male', enabled = tr
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActive(row.id)}
-                  className="px-3 py-2 rounded-full text-sm font-semibold min-h-[40px]"
+                  className="px-3 py-2 rounded-full text-sm font-semibold min-h-[44px]"
                   style={{
                     background: selected ? 'var(--orange)' : 'var(--card-bg)',
                     color: selected ? 'var(--accent-dark)' : 'var(--text-primary)',

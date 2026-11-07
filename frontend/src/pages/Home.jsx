@@ -1158,7 +1158,7 @@ function HomeApp() {
 
         {mountedTabs.has('prashna') && (
         <div style={tabPane('prashna')} role="tabpanel" id="panel-prashna" aria-labelledby="tab-prashna">
-          <PrashnaTab enabled={activeTab === 'prashna'} chart={chart} />
+          <PrashnaTab enabled={activeTab === 'prashna'} chart={chart} placeOfBirth={form.place_of_birth} />
         </div>
         )}
 

@@ -326,7 +326,7 @@ function PrashnaAuditCard({ audit }) {
   )
 }
 
-export default function PrashnaTab({ enabled = true, chart = null }) {
+export default function PrashnaTab({ enabled = true, chart = null, placeOfBirth = '' }) {
   const now = useLiveClock()
   const [categories, setCategories] = useState(PRASHNA_CATALOG)
   const [category, setCategory] = useState('career')
@@ -375,9 +375,9 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
 
   const defaultFromChart = useCallback(() => {
     const bd = chart?.birth_data
-    if (!bd?.lat || !bd?.lon) return null
-    return { lat: bd.lat, lon: bd.lon, place: bd.place || 'Birth place' }
-  }, [chart])
+    if (bd?.lat == null || bd?.lon == null) return null
+    return { lat: bd.lat, lon: bd.lon, place: placeOfBirth || 'Birth place' }
+  }, [chart, placeOfBirth])
 
   useEffect(() => {
     if (!location && chart) {
@@ -544,7 +544,7 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
               🟢 {result.verdict?.positive_count} supportive · 🔴 {result.verdict?.negative_count} challenging · ⚪ {result.verdict?.neutral_count} neutral
             </div>
             <p className="prashna-verdict-note">
-              Based on {result.testimonies?.counts?.total ?? 0} computed testimonies — not a guarantee.
+              Based on {result.testimonies?.counts?.total ?? 0} computed testimonies, read as tendencies.
             </p>
           </div>
 
@@ -554,9 +554,12 @@ export default function PrashnaTab({ enabled = true, chart = null }) {
             <AnalysisCard title="🤖 AI Prashna reading" badge="AI narration" badgeVariant="ai">
               <p className="prashna-result-card-para">{result.ai_reading}</p>
               <p className="prashna-result-card-note">
-                AI narration based only on computed testimonies — not a guarantee.
+                AI narration based only on the computed testimonies above.
               </p>
             </AnalysisCard>
+          )}
+          {!result.ai_reading && result.meta?.ai_skipped && (
+            <p className="prashna-result-card-note">{result.meta.ai_skipped} The rule-based verdict above is complete.</p>
           )}
 
           <AnalysisCard title="Rule-based summary" badge="Rule engine" badgeVariant="rule">

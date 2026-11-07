@@ -201,6 +201,25 @@ def test_sign_dignity_labels():
     assert classify_sign_dignity("Sun", "Aries", 10.0) == "Exalted"
     assert classify_sign_dignity("Sun", "Leo", 10.0) == "Moolatrikona"
     assert classify_sign_dignity("Rahu", "Taurus", 5.0) == "Neutral"
+    assert classify_sign_dignity("Mercury", "Virgo", 10.0) == "Exalted"
+    assert classify_sign_dignity("Mercury", "Virgo", 17.0) == "Moolatrikona"
+    assert classify_sign_dignity("Mercury", "Virgo", 25.0) == "Own"
+
+
+def test_retrograde_motion_is_never_athi_vega():
+    from agents.avastha_agent import _is_accelerated
+
+    assert _is_accelerated("Saturn", -0.13) is False
+    assert _is_accelerated("Saturn", 0.13) is True
+
+
+def test_missing_planet_is_an_error():
+    import pytest
+
+    chart = calculate_natal_chart("1978-09-18", "17:35", 13.0827, 80.2707, "Asia/Kolkata")
+    del chart["planet_positions"]["Sun"]
+    with pytest.raises(ValueError):
+        compute_avastha_analysis(chart)
 
 
 def test_full_chart_chennai_native():
@@ -213,8 +232,12 @@ def test_full_chart_chennai_native():
 
     # Jupiter exalted must NOT be crushed to Peeda
     assert by["Jupiter"]["sthula"]["name"] == "Deepta"
-    assert by["Jupiter"]["sthula"]["athi_vega_penalty"] == 15.0
     assert by["Jupiter"]["manifestation"]["net"] > 20
+
+    # Athi Vega only near top direct speed: Jupiter 0.17°/day is not, Saturn 0.12°/day is
+    assert by["Jupiter"]["is_accelerated"] is False
+    assert by["Saturn"]["is_accelerated"] is True
+    assert not any(by[p]["is_accelerated"] for p in ("Sun", "Moon", "Rahu", "Ketu"))
 
     # Nodes: no retro wipe to Sakta
     assert by["Rahu"]["sthula"]["name"] == "Heenasakstha"

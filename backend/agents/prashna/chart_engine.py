@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from agents.natal_agent import calculate_natal_chart
 from agents.panchangam_agent import LOCATIONS
@@ -43,7 +43,10 @@ def cast_prashna_chart(
     Build a horary chart using Swiss Ephemeris at question time.
     Reuses natal_agent.calculate_natal_chart — same astronomy, Prashna lagna.
     """
-    tz = ZoneInfo(timezone)
+    try:
+        tz = ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError(f"Unknown timezone: {timezone}") from exc
     dt = datetime.fromisoformat(timestamp_iso.replace("Z", "+00:00"))
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=tz)
@@ -53,7 +56,7 @@ def cast_prashna_chart(
     dob = dt.strftime("%Y-%m-%d")
     tob = dt.strftime("%H:%M")
 
-    chart = calculate_natal_chart(dob, tob, lat, lon, timezone)
+    chart = calculate_natal_chart(dob, dt.strftime("%H:%M:%S"), lat, lon, timezone)
     chart["prashna_moment"] = {
         "iso": dt.isoformat(),
         "date": dob,

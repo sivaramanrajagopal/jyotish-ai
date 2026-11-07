@@ -291,7 +291,7 @@ def calculate_natal_chart(
     tz = ZoneInfo(timezone)
 
     # Parse birth datetime
-    dt_str = f"{dob} {tob}:00"
+    dt_str = f"{dob} {tob}" if tob.count(":") == 2 else f"{dob} {tob}:00"
     birth_dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=tz)
     jd = _to_jd(birth_dt)
 

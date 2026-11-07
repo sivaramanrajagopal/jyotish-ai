@@ -2069,8 +2069,16 @@ def prashna_analyze(
             question_id=qid,
         )
 
+        ai_allowed = False
         if req.include_ai:
-            charge_ai_quota(request, auth_user, "forecast")
+            try:
+                charge_ai_quota(request, auth_user, "forecast")
+                ai_allowed = True
+            except HTTPException as exc:
+                if exc.status_code != 429:
+                    raise
+                result["meta"]["ai_skipped"] = exc.detail if isinstance(exc.detail, str) else "AI limit reached."
+        if ai_allowed:
             from agents.prashna.ai_narrator import narrate_prashna
             ai_reading = narrate_prashna(result, req.language or "english")
             if ai_reading:

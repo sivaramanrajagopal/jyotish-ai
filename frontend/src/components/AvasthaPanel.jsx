@@ -2,7 +2,7 @@
  * AvasthaPanel — Sthula/Sukshma planetary state scorecard + Dasa–Bhukti synergy.
  * Plain-language meanings kept short so the tab stays light and intuitive.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 
@@ -60,13 +60,6 @@ const SUKSHMA_MEANING = {
   Nidra: 'Asleep — dormant',
 }
 
-function barColor(pct) {
-  if (pct >= 80) return '#16a34a'
-  if (pct >= 50) return '#d97706'
-  if (pct >= 25) return '#ea580c'
-  return '#dc2626'
-}
-
 function classifyCombined(net) {
   if (net >= 80) return 'Peak Fructification'
   if (net >= 50) return 'Progressive Growth'
@@ -94,21 +87,6 @@ function synergyOutcomes(klass) {
     ],
   }
   return map[klass] || []
-}
-
-function ScoreBar({ value, label }) {
-  const pct = Math.max(0, Math.min(100, Number(value) || 0))
-  return (
-    <div className="av-score-bar" title={label || `${pct}%`}>
-      <div className="av-score-bar__track">
-        <div
-          className="av-score-bar__fill"
-          style={{ width: `${pct}%`, background: barColor(pct) }}
-        />
-      </div>
-      <span className="av-score-bar__pct">{pct.toFixed(0)}%</span>
-    </div>
-  )
 }
 
 function StatusBadge({ klass }) {
@@ -157,37 +135,6 @@ function RemedyBlock({ remedy }) {
   )
 }
 
-function ManifestationGauge({ score, label }) {
-  const pct = Math.max(0, Math.min(100, Number(score) || 0))
-  const r = 54
-  const c = 2 * Math.PI * r
-  const offset = c - (pct / 100) * c
-  return (
-    <div className="av-gauge">
-      <svg viewBox="0 0 140 90" className="av-gauge__svg" aria-hidden>
-        <path
-          d="M 16 78 A 54 54 0 0 1 124 78"
-          fill="none"
-          stroke="var(--card-border)"
-          strokeWidth="10"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 16 78 A 54 54 0 0 1 124 78"
-          fill="none"
-          stroke={barColor(pct)}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <div className="av-gauge__value">{pct.toFixed(0)}%</div>
-      <div className="av-gauge__label">{label}</div>
-    </div>
-  )
-}
-
 function MeaningGlossary() {
   return (
     <details className="av-primer">
@@ -227,6 +174,11 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
   const [dasaLord, setDasaLord] = useState('')
   const [bhuktiLord, setBhuktiLord] = useState('')
   const [breakdownPlanet, setBreakdownPlanet] = useState(null)
+  const drawerRef = useRef(null)
+
+  useEffect(() => {
+    if (breakdownPlanet) drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [breakdownPlanet])
 
   const load = useCallback(() => {
     if (!chart || !enabled) return
@@ -239,7 +191,10 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
         setDasaLord(s.current_dasa || 'Jupiter')
         setBhuktiLord(s.current_bhukti || 'Venus')
       })
-      .catch((e) => setError(e.response?.data?.detail || 'Could not load Avastha analysis.'))
+      .catch((e) => {
+        const detail = e.response?.data?.detail
+        setError(typeof detail === 'string' ? detail : 'Could not load Avastha analysis.')
+      })
       .finally(() => setLoading(false))
   }, [chart, userId, enabled])
 
@@ -260,9 +215,8 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
     return {
       dasaLord,
       bhuktiLord,
-      dasa_net: d.manifestation.net,
-      bhukti_net: b.manifestation.net,
-      combinedScore: combined,
+      dasaClass: d.manifestation.class,
+      bhuktiClass: b.manifestation.class,
       manifestationClass: klass,
       objectiveOutcome: synergyOutcomes(klass),
     }
@@ -283,23 +237,21 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
   return (
     <div className="td-panel av-panel">
       <div className="av-disclaimer" role="note">
-        <strong>Analytical aid only</strong>
-        <span> — not medical, legal, or financial advice. Scores quantify classical planetary states.</span>
+        <strong>Analytical aid</strong>
+        <span> describing classical planetary states. For medical, legal or financial matters, consult a qualified professional.</span>
       </div>
 
       <div className="av-hero">
         <div className="av-hero__top">
           <span className="av-hero__label">What is Avastha?</span>
-          <span className="av-hero__avg">Avg {s.avg_manifestation}%</span>
         </div>
         <p className="av-hero__headline">
-          Avastha = a planet’s <em>condition</em>. Capacity (Sthula) × Efficiency (Sukshma)
-          are combined with a geometric mean into a <strong>condition score %</strong>
-          (comparative aid — not a prediction of guaranteed outcomes).
+          Avastha is a planet’s <em>condition</em>: its capacity (Sthula) and how awake it is
+          (Sukshma), read together into one band per planet.
         </p>
         <p className="av-hero__meta">
-          Peak: <strong>{s.peak_planet}</strong> {s.peak_net}% · Lowest:{' '}
-          <strong>{s.lowest_planet}</strong> {s.lowest_net}% · Current period:{' '}
+          Strongest: <strong>{s.peak_planet}</strong> · Weakest:{' '}
+          <strong>{s.lowest_planet}</strong> · Current period:{' '}
           <strong>{s.current_dasa}–{s.current_bhukti}</strong>
         </p>
       </div>
@@ -308,19 +260,19 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
         <summary className="av-primer__summary">How to read this tab (30 seconds)</summary>
         <div className="av-primer__body">
           <ol className="av-howto">
-            <li><strong>Capacity %</strong> — dignity-based strength (combust/debilitation/last-degree hard; Athi Vega −15, retro −10 soft).</li>
-            <li><strong>Efficiency %</strong> — Sukshma “how awake” the planet is.</li>
-            <li><strong>Condition score %</strong> — √(Capacity × Efficiency) — both need to be decent.</li>
-            <li><strong>Dasa × Bhukti</strong> — average of the two lords’ natal condition scores.</li>
+            <li><strong>Capacity</strong> — strength from dignity. Combustion, debilitation and the last degree weigh heavily; fast motion and retrogression weigh lightly.</li>
+            <li><strong>Efficiency</strong> — the Sukshma state, how awake the planet is.</li>
+            <li><strong>Band</strong> — capacity and efficiency read together; both need to be decent.</li>
+            <li><strong>Dasa × Bhukti</strong> — the two period lords’ birth-chart condition, read together.</li>
           </ol>
           <p className="av-howto__bands">
-            Bands: <span className="av-tier--peak av-inline">80+ High</span>
+            Bands, strongest first: <span className="av-tier--peak av-inline">High</span>
             {' · '}
-            <span className="av-tier--good av-inline">50–79 Strategic</span>
+            <span className="av-tier--good av-inline">Strategic</span>
             {' · '}
-            <span className="av-tier--slow av-inline">25–49 Delayed</span>
+            <span className="av-tier--slow av-inline">Delayed</span>
             {' · '}
-            <span className="av-tier--blocked av-inline">0–24 Blocked</span>
+            <span className="av-tier--blocked av-inline">Blocked</span>
           </p>
         </div>
       </details>
@@ -335,7 +287,6 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
               <th>Planet</th>
               <th>Capacity</th>
               <th>Efficiency</th>
-              <th>Result</th>
               <th>Band</th>
             </tr>
           </thead>
@@ -361,7 +312,6 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
                 <td>
                   <div className="av-state-cell" title={STHULA_MEANING[p.sthula.name] || ''}>
                     <span>{p.sthula.name}</span>
-                    <span className="av-state-cell__pct">{p.sthula.capacity}%</span>
                   </div>
                   <span className="av-state-cell__hint">
                     {STHULA_MEANING[p.sthula.name] || p.sign_dignity}
@@ -370,14 +320,10 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
                 <td>
                   <div className="av-state-cell" title={SUKSHMA_MEANING[p.sukshma.name] || ''}>
                     <span>{p.sukshma.name}</span>
-                    <span className="av-state-cell__pct">{p.sukshma.efficiency}%</span>
                   </div>
                   <span className="av-state-cell__hint">
                     {SUKSHMA_MEANING[p.sukshma.name]}
                   </span>
-                </td>
-                <td>
-                  <ScoreBar value={p.manifestation.net} label={p.manifestation.class} />
                 </td>
                 <td>
                   <StatusBadge klass={p.manifestation.class} />
@@ -391,8 +337,8 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
 
       <h3 className="av-section-title">Dasa–Bhukti synergy</h3>
       <p className="av-synergy__intro">
-        Average of each lord’s <strong>natal condition score</strong> — not transit, not a second chart.
-        Prefills current Mahadasha and Bhukti; change dropdowns to explore other pairs.
+        The two lords’ <strong>birth-chart condition</strong>, read together.
+        Starts on the current Mahadasha and Bhukti; change the dropdowns to explore other pairs.
       </p>
       <div className="av-synergy">
         <div className="av-synergy__controls">
@@ -411,16 +357,18 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
         </div>
         {synergy && (
           <div className="av-synergy__result">
-            <ManifestationGauge
-              score={synergy.combinedScore}
-              label={`${synergy.dasaLord} × ${synergy.bhuktiLord}`}
-            />
             <div className="av-synergy__detail">
-              <StatusBadge klass={synergy.manifestationClass} />
               <p className="av-synergy__math">
-                avg(natal {synergy.dasaLord} {synergy.dasa_net}%, natal {synergy.bhuktiLord}{' '}
-                {synergy.bhukti_net}%) = <strong>{synergy.combinedScore}%</strong>
+                <strong>{synergy.dasaLord} × {synergy.bhuktiLord}</strong>{' '}
+                <StatusBadge klass={synergy.manifestationClass} />
               </p>
+              {synergy.dasaClass && (
+                <p className="av-synergy__math">
+                  {synergy.dasaLord} <StatusBadge klass={synergy.dasaClass} />
+                  {' · '}
+                  {synergy.bhuktiLord} <StatusBadge klass={synergy.bhuktiClass} />
+                </p>
+              )}
               <ul className="av-synergy__outcomes">
                 {(synergy.objectiveOutcome || []).map((line) => (
                   <li key={line}>{line}</li>
@@ -442,14 +390,15 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
             )}
           </p>
           <p>
-            Condition score = √(capacity × efficiency). Soft penalties: Athi Vega −15, Retro −10
-            (nodes skip retro). Hard: combust / debilitated / last degree.
+            The band is the geometric mean of capacity and efficiency. Light penalties: Athi Vega
+            (fast direct motion) and retrogression, which the nodes skip. Heavy: combust,
+            debilitated, last degree.
           </p>
         </div>
       </details>
 
       {breakdownRow && (
-        <div className="av-drawer" role="dialog" aria-label="Sukshma calculation breakdown">
+        <div ref={drawerRef} className="av-drawer" role="dialog" aria-label="Sukshma calculation breakdown">
           <div className="av-drawer__head">
             <h4>
               {breakdownRow.planet}: {breakdownRow.sukshma.name}
@@ -462,8 +411,8 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
             </button>
           </div>
           <p className="av-drawer__sthula">
-            Capacity: <strong>{breakdownRow.sthula.name}</strong> ({breakdownRow.sthula.capacity}%)
-            — {STHULA_MEANING[breakdownRow.sthula.name] || breakdownRow.sthula.reason}
+            Capacity: <strong>{breakdownRow.sthula.name}</strong>
+            {' '}— {STHULA_MEANING[breakdownRow.sthula.name] || breakdownRow.sthula.reason}
           </p>
           <ol className="av-drawer__steps">
             <li>
@@ -479,7 +428,7 @@ export default function AvasthaPanel({ chart, userId, enabled = true }) {
             </li>
             <li>
               mod 12 → index <code>{breakdownRow.sukshma.breakdown.avastha_index}</code>
-              {' '}→ <strong>{breakdownRow.sukshma.name}</strong> ({breakdownRow.sukshma.efficiency}%)
+              {' '}→ <strong>{breakdownRow.sukshma.name}</strong>
             </li>
           </ol>
           <p className="av-drawer__formula">{breakdownRow.sukshma.breakdown.formula}</p>

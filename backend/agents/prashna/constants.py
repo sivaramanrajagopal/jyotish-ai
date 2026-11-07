@@ -125,7 +125,6 @@ CATEGORY_QUESTIONS: dict[str, list[dict[str, str]]] = {
         {"id": "h10_career", "text": "H10 Career — Is professional success indicated?"},
         {"id": "h11_gains", "text": "H11 Gains — Will wishes and income manifest?"},
         {"id": "h12_spiritual", "text": "H12 Spiritual — Is foreign or spiritual path favourable?"},
-        {"id": "most_favourable", "text": "Which life area looks most favourable overall?"},
     ],
 }
 
@@ -143,7 +142,6 @@ KEY_INTEREST_HOUSE: dict[str, int] = {
     "h10_career": 10,
     "h11_gains": 11,
     "h12_spiritual": 12,
-    "most_favourable": 11,
 }
 
 
@@ -209,7 +207,7 @@ PLANET_OCCUPANT_POSITIVE: dict[str, str] = {
 }
 
 PLANET_OCCUPANT_CAUTION: dict[str, str] = {
-    "Saturn": "Delay, responsibility, and patience required — not necessarily denial.",
+    "Saturn": "Delay, responsibility, and patience required — the matter can still come through.",
     "Mars": "Competition, conflict, or urgency — energy must be channelled carefully.",
     "Rahu": "Uncertainty or unconventional paths — outcomes may be unusual.",
     "Ketu": "Detachment or separation themes — let go of rigid expectations.",

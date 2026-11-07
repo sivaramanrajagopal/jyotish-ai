@@ -41,7 +41,7 @@ TRIKONA = frozenset({5, 9})
 DUSTHANA = frozenset({6, 8, 12})
 
 _NOTE = (
-    "Classical suggestion from this planet’s avastha, not a prescription. "
+    "A classical suggestion drawn from this planet’s avastha. "
     "108 recitations is the count shown here; a longer anusthana can be done "
     "in the planet’s hora or during its dasha. "
     "Gemstones are withheld for combust, debilitated, and functional malefic planets."
