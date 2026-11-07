@@ -24,8 +24,12 @@ export default function LanguageToggle({ language, onChange }) {
         return (
           <button
             key={key}
+            type="button"
+            aria-pressed={active}
             onClick={() => onChange(key)}
             style={{
+              minHeight:    44,
+              minWidth:     44,
               padding:      '4px 12px',
               borderRadius: 16,
               border:       'none',

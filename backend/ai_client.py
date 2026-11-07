@@ -83,7 +83,3 @@ def _create(client, **kwargs):
         if retry.get("max_tokens"):
             retry["max_tokens"] = max(retry["max_tokens"] * 4, 2048)  # thinking counts toward the limit
         return client.chat.completions.create(**retry)
-
-
-def ai_provider() -> str:
-    return "Gemini" if is_gemini() else "OpenAI"

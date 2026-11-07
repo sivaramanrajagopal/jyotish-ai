@@ -54,6 +54,19 @@ def test_planet_rows_mark_dasha_lords():
     assert roles[md] == "maha"
 
 
+def test_house_prompt_separates_lordship_from_placement():
+    one = house_context(_links(), 10)
+    assert "Lord of the 10th: Mars" in one
+    assert "Mars rules the 3rd and 10th" in one
+    assert "Venus rules the 4th and 9th" in one
+    assert "Transit on this date: Mars" in one
+
+
+def test_moon_line_names_the_date_when_it_is_not_today():
+    moon = _links()["moon_today"]
+    assert moon["en"].startswith("On 6 Nov 2026 the Moon")
+
+
 def test_prompt_blocks_carry_status_and_no_scores():
     links = _links()
     daily = daily_context(links)

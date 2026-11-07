@@ -6,10 +6,11 @@ Planet rows carry the classical Gochara result from the natal Moon.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from agents.house_connections.activation import compute_activation, ordinal
-from agents.house_connections.core import analyze_all_houses
+from agents.house_connections.core import analyze_all_houses, houses_owned_by
 from agents.house_connections.yogas import detect_yogas
 from agents.transit_score_agent import (
     GOCHARA_AUSPICIOUS,
@@ -80,6 +81,16 @@ def forecast_links(chart: dict, transit_date: str | None, transit_time: str | No
     for row in houses:
         by_status[row["status"]["key"]].append(row["house"])
 
+    moon = activation.get("today")
+    tz = (chart.get("birth_data") or {}).get("timezone") or "Asia/Kolkata"
+    if moon and when != datetime.now(ZoneInfo(tz)).date():
+        day = f"{when.day} {when.strftime('%b %Y')}"
+        moon = {
+            **moon,
+            "en": moon["en"].replace("Today the Moon", f"On {day} the Moon"),
+            "ta": moon["ta"].replace("இன்று", f"{day} அன்று"),
+        }
+
     return {
         "as_of": activation["as_of"],
         "transit_date": scores["transit_date"],
@@ -88,13 +99,28 @@ def forecast_links(chart: dict, transit_date: str | None, transit_time: str | No
         "natal_moon_en": scores.get("natal_moon_en", ""),
         "period": activation.get("period"),
         "relation": activation.get("relation"),
-        "moon_today": activation.get("today"),
+        "moon_today": moon,
         "now": activation.get("now", []),
         "by_status": by_status,
         "houses": houses,
         "planets": _planet_rows(scores, md, bh),
         "_scores": scores,
+        "_lordships": lordships_line(chart),
     }
+
+
+def lordships_line(chart: dict) -> str:
+    """Which houses each planet rules, so the narrator never confuses ruling with sitting."""
+    asc = int((chart.get("ascendant") or {}).get("sign_index") or 0)
+    parts = []
+    for planet in ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"):
+        owned = houses_owned_by(planet, asc)
+        if owned:
+            parts.append(f"{planet} rules the {' and '.join(ordinal(h) for h in owned)}")
+    return (
+        "LORDSHIPS from the lagna: " + "; ".join(parts) + ". "
+        "A planet is lord only of the houses it rules here; the house it sits in is its placement."
+    )
 
 
 def public(result: dict) -> dict:
@@ -123,6 +149,7 @@ def daily_context(result: dict) -> str:
         f"=== HOUSE LINKS — {result['transit_date']} ===",
         f"Dasha: {md.get('planet', '')} Mahadasha (to {md.get('end', '')}) / "
         f"{bh.get('planet', '')} Bhukti (to {bh.get('end', '')}).",
+        result.get("_lordships", ""),
     ]
     if result.get("relation"):
         lines.append(result["relation"]["en"])
@@ -145,7 +172,11 @@ def house_context(result: dict, house: int) -> str:
     row = next(r for r in result["houses"] if r["house"] == house)
     pl = {r["planet"]: r for r in result["planets"]}
     lines = [
-        f"HOUSE {house}: {row['theme_en']} ({row['sign']} sign, lord {row['lord']} in the {ordinal(row['lord_house'])})",
+        f"HOUSE {house}: {row['theme_en']} ({row['sign']} sign)",
+        f"Lord of the {ordinal(house)}: {row['lord']}. In the birth chart {row['lord']} sits in the "
+        f"{ordinal(row['lord_house'])}; that is its placement, so do not call {row['lord']} the "
+        f"{ordinal(row['lord_house'])} lord unless the LORDSHIPS line says so.",
+        result.get("_lordships", ""),
         f"Status on {result['transit_date']}: {row['status']['en']}",
     ]
     for r in row["dasha"]["reasons"]:
@@ -161,8 +192,8 @@ def house_context(result: dict, house: int) -> str:
     lord = pl.get(row["lord"])
     if lord:
         lines.append(
-            f"House lord {row['lord']} in Gochara: {lord['sign_en']}, "
-            f"{ordinal(lord['pos_from_moon'])} from the natal Moon, {lord['result']['en'].lower()}"
+            f"Transit on this date: {row['lord']} is passing through {lord['sign_en']}, "
+            f"{ordinal(lord['pos_from_moon'])} from the natal Moon, {lord['result']['en'].lower()} in Gochara"
         )
     for name in row.get("transit_in", []) + row.get("transit_aspecting", []):
         prow = pl.get(name)

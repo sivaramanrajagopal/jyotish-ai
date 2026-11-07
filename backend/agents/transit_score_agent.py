@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import datetime
 from time_utils import today_ist
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from pathlib import Path
 from typing import Optional
 
@@ -523,14 +523,23 @@ def _rag(score: float) -> dict:
 # In-process cache
 # ─────────────────────────────────────────────────────────────────────────────
 
-_score_cache: dict[str, dict] = {}
+_SCORE_CACHE_MAX = 256
+_score_cache: "OrderedDict[str, dict]" = OrderedDict()
 
 
 def _cache_key(natal_chart: dict, transit_date: str, transit_time: Optional[str] = None) -> str:
     bd = natal_chart.get("birth_data", {})
     fp = chart_fingerprint(natal_chart)
-    tt = transit_time or "auto"
+    # "now" moves the Moon about 5' every 10 minutes, so an unset time caches per 10-minute slot
+    tt = transit_time or "auto@" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")[:-1]
     return f"{bd.get('dob')}|{bd.get('tob')}|{bd.get('lat')}|{bd.get('lon')}|{transit_date}|{tt}|{fp}"
+
+
+def _cache_put(key: str, value: dict) -> None:
+    _score_cache[key] = value
+    _score_cache.move_to_end(key)
+    while len(_score_cache) > _SCORE_CACHE_MAX:
+        _score_cache.popitem(last=False)
 
 
 def _resolve_transit_jd(
@@ -631,6 +640,7 @@ def score_all_houses(
 
     ck = _cache_key(natal_chart, transit_date, transit_time)
     if ck in _score_cache:
+        _score_cache.move_to_end(ck)
         return _score_cache[ck]
 
     bd     = natal_chart.get("birth_data", {})
@@ -854,7 +864,7 @@ def score_all_houses(
         "gochara_note":     "Transits evaluated from natal Moon sign per Parasara Gochara rules. Vedha checked.",
     }
 
-    _score_cache[ck] = result
+    _cache_put(ck, result)
     return result
 
 
