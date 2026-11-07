@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
+import { errorText } from '../hooks/useApiResult'
 import { classicalForHouse, useClassicalRules } from '../hooks/useClassicalRules'
 import HouseLinksGraph from './HouseLinksGraph'
 import SouthIndianChart from './SouthIndianChart'
@@ -56,9 +57,9 @@ function transitSummary(row) {
       ? `Jupiter and Saturn both touch it now, until ${t.double_until}`
       : 'Jupiter and Saturn both touch it now'
   }
-  if (t.jupiter) return 'Jupiter touches it now; Saturn does not'
-  if (t.saturn) return 'Saturn touches it now; Jupiter does not'
-  return 'Neither Jupiter nor Saturn touches it now'
+  if (t.jupiter) return 'Jupiter touches it now'
+  if (t.saturn) return 'Saturn touches it now'
+  return 'Jupiter and Saturn are both elsewhere'
 }
 
 function NowCard({ activation, rows, onOpen }) {
@@ -453,40 +454,47 @@ function TimelineTable({ rows }) {
           or sits in. Shared: other houses both the mahadasha and the bhukti lord reach.
         </p>
         {rows.map(m => (
-          <details key={m.planet} className={`hl-tl hl-tl--${m.state}`} open={m.state === 'now'}>
-            <summary className="hl-tl__summary">
-              <span className="hl-tl__head">
-                <strong>{m.planet} mahadasha</strong>
-                {m.state === 'now' && <span className="hl-badge hl-badge--live">Running</span>}
-              </span>
-              <span className="hl-tbl__sub">{m.start} to {m.end}</span>
-              <span className="hl-tl__houses">
-                Activated <strong>{houseList(m.activated)}</strong>
-                {m.connected.length > 0 && ` · connected ${houseList(m.connected)}`}
-              </span>
-            </summary>
-            <table className="hl-tbl">
-              <colgroup><col style={{ width: '40%' }} /><col style={{ width: '30%' }} /><col /></colgroup>
-              <thead>
-                <tr><th scope="col">Bhukti</th><th scope="col">Activated</th><th scope="col">Shared</th></tr>
-              </thead>
-              <tbody>
-                {m.bhuktis.map(b => (
-                  <tr key={`${b.planet}-${b.start}`} className={b.state === 'now' ? 'hl-tbl__row--now' : b.state === 'past' ? 'hl-tbl__row--past' : ''}>
-                    <th scope="row">
-                      {b.planet}
-                      <span className="hl-tbl__sub">{b.start} to {b.end}</span>
-                      <ConnectedMore houses={b.connected} />
-                    </th>
-                    <td><strong>{houseList(b.activated)}</strong></td>
-                    <td>{houseList(b.shared)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
+          <TimelineMahadasha key={m.planet} m={m} />
         ))}
       </div>
+    </details>
+  )
+}
+
+function TimelineMahadasha({ m }) {
+  const [open, setOpen] = useState(m.state === 'now')
+  return (
+    <details className={`hl-tl hl-tl--${m.state}`} open={open} onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary className="hl-tl__summary">
+        <span className="hl-tl__head">
+          <strong>{m.planet} mahadasha</strong>
+          {m.state === 'now' && <span className="hl-badge hl-badge--live">Running</span>}
+        </span>
+        <span className="hl-tbl__sub">{m.start} to {m.end}</span>
+        <span className="hl-tl__houses">
+          Activated <strong>{houseList(m.activated)}</strong>
+          {m.connected.length > 0 && ` · connected ${houseList(m.connected)}`}
+        </span>
+      </summary>
+      <table className="hl-tbl">
+        <colgroup><col style={{ width: '40%' }} /><col style={{ width: '30%' }} /><col /></colgroup>
+        <thead>
+          <tr><th scope="col">Bhukti</th><th scope="col">Activated</th><th scope="col">Shared</th></tr>
+        </thead>
+        <tbody>
+          {m.bhuktis.map(b => (
+            <tr key={`${b.planet}-${b.start}`} className={b.state === 'now' ? 'hl-tbl__row--now' : b.state === 'past' ? 'hl-tbl__row--past' : ''}>
+              <th scope="row">
+                {b.planet}
+                <span className="hl-tbl__sub">{b.start} to {b.end}</span>
+                <ConnectedMore houses={b.connected} />
+              </th>
+              <td><strong>{houseList(b.activated)}</strong></td>
+              <td>{houseList(b.shared)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </details>
   )
 }
@@ -655,9 +663,10 @@ function MapSection({ data, chart, rows, focusHouse, setFocusHouse }) {
 export default function HouseLinksPanel({ chart, userId, enabled = true }) {
   const [result, setResult] = useState({ chart: null, data: null, error: '' })
   const [view, setView] = useState('now')
-  const [selected, setSelected] = useState(null)
+  const [selection, setSelection] = useState({ chart: null, house: null })
   const [showMap, setShowMap] = useState(false)
   const classical = useClassicalRules(chart, userId, enabled)
+  const selected = selection.chart === chart ? selection.house : null
 
   useEffect(() => {
     if (!chart || !enabled) return undefined
@@ -667,7 +676,7 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
         if (!cancel) setResult({ chart, data: r.data, error: '' })
       })
       .catch(e => {
-        if (!cancel) setResult({ chart, data: null, error: e.response?.data?.detail || 'Could not load House Links.' })
+        if (!cancel) setResult({ chart, data: null, error: errorText(e, 'Could not load House Links.') })
       })
     return () => { cancel = true }
   }, [chart, userId, enabled])
@@ -699,11 +708,11 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
   const selectedHouse = selected ?? (view === 'now' ? firstNow : 1)
 
   const showHouse = useCallback(house => {
-    setSelected(house)
+    setSelection({ chart, house })
     requestAnimationFrame(() => {
       document.getElementById('hl-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
-  }, [])
+  }, [chart])
 
   if (!chart) {
     return <div className="hl-panel hl-panel--muted">Open My Chart first…</div>
@@ -730,7 +739,7 @@ export default function HouseLinksPanel({ chart, userId, enabled = true }) {
               type="button"
               className={`hl-switch__btn${view === key ? ' hl-switch__btn--on' : ''}`}
               aria-pressed={view === key}
-              onClick={() => { setView(key); setSelected(null) }}
+              onClick={() => { setView(key); setSelection({ chart, house: null }) }}
             >
               {en}
               <span className="hl-switch__ta">{ta}</span>

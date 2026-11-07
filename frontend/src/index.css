@@ -5421,6 +5421,7 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   align-items: center;
   gap: 0.35rem;
   background: rgba(255,255,255,0.02);
+  min-height: 44px;
 }
 
 .hl-factor-section__summary::-webkit-details-marker { display: none; }
@@ -5469,6 +5470,9 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   padding: 0.65rem 0.85rem;
   margin: 0;
   list-style: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .hl-table-collapse__summary::-webkit-details-marker { display: none; }
@@ -5496,6 +5500,9 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   padding: 0.5rem 0.75rem;
   font-weight: 600;
   list-style: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .hl-primer__summary::-webkit-details-marker { display: none; }

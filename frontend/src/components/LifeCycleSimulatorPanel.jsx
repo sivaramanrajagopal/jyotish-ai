@@ -267,9 +267,11 @@ export default function LifeCycleSimulatorPanel({ chart, userId, enabled = true 
   }, [enabled, requestKey, userId, married])
 
   const current = result.key === requestKey
-  const data = result.data
-  const error = current ? result.error : ''
+  const chartPart = `${fingerprint}|${birth.dob}|${birth.tob}|${moonLon}|${userId || ''}|`
+  const sameChart = typeof result.key === 'string' && result.key.startsWith(chartPart)
   const loading = Boolean(chart && enabled && !current)
+  const data = result.data && (current || (loading && sameChart)) ? result.data : null
+  const error = current ? result.error : ''
   const shownKey = openKey === undefined ? data?.themes?.[0]?.key : openKey
 
   const toggleMarried = () => {

@@ -60,8 +60,8 @@ function HealthHousesPrimer() {
       </summary>
       <p className="hl-primer__body">
         <Bilingual
-          en="In the D3 Drekkana chart, houses 6, 8, and 12 are dusthana (challenging) zones linked to vitality and recovery. Planets here — especially malefics — raise awareness for the mapped body part. Colors on the map reflect combined natal, Dasa, and transit scores — not a medical diagnosis."
-          ta="D3 திரேக்கான வரைபடத்தில் 6, 8, 12ம் வீடுகள் துஷ்ட வீடுகள் — உடல் நிலை மற்றும் குணமடைதலுடன் தொடர்புடையவை. இங்குள்ள கிரகங்கள் — குறிப்பாக பாப கிரகங்கள் — உடல் பகுதிக்கு விழிப்புணர்வை உயர்த்தும். வரைபட நிறங்கள் ஜாதகம், தசை, கோசார மதிப்பெண்களின் தொகை — மருத்துவ நோயறிதல் அல்ல."
+          en="In the D3 Drekkana chart, houses 6, 8, and 12 are dusthana (challenging) zones linked to vitality and recovery. Planets here — especially malefics — raise awareness for the mapped body part. Colors on the map reflect combined natal, Dasa, and transit scores, for awareness only."
+          ta="D3 திரேக்கான வரைபடத்தில் 6, 8, 12ம் வீடுகள் துஷ்ட வீடுகள் — உடல் நிலை மற்றும் குணமடைதலுடன் தொடர்புடையவை. இங்குள்ள கிரகங்கள் — குறிப்பாக பாப கிரகங்கள் — உடல் பகுதிக்கு விழிப்புணர்வை உயர்த்தும். வரைபட நிறங்கள் ஜாதகம், தசை, கோசார மதிப்பெண்களின் தொகை; விழிப்புணர்வுக்காக மட்டும்."
           inline
         />
       </p>
@@ -148,8 +148,9 @@ function TextFactorList({ items }) {
 }
 
 function FactorSection({ id, titleEn, titleTa, count, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
-    <details className="hl-factor-section" id={id} open={defaultOpen}>
+    <details className="hl-factor-section" id={id} open={open} onToggle={e => setOpen(e.currentTarget.open)}>
       <summary className="hl-factor-section__summary">
         <Bilingual en={titleEn} ta={titleTa} inline />
         <span className="hl-layer-title__count">({count})</span>
@@ -235,9 +236,11 @@ function TransitTodayTable({ rows, date }) {
 
 export default function HealthPanel({ chart, userId, enabled = true }) {
   const [result, setResult] = useState({ chart: null, userId: null, data: null, error: '' })
-  const [selectedZone, setSelectedZone] = useState(null)
+  const [zonePick, setZonePick] = useState({ chart: null, zone: null })
   const tableRef = useRef(null)
   const factorsRef = useRef(null)
+  const selectedZone = zonePick.chart === chart ? zonePick.zone : null
+  const setSelectedZone = (zone) => setZonePick({ chart, zone })
 
   useEffect(() => {
     if (!chart || !enabled) return undefined
@@ -250,14 +253,15 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
         if (cancel) return
         const detail = e.response?.data?.detail
         const message = typeof detail === 'string' ? detail : 'Could not load health analysis.'
-        setResult(prev => ({ ...prev, chart, userId, error: message }))
+        setResult({ chart, userId, data: null, error: message })
       })
     return () => { cancel = true }
   }, [chart, userId, enabled])
 
-  const loading = Boolean(chart && enabled) && (result.chart !== chart || result.userId !== userId)
-  const data = result.data
-  const error = loading ? '' : result.error
+  const current = result.chart === chart && result.userId === userId
+  const loading = Boolean(chart && enabled && !current)
+  const data = current ? result.data : null
+  const error = current ? result.error : ''
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 640px)')
