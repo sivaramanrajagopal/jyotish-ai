@@ -36,7 +36,7 @@ THEMES = [
     {
         "key": "health",
         "en": "Health & care", "ta": "ஆரோக்கியம் / கவனம்",
-        "key_houses": [1, 6, 8], "support": [],
+        "key_houses": [1, 6, 8, 12], "support": [],
         "care": True,
     },
     {

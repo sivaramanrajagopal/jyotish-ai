@@ -542,6 +542,17 @@ def _cache_put(key: str, value: dict) -> None:
         _score_cache.popitem(last=False)
 
 
+def _today_in(natal_chart: dict) -> datetime.date:
+    """Today in the birth timezone, the zone transit times are read in."""
+    from zoneinfo import ZoneInfo
+
+    tz_str = (natal_chart.get("birth_data") or {}).get("timezone") or ""
+    try:
+        return datetime.datetime.now(ZoneInfo(tz_str)).date()
+    except Exception:
+        return today_ist()
+
+
 def _resolve_transit_jd(
     transit_date: str,
     tz_str: str,
@@ -636,7 +647,7 @@ def score_all_houses(
     dict: houses, overall_health, transit_analysis, dasha_transit, transit_moment, …
     """
     if transit_date is None:
-        transit_date = today_ist().isoformat()
+        transit_date = _today_in(natal_chart).isoformat()
 
     ck = _cache_key(natal_chart, transit_date, transit_time)
     if ck in _score_cache:

@@ -12,6 +12,7 @@ PLANETS = [
 ]
 MALEFICS = frozenset({"Sun", "Mars", "Saturn", "Rahu", "Ketu"})
 HEALTH_HOUSES = frozenset({6, 8, 12})
+D1_HEALTH_HOUSES = (1, 6, 8, 12)
 SLOW_TRANSITS = frozenset({"Saturn", "Mars", "Rahu", "Ketu"})
 TRANSIT_PLANETS = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
@@ -58,7 +59,7 @@ def build_planet_rows(
         d3p = d3_positions[planet]
         d1_deg = float(d1p.get("degree_in_sign", 0))
         d3_house = int(d3p.get("house", 0))
-        d1_house = int(d1p.get("house") or _whole_sign_house(d1p.get("sign_index", 0), d1_asc_idx))
+        d1_house = _whole_sign_house(d1p.get("sign_index", 0), d1_asc_idx)
         body = body_part_for_house(d1_house, d1_asc_deg)
         rows.append({
             "planet": planet,
@@ -74,7 +75,7 @@ def build_planet_rows(
             "retrograde": bool(d1p.get("retrograde")),
             "malefic": planet in MALEFICS,
             "health_house_d3": d3_house in HEALTH_HOUSES,
-            "health_house_d1": d1_house in HEALTH_HOUSES,
+            "health_house_d1": d1_house in D1_HEALTH_HOUSES,
         })
     return rows
 
@@ -109,7 +110,7 @@ def apply_dasa_scores(
     items: list[dict] = []
     lords = {maha, bhukti} - {""}
     health_lords = {
-        _lord_of_house(d1_asc_idx, h) for h in (6, 8, 12)
+        _lord_of_house(d1_asc_idx, h) for h in D1_HEALTH_HOUSES
     } | {
         _lord_of_house(d3_asc_idx, h) for h in (6, 8, 12)
     }
@@ -120,8 +121,8 @@ def apply_dasa_scores(
             zone_scores[row["body_zone"]] = zone_scores.get(row["body_zone"], 0) + 2.0
         if lord in health_lords:
             items.append({
-                "text_en": f"{lord} (Mahadasha or Bhukti) rules a health house (6/8/12) in D1 or D3",
-                "text_ta": f"{lord} (மகாதசை/புத்தி) D1/D3-ல் ஆரோக்கிய வீடு (6/8/12) அதிபதி",
+                "text_en": f"{lord} (Mahadasha or Bhukti) rules a health house (D1 1/6/8/12 or D3 6/8/12)",
+                "text_ta": f"{lord} (மகாதசை/புத்தி) ஆரோக்கிய வீடு அதிபதி (D1 1/6/8/12 அல்லது D3 6/8/12)",
             })
     return items
 
@@ -177,7 +178,7 @@ def apply_transit_scores(
                     f"({body['ta']})"
                 ),
             })
-        elif house_d1 in HEALTH_HOUSES:
+        elif house_d1 in D1_HEALTH_HOUSES:
             items.append({
                 "planet": tplanet,
                 "sign": sign,
@@ -239,7 +240,7 @@ def build_transit_today(
         house_d1 = _whole_sign_house(sign_idx, d1_asc_idx)
         house_d3 = _whole_sign_house(sign_idx, d3_asc_idx)
         body = body_part_for_house(house_d1, d1_asc_deg)
-        sensitive = house_d1 in HEALTH_HOUSES or house_d3 in HEALTH_HOUSES
+        sensitive = house_d1 in D1_HEALTH_HOUSES or house_d3 in HEALTH_HOUSES
         out.append({
             "planet": planet,
             "sign": sign,

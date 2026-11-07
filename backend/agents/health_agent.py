@@ -4,10 +4,12 @@ health_agent.py — D3 Drekkana body map + Dasa/Bhukti + transit health awarenes
 
 from __future__ import annotations
 
-import datetime
+import logging
+
 from time_utils import today_ist
 
 from agents.bhavat_bhavam.slices import compute_health_bhavat_bhavam
+from agents.health.links import dasha_moment, health_links, links_context
 from agents.health.body_map import body_part_for_house
 from agents.health.d3 import build_drekkana_from_natal
 from agents.health.warnings import (
@@ -33,16 +35,18 @@ DISCLAIMER_TA = (
 )
 
 
-def _transit_positions_for_today(natal_chart: dict) -> dict:
+def _transit_positions_for_today(natal_chart: dict, moment: dict | None = None) -> dict:
     bd = natal_chart.get("birth_data") or {}
     lat = bd.get("lat")
     lon = bd.get("lon")
     tz = bd.get("timezone") or "Asia/Kolkata"
     if lat is None or lon is None:
         return {}
-    today = today_ist().isoformat()
+    moment = moment or {}
+    day = moment.get("date") or today_ist().isoformat()
+    time = moment.get("time") or "12:00"
     try:
-        transit = calculate_natal_chart(today, "12:00", float(lat), float(lon), tz)
+        transit = calculate_natal_chart(day, time, float(lat), float(lon), moment.get("timezone") or tz)
         return transit.get("planet_positions") or {}
     except Exception:
         return {}
@@ -74,8 +78,16 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     from agents.health.warnings import _zone_scores_from_rows
     zone_scores = _zone_scores_from_rows(rows)
 
+    try:
+        links = health_links(natal_chart)
+    except Exception:
+        logging.getLogger(__name__).exception("health house links failed")
+        links = None
+
     moon_lon = (pp.get("Moon") or {}).get("longitude", 0.0)
-    _, cur_d, _, cur_b = find_current_dasha_bhukti(moon_lon, bd["dob"])
+    _, cur_d, _, cur_b = find_current_dasha_bhukti(
+        moon_lon, bd["dob"], dasha_moment(links) if links else None,
+    )
     maha = cur_d["planet"]
     bhukti = cur_b["planet"]
 
@@ -86,7 +98,8 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         d3_asc_idx=d3_asc_idx,
     )
 
-    transit_pp = _transit_positions_for_today(natal_chart)
+    moment = (links or {}).get("transit_moment")
+    transit_pp = _transit_positions_for_today(natal_chart, moment)
     transit_items = apply_transit_scores(
         zone_scores, rows,
         transit_positions=transit_pp,
@@ -121,7 +134,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
     top_region = body_regions[0] if body_regions else {}
     top_factor = (factor_groups.get("d3_natal") or [None])[0]
     overall = top_factor["risk"] if top_factor else (body_regions[0]["risk"] if body_regions else "low")
-    transit_date = today_ist().isoformat()
+    transit_date = (moment or {}).get("date") or today_ist().isoformat()
     bhavat_bhavam = compute_health_bhavat_bhavam(natal_chart, maha=maha, bhukti=bhukti)
 
     return {
@@ -165,6 +178,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
             "headline_ta": _hero_ta(maha, bhukti, overall, top_factor),
         },
         "bhavat_bhavam": bhavat_bhavam,
+        "house_links": links,
     }
 
 
@@ -207,6 +221,8 @@ def health_context_for_narrator(natal_chart: dict) -> str:
         "the lagna's decan (Brihat Jataka 5.25). D3 houses 6/8/12 only raise awareness.",
         f"Transits as of: {s.get('transit_date', 'today')}",
     ]
+    if data.get("house_links"):
+        lines.append(links_context(data["house_links"]))
     for f in (fg.get("d3_natal") or [])[:4]:
         reasons = "; ".join(f.get("reasons_en") or [])
         who = f"{f['planet']} → " if f.get("planet") else ""

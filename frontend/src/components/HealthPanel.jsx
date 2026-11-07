@@ -7,6 +7,7 @@ import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
 import BodyMapSvg from './BodyMapSvg'
 import BhavatBhavamLayer from './BhavatBhavamLayer'
+import { HouseStatusDetail, HouseStatusTiles } from './TransitHouseStatus'
 
 const RISK_CLASS = {
   low: 'hl-risk--low',
@@ -81,7 +82,8 @@ function ZoneRationale({ region, labelPrefix }) {
 }
 
 function HouseBadge({ house, kind }) {
-  if (![6, 8, 12].includes(house)) return house
+  const health = kind === '1' ? [1, 6, 8, 12] : [6, 8, 12]
+  if (!health.includes(house)) return house
   return (
     <span className="hl-house-badge" title={`D${kind} health house`}>
       {house}
@@ -154,6 +156,29 @@ function FactorSection({ id, titleEn, titleTa, count, defaultOpen = true, childr
       </summary>
       <div className="hl-factor-section__body">{children}</div>
     </details>
+  )
+}
+
+/** House Links status of the 1st, 6th, 8th and 12th — the same reading as Gochar and Forecast. */
+function HealthHouseLinks({ links }) {
+  const [selected, setSelected] = useState(null)
+  if (!links?.houses?.length) return null
+  const row = links.houses.find(r => r.house === selected)
+  return (
+    <section className="hl-now" aria-label="Health houses on House Links">
+      <h3 className="hl-section-title">
+        <Bilingual en="Health houses now (House Links)" ta="ஆரோக்கிய வீடுகள் இப்போது (வீட்டுத் தொடர்பு)" inline />
+      </h3>
+      <p className="hl-now__line">
+        <Bilingual
+          en="1st body, 6th illness, 8th chronic conditions, 12th hospital and rest. Same status as Gochar and Forecast."
+          ta="1 உடல், 6 நோய், 8 நாள்பட்ட நிலை, 12 மருத்துவமனை / ஓய்வு. கோசாரம், முன்னறிவிப்பு போலவே."
+          inline
+        />
+      </p>
+      <HouseStatusTiles houses={links.houses} selected={selected} onSelect={setSelected} />
+      <HouseStatusDetail row={row} planets={links.planets} onClose={() => setSelected(null)} />
+    </section>
   )
 }
 
@@ -314,6 +339,8 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
           <span className="hl-hero__dates"> ({s.dasa_period})</span>
         </p>
       </div>
+
+      <HealthHouseLinks links={data.house_links} />
 
       <TransitTodayTable rows={data.transit_today} date={s.transit_date} />
 
