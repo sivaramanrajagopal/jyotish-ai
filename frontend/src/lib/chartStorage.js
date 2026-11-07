@@ -12,7 +12,7 @@ export function saveSessionChart(form, chart) {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({
       form, chart, savedAt: new Date().toISOString(),
     }))
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
 }
 
 export function loadSessionChart() {
@@ -41,12 +41,12 @@ function migrateLegacyLocalStorage() {
     saveSessionChart(parsed.form, parsed.chart)
     return parsed
   } catch {
-    try { localStorage.removeItem(LEGACY_KEY) } catch {}
+    try { localStorage.removeItem(LEGACY_KEY) } catch { /* storage unavailable (private mode or full) */ }
     return null
   }
 }
 
 export function clearSessionChart() {
-  try { sessionStorage.removeItem(SESSION_KEY) } catch {}
-  try { localStorage.removeItem(LEGACY_KEY) } catch {}
+  try { sessionStorage.removeItem(SESSION_KEY) } catch { /* storage unavailable (private mode or full) */ }
+  try { localStorage.removeItem(LEGACY_KEY) } catch { /* storage unavailable (private mode or full) */ }
 }

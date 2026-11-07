@@ -13,6 +13,6 @@ export function saveNativeNote(note) {
   const value = note === 'married' || note === 'work' ? note : ''
   try {
     localStorage.setItem(KEY, value)
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
   return value
 }

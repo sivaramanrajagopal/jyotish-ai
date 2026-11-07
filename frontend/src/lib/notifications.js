@@ -36,7 +36,7 @@ export function getNotificationPrefs() {
 export function saveNotificationPrefs(prefs) {
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify({ ...DEFAULT_PREFS, ...prefs }))
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
 }
 
 function todayKey() {
@@ -59,7 +59,7 @@ function markSent(tag) {
   const log = getSentLog()
   log[tag] = true
   log._date = todayKey()
-  try { localStorage.setItem(SENT_KEY, JSON.stringify(log)) } catch {}
+  try { localStorage.setItem(SENT_KEY, JSON.stringify(log)) } catch { /* storage unavailable (private mode or full) */ }
 }
 
 function alreadySent(tag) {
@@ -81,7 +81,7 @@ function markWatchSent(tag) {
     const log = JSON.parse(localStorage.getItem(WATCH_SENT_KEY) || '{}')
     log[tag] = true
     localStorage.setItem(WATCH_SENT_KEY, JSON.stringify(log))
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
 }
 
 export async function loadComing(chart, userId) {
@@ -91,12 +91,12 @@ export async function loadComing(chart, userId) {
   try {
     const cached = JSON.parse(localStorage.getItem(WATCH_CACHE_KEY) || 'null')
     if (cached?.date === today && cached.note === note && cached.fp === fp) return cached.data
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
   const gender = chart?.birth_data?.gender || ''
   const { data } = await api.post('/watch', chartPayload(chart, userId, { note, gender }))
   try {
     localStorage.setItem(WATCH_CACHE_KEY, JSON.stringify({ date: today, note, fp, data }))
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
   return data
 }
 

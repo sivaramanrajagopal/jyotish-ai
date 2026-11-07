@@ -33,9 +33,9 @@ export function saveChatMessages(chart, messages) {
       messages,
       savedAt: new Date().toISOString(),
     }))
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
 }
 
 export function clearChatMessages(chart) {
-  try { sessionStorage.removeItem(storageKey(chart)) } catch {}
+  try { sessionStorage.removeItem(storageKey(chart)) } catch { /* storage unavailable (private mode or full) */ }
 }

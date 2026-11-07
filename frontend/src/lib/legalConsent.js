@@ -11,7 +11,7 @@ export function hasLegalConsent() {
 export function saveLegalConsent() {
   try {
     localStorage.setItem(LEGAL_STORAGE_KEY, 'accepted')
-  } catch {}
+  } catch { /* storage unavailable (private mode or full) */ }
 }
 
 /** Returns age in full years on referenceDate (default today). */
