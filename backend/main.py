@@ -59,6 +59,7 @@ from auth import AuthUser, get_current_user, get_current_user_optional, resolve_
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
 from chart_utils import assert_chart_not_stale, ensure_dasha, refresh_dasha
 from ai_limits import (
+    AI_BUSY_DETAIL,
     AI_FREE_LIMIT_DETAIL,
     AI_KEY_INVALID_DETAIL,
     AI_MODEL_GONE_DETAIL,
@@ -1132,7 +1133,7 @@ def chat_endpoint(
         return {"reply": reply, "model": ai_model()}
     except RuntimeError as exc:
         msg = str(exc)
-        if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL, AI_MODEL_GONE_DETAIL):
+        if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL, AI_MODEL_GONE_DETAIL, AI_BUSY_DETAIL):
             raise HTTPException(status_code=503, detail=msg)
         if "no credits" in msg.lower():
             raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)

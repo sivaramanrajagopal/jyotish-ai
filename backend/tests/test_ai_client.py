@@ -65,6 +65,57 @@ def test_thinking_setting_is_dropped_when_rejected():
     assert "extra_body" not in seen[-1] and seen[-1]["max_tokens"] == 2048
 
 
+def _status_error(cls, code, message):
+    import httpx
+
+    return cls(message, response=httpx.Response(code, request=httpx.Request("POST", "http://x")), body=None)
+
+
+def _client(create):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+def test_busy_model_falls_back_to_lite(monkeypatch):
+    from openai import InternalServerError
+
+    from ai_client import create_chat
+
+    _env(monkeypatch, "AIzaTest")
+    seen = []
+
+    def create(**kw):
+        seen.append(kw["model"])
+        if kw["model"] == "gemini-3.8-flash":
+            raise _status_error(InternalServerError, 503, "high demand")
+        return "ok"
+
+    assert create_chat(_client(create), model="gemini-3.8-flash") == "ok"
+    assert seen == ["gemini-3.8-flash", "gemini-flash-lite-latest"]
+
+
+def test_busy_message_survives_a_failed_fallback(monkeypatch):
+    from openai import InternalServerError, NotFoundError
+
+    from ai_client import create_chat
+    from ai_limits import AI_BUSY_DETAIL
+
+    _env(monkeypatch, "AIzaTest")
+
+    def create(**kw):
+        if kw["model"] == "gemini-3.8-flash":
+            raise _status_error(InternalServerError, 503, "This model is currently experiencing high demand.")
+        raise _status_error(NotFoundError, 404, "model not found")
+
+    try:
+        create_chat(_client(create), model="gemini-3.8-flash")
+    except InternalServerError as exc:
+        assert ai_error_detail(exc) == AI_BUSY_DETAIL
+    else:
+        raise AssertionError("expected the busy error")
+
+
 def test_openai_billing_message_stays(monkeypatch):
     _env(monkeypatch, "sk-test")
     assert ai_error_detail(Exception("billing_not_active")) == OPENAI_BILLING_DETAIL

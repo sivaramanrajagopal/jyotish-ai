@@ -14,6 +14,7 @@ from openai import OpenAI
 
 OPENAI_MODEL = "gpt-4o-mini"
 GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
@@ -45,8 +46,31 @@ def ai_extra() -> dict:
     return {"extra_body": {"reasoning_effort": "none"}} if is_gemini() else {}
 
 
+def ai_fallback_model() -> str:
+    explicit = os.getenv("AI_FALLBACK_MODEL", "").strip()
+    if explicit:
+        return explicit
+    return GEMINI_FALLBACK_MODEL if is_gemini() else ""
+
+
 def create_chat(client, **kwargs):
-    """chat.completions.create, retried once without the thinking setting if the model rejects it."""
+    """chat.completions.create with two recoveries: a busy model falls back to a lighter one,
+    and a rejected thinking setting is dropped."""
+    from openai import APIStatusError, InternalServerError
+
+    try:
+        return _create(client, **kwargs)
+    except InternalServerError as busy:
+        fallback = ai_fallback_model()
+        if not fallback or fallback == kwargs.get("model"):
+            raise
+        try:
+            return _create(client, **{**kwargs, "model": fallback})
+        except APIStatusError:
+            raise busy from None
+
+
+def _create(client, **kwargs):
     from openai import BadRequestError
 
     try:
