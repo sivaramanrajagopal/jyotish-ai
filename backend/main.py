@@ -57,7 +57,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from rate_limit import limiter, client_ip
 from auth import AuthUser, get_current_user, get_current_user_optional, resolve_user_id
 from chart_store import load_natal_chart, resolve_natal_chart, save_natal_chart
-from chart_utils import round_score, assert_chart_not_stale, ensure_dasha, refresh_dasha
+from chart_utils import assert_chart_not_stale, ensure_dasha, refresh_dasha
 from ai_limits import (
     OPENAI_BILLING_DETAIL,
     check_ai_quota,
@@ -85,7 +85,8 @@ from agents.orchestrator import assemble_context
 from agents.narrator import generate_forecast
 from agents.chat_agent import chat as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
-from agents.transit_score_agent import score_all_houses, build_house_context
+from agents.transit_score_agent import score_all_houses
+from agents.forecast_links import daily_context, forecast_links, house_context as links_house_context, public
 from agents.ashtakavarga_agent import (
     calculate_ashtakavarga,
     bav_context_for_narrator,
@@ -1227,6 +1228,25 @@ def forecast_scores(
         raise HTTPException(status_code=500, detail="Forecast scoring failed.")
 
 
+@app.post("/forecast/links")
+@limiter.limit("30/minute")
+def forecast_links_endpoint(
+    request: Request,
+    req: ForecastScoresRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """House Links status of all 12 houses and classical Gochara rows for a date."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    chart = ensure_dasha(chart)
+    try:
+        return public(forecast_links(chart, req.transit_date, req.transit_time))
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error("forecast/links error: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Forecast failed.")
+
+
 @app.post("/forecast/house")
 @limiter.limit("20/minute")
 def forecast_house_insight(
@@ -1236,7 +1256,7 @@ def forecast_house_insight(
 ):
     """
     Return AI interpretation for a single house.
-    Uses deterministic scores + OpenAI narrator with age/gender context.
+    Uses House Links status + OpenAI narrator with age/gender context.
     """
     if not 1 <= req.house_num <= 12:
         raise HTTPException(status_code=400, detail="house_num must be 1–12.")
@@ -1251,16 +1271,11 @@ def forecast_house_insight(
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
 
     try:
-        scores = score_all_houses(
-            chart,
-            req.transit_date,
-            req.transit_time,
-            chart.get("dasha"),
-        )
+        links = forecast_links(chart, req.transit_date, req.transit_time)
     except Exception as exc:
         import logging, traceback
-        logging.getLogger(__name__).error("forecast/house scoring: %s\n%s", exc, traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Forecast scoring failed.")
+        logging.getLogger(__name__).error("forecast/house links: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Forecast failed.")
 
     # Derive age from dob
     dob_str = chart.get("birth_data", {}).get("dob", "")
@@ -1273,10 +1288,10 @@ def forecast_house_insight(
     except Exception:
         pass
 
-    house_context = build_house_context(scores, req.house_num)
-    dasha_info    = chart.get("dasha", {})
-    md = dasha_info.get("mahadasha", {}) if dasha_info else {}
-    bh = dasha_info.get("bhukti", {})    if dasha_info else {}
+    house_context = links_house_context(links, req.house_num)
+    period = links.get("period") or {}
+    md = period.get("mahadasha") or {}
+    bh = period.get("bhukti") or {}
 
     gender_note = {
         "male":   "Tailor advice for a man.",
@@ -1288,6 +1303,9 @@ def forecast_house_insight(
         "Provide a focused, specific forecast for ONE life area based on the data below. "
         "Be direct and practical — 3 sentences max per section. "
         "Never be vague. Always name specific planets, signs, or periods. "
+        "The house status (Live now, Dasha on, Transit only, Quiet) is settled; build the reading on it. "
+        "A Transit only or Quiet house gives light results, so keep the tone measured. "
+        "Never quote a score or percentage. No disclaimers. "
         f"{gender_note}"
         + _lang_suffix(req.language)
     )
@@ -1325,17 +1343,14 @@ def forecast_house_insight(
         logging.getLogger(__name__).error("forecast/house AI: %s\n%s", exc, traceback.format_exc())
         raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
 
-    house_data = scores["houses"].get(req.house_num, {})
+    row = next(r for r in links["houses"] if r["house"] == req.house_num)
     return {
-        "house_num":   req.house_num,
-        "area":        house_data.get("area"),
-        "score":       house_data.get("score"),
-        "rag":         house_data.get("rag"),
-        "insight":     insight,
-        "lord":        house_data.get("lord"),
-        "lord_house":  house_data.get("lord_placed_house"),
-        "lord_dignity": house_data.get("lord_dignity"),
-        "transit_planets": house_data.get("transit_planets", []),
+        "house_num":  req.house_num,
+        "status":     row["status"],
+        "insight":    insight,
+        "lord":       row["lord"],
+        "lord_house": row["lord_house"],
+        "transit_planets": row["transit_in"] + row["transit_aspecting"],
     }
 
 
@@ -1361,7 +1376,7 @@ def forecast_daily_reading(
 ):
     """
     Synthesise natal chart + Dasha + Gochara + Tara Balam into a
-    3-5 sentence daily reading with a Dasha-Transit correlation score.
+    3-5 sentence daily reading led by the House Links live houses.
     """
     charge_ai_quota(request, auth_user, "forecast")
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
@@ -1372,23 +1387,13 @@ def forecast_daily_reading(
     if not api_key:
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
 
-    # ── Scores + Dasha-Transit correlation ────────────────────────────────
     try:
-        from agents.transit_score_agent import (
-            score_all_houses, dasha_transit_correlation, compact_gochara_summary
-        )
-        scores = score_all_houses(
-            chart,
-            req.transit_date,
-            req.transit_time,
-            chart.get("dasha"),
-        )
-        dasha  = chart.get("dasha", {}) or {}
-        dtc    = scores.get("dasha_transit") or dasha_transit_correlation(scores, dasha)
+        links = forecast_links(chart, req.transit_date, req.transit_time)
+        links_context = daily_context(links)
     except Exception as exc:
         import logging, traceback
-        logging.getLogger(__name__).error("daily-reading scoring: %s\n%s", exc, traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Forecast scoring failed.")
+        logging.getLogger(__name__).error("daily-reading links: %s\n%s", exc, traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Forecast failed.")
 
     # ── Derive age ─────────────────────────────────────────────────────────
     dob_str = chart.get("birth_data", {}).get("dob", "")
@@ -1399,13 +1404,6 @@ def forecast_daily_reading(
         age   = str(today.year - dob_d.year - ((today.month, today.day) < (dob_d.month, dob_d.day)))
     except Exception:
         pass
-
-    md = (dasha.get("mahadasha") or {})
-    bh = (dasha.get("bhukti")    or {})
-
-    oh = scores["overall_health"]
-    top3 = sorted(scores["houses"].values(), key=lambda x: x["score"], reverse=True)[:3]
-    bot3 = sorted(scores["houses"].values(), key=lambda x: x["score"])[:3]
 
     # ── Tara Balam context (respects transit_date when provided) ───────────
     tara_context = ""
@@ -1438,28 +1436,25 @@ def forecast_daily_reading(
 
     system = (
         "You are Parashara Jyotish, a classical Vedic astrology advisor. "
-        "Write a concise daily reading (4–5 sentences) synthesising ALL available data: "
-        "natal chart strength, current Dasha period, Gochara transit health, "
-        "Ashtakavarga (SAV) house bindus, and Tara Balam. "
-        "Be specific — name planets, houses, SAV scores, and periods. No disclaimers. No generic statements. "
+        "Write a concise daily reading (4–5 sentences) from the HOUSE LINKS block, the Gochara facts, "
+        "Ashtakavarga bindus and Tara Balam. "
+        "Which houses are live comes only from HOUSE LINKS; lead with the Live now houses, "
+        "then the Dasha on houses as the ones building toward results. "
+        "Transit only houses give light, passing effects. "
+        "Be specific: name planets, houses and periods. Never quote a score or percentage. "
+        "No disclaimers. No generic statements. "
         f"{'Tailor the language for a man.' if req.gender.lower()=='male' else 'Tailor the language for a woman.' if req.gender.lower()=='female' else ''}"
         + _lang_suffix(req.language)
     )
 
     user_prompt = (
-        f"Age: {age or 'unknown'}. Gender: {req.gender}.\n"
-        f"Current Dasha: {md.get('planet','')} Mahadasha ({md.get('remaining_years','')} yrs left) / "
-        f"{bh.get('planet','')} Bhukti ({bh.get('remaining_months','')} months left).\n"
-        f"Dasha-Transit correlation: {dtc['rag']['label']} ({round_score(dtc['correlation_score'])}/100). {dtc['overall']}\n"
-        f"{dtc['summary']}\n\n"
-        f"Overall transit health: {round_score(oh['average_score'])}/100 [{oh['rag']['label']}]\n"
-        f"Strongest areas today: {', '.join(h['name'] for h in top3)}\n"
-        f"Most challenging areas: {', '.join(h['name'] for h in bot3)}\n"
+        f"Age: {age or 'unknown'}. Gender: {req.gender}.\n\n"
+        f"{links_context}\n\n"
         f"{tara_context}\n\n"
         + (f"{sav_context}\n\n" if sav_context else "")
         + "Write the daily reading as a single flowing paragraph. "
-        "Start with the Dasha-Transit correlation, then the strongest/weakest areas, "
-        "mention any notable SAV-strong or SAV-weak houses, then practical guidance for today."
+        "Start with the running dasha and the Live now houses, then the houses waiting on transit, "
+        "mention a notable Ashtakavarga-strong or weak house if it is live, then practical guidance for the day."
     )
 
     try:
@@ -1486,16 +1481,12 @@ def forecast_daily_reading(
         raise HTTPException(status_code=500, detail="AI service temporarily unavailable.")
 
     return {
-        "reading":              reading,
-        "dasha_transit":        dtc,
-        "overall_health":       oh,
-        "top_houses":           [{"house": h["house_num"], "name": h["name"],
-                                  "score": h["score"], "rag": h["rag"]} for h in top3],
-        "challenging_houses":   [{"house": h["house_num"], "name": h["name"],
-                                  "score": h["score"], "rag": h["rag"]} for h in bot3],
-        "transit_date":         scores["transit_date"],
-        "transit_moment":       scores.get("transit_moment"),
-        "natal_moon":           scores.get("natal_moon_en", ""),
+        "reading":        reading,
+        "period":         links.get("period"),
+        "by_status":      links["by_status"],
+        "transit_date":   links["transit_date"],
+        "transit_moment": links.get("transit_moment"),
+        "natal_moon":     links.get("natal_moon_en", ""),
     }
 
 

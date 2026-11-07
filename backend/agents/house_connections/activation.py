@@ -238,7 +238,13 @@ def _period(chart: dict, as_of: date) -> dict | None:
     }
 
 
-def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], as_of: date | None = None) -> dict:
+def compute_activation(
+    chart: dict,
+    houses: dict[int, dict],
+    yogas: list[dict],
+    as_of: date | None = None,
+    transit_time: str = "12:00",
+) -> dict:
     when = as_of or datetime.now(TZ).date()
     pp = chart.get("planet_positions") or {}
     asc = int((chart.get("ascendant") or {}).get("sign_index") or 0)
@@ -257,7 +263,7 @@ def compute_activation(chart: dict, houses: dict[int, dict], yogas: list[dict], 
             en, ta, tone = RELATION[_distance(_seat(pp, md, asc), _seat(pp, bh, asc))]
             relation = {"en": f"{bh} and {md} sit {en}.", "ta": f"{bh} & {md}: {ta}.", "tone": tone}
 
-    scores = score_all_houses(chart, transit_date=when.isoformat(), transit_time="12:00")
+    scores = score_all_houses(chart, transit_date=when.isoformat(), transit_time=transit_time)
     sky = {row["planet"]: row for row in scores.get("transit_analysis") or []}
 
     def sky_sign(planet: str) -> int | None:
