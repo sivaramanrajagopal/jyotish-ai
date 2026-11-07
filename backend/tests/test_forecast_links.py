@@ -60,6 +60,8 @@ def test_house_prompt_separates_lordship_from_placement():
     assert "Mars rules the 3rd and 10th" in one
     assert "Venus rules the 4th and 9th" in one
     assert "Transit on this date: Mars" in one
+    assert "Mars sits in Libra in the 9th (neither its own sign nor exalted)" in one
+    assert "Mars is passing through Cancer (debilitated)" in one
 
 
 def test_moon_line_names_the_date_when_it_is_not_today():

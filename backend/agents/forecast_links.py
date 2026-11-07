@@ -10,7 +10,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from agents.house_connections.activation import compute_activation, ordinal
-from agents.house_connections.core import analyze_all_houses, houses_owned_by
+from agents.house_connections.core import _dignity, analyze_all_houses, houses_owned_by
 from agents.house_connections.yogas import detect_yogas
 from agents.transit_score_agent import (
     GOCHARA_AUSPICIOUS,
@@ -167,14 +167,29 @@ def daily_context(result: dict) -> str:
     return "\n".join(lines)
 
 
+_DIGNITY_PHRASE = {
+    "Exalted": "exalted",
+    "Own Sign": "its own sign",
+    "Debilitated": "debilitated",
+    "Neutral": "neither its own sign nor exalted",
+}
+
+
+def _dignity_phrase(planet: str, sign: str) -> str:
+    return _DIGNITY_PHRASE.get(_dignity(planet, sign), "neither its own sign nor exalted")
+
+
 def house_context(result: dict, house: int) -> str:
     """Prompt block for one house insight."""
     row = next(r for r in result["houses"] if r["house"] == house)
     pl = {r["planet"]: r for r in result["planets"]}
+    lord = row["lord"]
+    natal_sign = next(r["sign"] for r in result["houses"] if r["house"] == row["lord_house"])
     lines = [
         f"HOUSE {house}: {row['theme_en']} ({row['sign']} sign)",
-        f"Lord of the {ordinal(house)}: {row['lord']}. In the birth chart {row['lord']} sits in the "
-        f"{ordinal(row['lord_house'])}; that is its placement, so do not call {row['lord']} the "
+        f"Lord of the {ordinal(house)}: {lord}. In the birth chart {lord} sits in "
+        f"{natal_sign} in the {ordinal(row['lord_house'])} ({_dignity_phrase(lord, natal_sign)}); "
+        f"that is its placement, so do not call {lord} the "
         f"{ordinal(row['lord_house'])} lord unless the LORDSHIPS line says so.",
         result.get("_lordships", ""),
         f"Status on {result['transit_date']}: {row['status']['en']}",
@@ -189,15 +204,17 @@ def house_context(result: dict, house: int) -> str:
         lines.append("Planets passing through: " + ", ".join(row["transit_in"]))
     if row.get("transit_aspecting"):
         lines.append("Planets aspecting: " + ", ".join(row["transit_aspecting"]))
-    lord = pl.get(row["lord"])
-    if lord:
+    lord_now = pl.get(lord)
+    if lord_now:
         lines.append(
-            f"Transit on this date: {row['lord']} is passing through {lord['sign_en']}, "
-            f"{ordinal(lord['pos_from_moon'])} from the natal Moon, {lord['result']['en'].lower()} in Gochara"
+            f"Transit on this date: {lord} is passing through {lord_now['sign_en']} "
+            f"({_dignity_phrase(lord, lord_now['sign_en'])}), "
+            f"{ordinal(lord_now['pos_from_moon'])} from the natal Moon, "
+            f"{lord_now['result']['en'].lower()} in Gochara"
         )
     for name in row.get("transit_in", []) + row.get("transit_aspecting", []):
         prow = pl.get(name)
-        if prow and name != row["lord"]:
+        if prow and name != lord:
             lines.append(f"  {name}: {ordinal(prow['pos_from_moon'])} from Moon, {prow['result']['en'].lower()}")
     if row["transit"].get("sav_points") is not None:
         lines.append(f"Ashtakavarga: {row['transit']['sav_points']} bindus ({row['transit']['sav_label']})")
