@@ -80,8 +80,8 @@ function DoshaPrimer() {
       </summary>
       <p className="dr-primer__body">
         <Bilingual
-          en="Soonya = void signs for your birth tithi. Chandrashtama = Moon in 8th from natal Moon. Mudakku = 22nd Drekkana blocked sign. Vadhai/Vainasikam = red-zone nakshatras from Janma Moon. Pushkara Navamsa can neutralise harsh afflictions (Divine Protection). This tab scans live transits and the next 90 days. For health or money decisions, consult a qualified professional."
-          ta="சூன்யம் = பிறந்த திதிக்கான வெற்று ராசிகள். சந்திராஷ்டமம் = ஜன்ம சந்திரத்தின் 8ம் ராசி. முடக்கு = 22ம் திரேக்கான தடை. வதை/வைனாசிகம் = சிவப்பு மண்டல நட்சத்திரங்கள். புஷ்கரம் கடுமையான தோஷங்களை மென்மையாக்கலாம். இது நேரடி கோசாரம் + 90 நாள் முன்னறிவிப்பு. உடல்நலம் அல்லது பணம் தொடர்பான முடிவுகளுக்கு தகுதியான நிபுணரை அணுகவும்."
+          en="Soonya = void signs for your birth tithi. Chandrashtama = Moon in 8th from natal Moon. Mudakku = 22nd Drekkana, the 10° slice. Vadhai/Vainasikam = red-zone nakshatras from Janma Moon. Pushkara Navamsa can neutralise harsh afflictions (Divine Protection). This tab scans live transits and the next 90 days. For health or money decisions, consult a qualified professional."
+          ta="சூன்யம் = பிறந்த திதிக்கான வெற்று ராசிகள். சந்திராஷ்டமம் = ஜன்ம சந்திரத்தின் 8ம் ராசி. முடக்கு = 22ம் திரேக்கானம், 10° பகுதி. வதை/வைனாசிகம் = சிவப்பு மண்டல நட்சத்திரங்கள். புஷ்கரம் கடுமையான தோஷங்களை மென்மையாக்கலாம். இது நேரடி கோசாரம் + 90 நாள் முன்னறிவிப்பு. உடல்நலம் அல்லது பணம் தொடர்பான முடிவுகளுக்கு தகுதியான நிபுணரை அணுகவும்."
           inline
         />
       </p>

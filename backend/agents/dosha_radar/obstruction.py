@@ -89,6 +89,17 @@ def get_mudakku_rasi(lagna_longitude: float) -> dict:
     }
 
 
+def in_khara_drekkana(longitude: float, mudakku: dict) -> bool:
+    """True only while the planet is in the 10° 22nd-drekkana slice."""
+    lon = float(longitude) % 360.0
+    sign_idx = int(lon / 30) % 12
+    deg = lon % 30
+    return (
+        sign_idx == mudakku["sign_idx"]
+        and mudakku["degree_lo"] <= deg < mudakku["degree_hi"]
+    )
+
+
 def get_tara(transit_nak_idx: int, janma_nak_idx: int) -> dict:
     distance = (int(transit_nak_idx) - int(janma_nak_idx)) % 27
     tara_num = (distance % 9) + 1
@@ -173,7 +184,7 @@ def compute_live_transit_status(
 
     soonya_rasis = profile["soonya_rasis"]
     chandrashtama_idx = profile["chandrashtama_sign_idx"]
-    mudakku_sign_idx = profile["mudakku"]["sign_idx"]
+    mudakku = profile["mudakku"]
     vadhai_nak_idx = profile["vadhai_nak_idx"]
     vainasikam_nak_idx = profile["vainasikam_nak_idx"]
     lagna_sign_idx = profile["lagna_sign_idx"]
@@ -203,7 +214,7 @@ def compute_live_transit_status(
 
         in_soonya = p_sign in soonya_rasis
         in_chandrashtama = p_name == "Moon" and p_sign == chandrashtama_idx
-        in_mudakku = p_sign == mudakku_sign_idx
+        in_mudakku = in_khara_drekkana(p_lon, mudakku)
 
         red_zone_raw = None
         if p_nak == vainasikam_nak_idx:

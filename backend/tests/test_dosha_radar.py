@@ -9,6 +9,7 @@ from agents.dosha_radar.obstruction import (
     compute_live_transit_status,
     get_mudakku_rasi,
     get_vadhai_vainasikam,
+    in_khara_drekkana,
     scan_all_dosha_transits,
 )
 from agents.dosha_radar_agent import compute_dosha_radar_analysis, dosha_radar_context_for_narrator
@@ -69,6 +70,23 @@ def test_mudakku_rasi_shape():
     m = get_mudakku_rasi(120.5)
     assert "sign_idx" in m
     assert "sign_name" in m
+
+
+def test_khara_drekkana_is_the_ten_degree_slice():
+    # Chart A lagna ~ Aquarius 22.7° → 22nd drekkana is Virgo 20–30°.
+    m = get_mudakku_rasi(10 * 30 + 22.66)
+    assert m["sign_english"] == "Virgo"
+    assert (m["degree_lo"], m["degree_hi"]) == (20, 30)
+    virgo = 5 * 30
+    assert in_khara_drekkana(virgo + 21.0, m) is True
+    assert in_khara_drekkana(virgo + 5.0, m) is False
+    assert in_khara_drekkana(4 * 30 + 25.0, m) is False
+
+
+def test_natal_soonya_skips_rahu_and_ketu():
+    natal = compute_dosha_radar_analysis(_chart())["natal_afflictions"]
+    for node in ("Rahu", "Ketu"):
+        assert natal[node]["in_soonya"] is False
 
 
 def test_pushkara_transit_scan_shape():

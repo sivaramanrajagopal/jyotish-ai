@@ -77,7 +77,7 @@ def _build_natal_afflictions(natal_chart: dict, soonya_rasis: list[int]) -> dict
             "combust": combust,
             "gandanta": gandanta,
             "pushkara": pushkara,
-            "in_soonya": sign_idx in soonya_rasis,
+            "in_soonya": (not node) and sign_idx in soonya_rasis,
             "critical_obstruction": crit,
         }
     return out
@@ -214,7 +214,10 @@ def compute_dosha_radar_analysis(natal_chart: dict) -> dict:
             "divine_protection_natal": divine_count,
             "soonya_signs": profile["soonya_signs"],
             "chandrashtama_sign": profile["chandrashtama_sign"],
-            "mudakku_sign": profile["mudakku"]["sign_name"],
+            "mudakku_sign": (
+                f"{profile['mudakku']['sign_name']} "
+                f"{int(profile['mudakku']['degree_lo'])}–{int(profile['mudakku']['degree_hi'])}°"
+            ),
             "vadhai_nakshatra": profile["vadhai_nak_name"],
             "vainasikam_nakshatra": profile["vainasikam_nak_name"],
             "forecast_horizon_days": forecast["days_ahead"],
@@ -243,7 +246,8 @@ def dosha_radar_context_for_narrator(natal_chart: dict) -> str:
         "=== DOSHA RADAR (obstruction + Pushkara — use for transit caution & divine protection) ===",
         f"Soonya (dagdha) signs: {', '.join(prof['soonya_signs']) or 'none'}",
         f"Chandrashtama sign: {prof['chandrashtama_sign']} ({prof['chandrashtama_english']})",
-        f"Mudakku (22nd Drekkana): {prof['mudakku']['sign_name']} H{prof['mudakku_house']}",
+        f"Mudakku (22nd Drekkana): {prof['mudakku']['sign_name']} "
+        f"{int(prof['mudakku']['degree_lo'])}–{int(prof['mudakku']['degree_hi'])}° H{prof['mudakku_house']}",
         f"Vadhai nakshatra: {prof['vadhai_nak_name']} | Vainasikam: {prof['vainasikam_nak_name']}",
         "",
         "NATAL PUSHKARA NAVAMSA:",
