@@ -1,7 +1,7 @@
 /**
  * HealthPanel — D3 Drekkana body map, Dasa/Bhukti + transit awareness (EN + TA).
  */
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
@@ -234,24 +234,30 @@ function TransitTodayTable({ rows, date }) {
 }
 
 export default function HealthPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [result, setResult] = useState({ chart: null, userId: null, data: null, error: '' })
   const [selectedZone, setSelectedZone] = useState(null)
   const tableRef = useRef(null)
   const factorsRef = useRef(null)
 
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
+  useEffect(() => {
+    if (!chart || !enabled) return undefined
+    let cancel = false
     api.post('/health/analyze', chartPayload(chart, userId))
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail || 'Could not load health analysis.'))
-      .finally(() => setLoading(false))
+      .then(r => {
+        if (!cancel) setResult({ chart, userId, data: r.data, error: '' })
+      })
+      .catch(e => {
+        if (cancel) return
+        const detail = e.response?.data?.detail
+        const message = typeof detail === 'string' ? detail : 'Could not load health analysis.'
+        setResult(prev => ({ ...prev, chart, userId, error: message }))
+      })
+    return () => { cancel = true }
   }, [chart, userId, enabled])
 
-  useEffect(() => { load() }, [load])
+  const loading = Boolean(chart && enabled) && (result.chart !== chart || result.userId !== userId)
+  const data = result.data
+  const error = loading ? '' : result.error
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 640px)')

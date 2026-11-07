@@ -306,26 +306,30 @@ function PushkaraTransitList({ items }) {
 }
 
 export default function DoshaRadarPanel({ chart, userId, enabled = true }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const load = useCallback(() => {
-    if (!chart || !enabled) return
-    setLoading(true)
-    setError('')
-    api.post('/dosha-radar/analyze', chartPayload(chart, userId))
-      .then(r => setData(r.data))
-      .catch(e => {
-        const detail = e.response?.data?.detail
-        setError(typeof detail === 'string' ? detail : 'Could not load Dosha Radar.')
-      })
-      .finally(() => setLoading(false))
-  }, [chart, userId, enabled])
+  const [nonce, setNonce] = useState(0)
+  const [result, setResult] = useState({ chart: null, userId: null, nonce: -1, data: null, error: '' })
+  const load = useCallback(() => setNonce(n => n + 1), [])
 
   useEffect(() => {
-    if (enabled && chart) load()
-  }, [enabled, chart, load])
+    if (!chart || !enabled) return undefined
+    let cancel = false
+    api.post('/dosha-radar/analyze', chartPayload(chart, userId))
+      .then(r => {
+        if (!cancel) setResult({ chart, userId, nonce, data: r.data, error: '' })
+      })
+      .catch(e => {
+        if (cancel) return
+        const detail = e.response?.data?.detail
+        const message = typeof detail === 'string' ? detail : 'Could not load Dosha Radar.'
+        setResult(prev => ({ ...prev, chart, userId, nonce, error: message }))
+      })
+    return () => { cancel = true }
+  }, [chart, userId, enabled, nonce])
+
+  const loading = Boolean(chart && enabled)
+    && (result.chart !== chart || result.userId !== userId || result.nonce !== nonce)
+  const data = result.data
+  const error = loading ? '' : result.error
 
   if (!chart) {
     return <div className="dr-loading" style={{ opacity: 0.6 }}>Open My Chart first…</div>

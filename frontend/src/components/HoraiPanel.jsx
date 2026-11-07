@@ -1,7 +1,7 @@
 /**
  * HoraiPanel — daily Horai & Uba Horai inside Panchangam tab.
  */
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import api from '../api/client'
 import {
   HORAI_MODES,
@@ -77,20 +77,17 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
   const timeZone = panch?.timezone || 'Asia/Kolkata'
   const weekdaySun0 = weekdaySunZeroFromVaaram(panch?.vaaram_name)
 
-  const fetchNextSunrise = useCallback(async () => {
-    if (!enabled || mode !== HORAI_MODES.SUNRISE || !displayDate || !location) return
-    try {
-      const nextDate = addDaysYmd(displayDate, 1)
-      const res = await api.get('/panchangam/date', { params: { date: nextDate, location } })
-      setNextSunrise(res.data?.sunrise || null)
-    } catch {
-      setNextSunrise(null)
-    }
+  useEffect(() => {
+    if (!enabled || mode !== HORAI_MODES.SUNRISE || !displayDate || !location) return undefined
+    let cancel = false
+    const key = `${displayDate}|${location}`
+    api.get('/panchangam/date', { params: { date: addDaysYmd(displayDate, 1), location } })
+      .then(res => { if (!cancel) setNextSunrise({ key, iso: res.data?.sunrise || null }) })
+      .catch(() => { if (!cancel) setNextSunrise({ key, iso: null }) })
+    return () => { cancel = true }
   }, [displayDate, location, mode, enabled])
 
-  useEffect(() => {
-    fetchNextSunrise()
-  }, [fetchNextSunrise])
+  const nextSunriseIso = nextSunrise?.key === `${displayDate}|${location}` ? nextSunrise.iso : null
 
   const horaiDay = useMemo(() => {
     if (!panch || !displayDate) return null
@@ -101,9 +98,9 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
       timeZone,
       sunriseIso: panch.sunrise,
       sunsetIso: panch.sunset,
-      nextSunriseIso: nextSunrise,
+      nextSunriseIso,
     })
-  }, [panch, displayDate, weekdaySun0, mode, timeZone, nextSunrise])
+  }, [panch, displayDate, weekdaySun0, mode, timeZone, nextSunriseIso])
 
   const live = useMemo(() => {
     if (!enabled || !panch) return null
@@ -120,7 +117,7 @@ export default function HoraiPanel({ displayDate, location, panch, enabled = tru
           : weekdaySunZeroFromYmd(ymd, timeZone)
       ),
     })
-  }, [enabled, panch, now, timeZone, weekdaySun0, mode])
+  }, [enabled, panch, now, timeZone, weekdaySun0, mode, displayDate])
 
   const localNow = nowInTimezone(timeZone)
 

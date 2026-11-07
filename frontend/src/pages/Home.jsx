@@ -715,7 +715,19 @@ function HomeApp() {
   const dashaBackfillRef = useRef('')
   const mobileNavWrapRef = useRef(null)
   const scrollTargetRef = useRef(scrollTarget)
-  scrollTargetRef.current = scrollTarget
+  const initialTabRef = useRef(activeTab)
+  const [syncedUserId, setSyncedUserId] = useState(null)
+  const [adminDeepLinked, setAdminDeepLinked] = useState(false)
+
+  // Deep-link ?tab=admin once owner status is confirmed
+  if (isAdmin && requestedTab === 'admin' && !adminDeepLinked) {
+    setAdminDeepLinked(true)
+    setMountedTabs(prev => new Set(prev).add('admin'))
+    setActiveTab('admin')
+  }
+
+  // Declared before the tab effect below so it sees the latest scroll target.
+  useEffect(() => { scrollTargetRef.current = scrollTarget }, [scrollTarget])
 
   const DISCLAIMER_SECTIONS = useMemo(
     () => [{ title: 'Disclaimer', body: SHORT_DISCLAIMER }],
@@ -738,7 +750,9 @@ function HomeApp() {
         else url.hash = ''
       }
       window.history.replaceState({}, '', url)
-    } catch {}
+    } catch {
+      // URL sync is cosmetic; the tab has already switched.
+    }
   }, [])
 
   // Keep the chosen tab in view in both bars, and open each tab at the top of the page.
@@ -787,15 +801,16 @@ function HomeApp() {
   }, [activeTab, scrollTarget])
 
   useEffect(() => {
-    trackTabView(activeTab)
-  }, []) // initial tab only — eslint-disable-line react-hooks/exhaustive-deps
+    trackTabView(initialTabRef.current)
+  }, [])
 
   // Load chart from server when signed in; sync session chart if none saved yet
   useEffect(() => {
-    if (!userId) return
-    setChartRefreshing(true)
+    if (!userId) return undefined
+    let cancel = false
     api.get('/natal-chart')
       .then(({ data }) => {
+        if (cancel) return
         setChart(data)
         const bd = data?.birth_data || {}
         setForm(f => ({
@@ -809,20 +824,24 @@ function HomeApp() {
         }))
       })
       .catch(async (err) => {
-        if (err.response?.status !== 404) return
+        if (cancel || err.response?.status !== 404) return
         const s = loadSessionChart()
         if (!s?.form?.dob || !s?.chart) return
         try {
           const { data } = await api.post('/natal-chart', { ...s.form, user_id: userId })
+          if (cancel) return
           setChart(data)
           setForm(s.form)
         } catch (syncErr) {
           console.error('[chart sync]', syncErr)
-          setSyncNotice('Could not save your chart to your account. Please recalculate on Home.')
+          if (!cancel) setSyncNotice('Could not save your chart to your account. Please recalculate on Home.')
         }
       })
-      .finally(() => setChartRefreshing(false))
+      .finally(() => { if (!cancel) setSyncedUserId(userId) })
+    return () => { cancel = true }
   }, [userId])
+
+  const accountSyncing = Boolean(userId) && syncedUserId !== userId
 
   // Backfill dasha on guest session charts (signed-in users use GET /natal-chart)
   useEffect(() => {
@@ -859,14 +878,6 @@ function HomeApp() {
     navigator.serviceWorker.addEventListener('message', onMsg)
     return () => navigator.serviceWorker.removeEventListener('message', onMsg)
   }, [setTab, TABS])
-
-  // Deep-link ?tab=admin once owner status is confirmed
-  useEffect(() => {
-    if (isAdmin && requestedTab === 'admin') {
-      setMountedTabs(prev => new Set(prev).add('admin'))
-      setActiveTab('admin')
-    }
-  }, [isAdmin, requestedTab])
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -1020,7 +1031,7 @@ function HomeApp() {
             <button type="button" className="app-notice__dismiss" onClick={() => setSyncNotice('')}>Dismiss</button>
           </div>
         )}
-        {chartRefreshing && (
+        {(chartRefreshing || accountSyncing) && (
           <div style={{
             textAlign: 'center', padding: '8px', fontSize: 12,
             color: 'var(--orange)', background: 'var(--highlight-bg)',
