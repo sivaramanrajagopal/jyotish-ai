@@ -33,6 +33,7 @@ AI_FREE_LIMIT_DETAIL = (
     "The free AI limit is used up for now. Try again in a minute, or tomorrow if today's limit is reached."
 )
 AI_KEY_INVALID_DETAIL = "The AI API key is invalid. Please check server configuration."
+AI_MODEL_GONE_DETAIL = "The AI model is no longer available. Set AI_MODEL on the server to a current model."
 _KEY_INVALID_MARKERS = (
     "api_key_invalid", "api key not valid", "valid api key", "invalid api key", "incorrect api key",
 )
@@ -51,6 +52,8 @@ def ai_error_detail(exc: Exception) -> Optional[str]:
     text = str(exc).lower()
     if any(marker in text for marker in _KEY_INVALID_MARKERS):
         return AI_KEY_INVALID_DETAIL
+    if "no longer available" in text or ("not_found" in text and "model" in text):
+        return AI_MODEL_GONE_DETAIL
     if is_gemini() and ("resource_exhausted" in text or "quota" in text or "429" in text):
         return AI_FREE_LIMIT_DETAIL
     if is_openai_billing_error(exc):

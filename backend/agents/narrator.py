@@ -14,7 +14,7 @@ import os
 import re
 from typing import Optional
 
-from ai_client import ai_client, ai_extra, ai_model
+from ai_client import ai_client, ai_extra, ai_model, create_chat
 
 
 # ── Model config ─────────────────────────────────────────────────────────────
@@ -181,7 +181,8 @@ def generate_forecast(context: dict) -> dict:
 
     client = ai_client(api_key)
 
-    response = client.chat.completions.create(
+    response = create_chat(
+        client,
         model=ai_model(),
         max_tokens=TOKENS,
         messages=[

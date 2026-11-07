@@ -61,13 +61,14 @@ from chart_utils import assert_chart_not_stale, ensure_dasha, refresh_dasha
 from ai_limits import (
     AI_FREE_LIMIT_DETAIL,
     AI_KEY_INVALID_DETAIL,
+    AI_MODEL_GONE_DETAIL,
     OPENAI_BILLING_DETAIL,
     ai_error_detail,
     check_ai_quota,
     moderate_messages,
     refund_ai_quota,
 )
-from ai_client import ai_client, ai_extra, ai_model
+from ai_client import ai_client, ai_extra, ai_model, create_chat
 from analytics import track_event
 from security import (
     IS_PRODUCTION,
@@ -1131,7 +1132,7 @@ def chat_endpoint(
         return {"reply": reply, "model": ai_model()}
     except RuntimeError as exc:
         msg = str(exc)
-        if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL):
+        if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL, AI_MODEL_GONE_DETAIL):
             raise HTTPException(status_code=503, detail=msg)
         if "no credits" in msg.lower():
             raise HTTPException(status_code=503, detail=OPENAI_BILLING_DETAIL)
@@ -1253,7 +1254,8 @@ def _ai_complete(api_key: str, system: str, user_prompt: str, max_tokens: int, l
     from openai import AuthenticationError, RateLimitError
 
     try:
-        response = ai_client(api_key).chat.completions.create(
+        response = create_chat(
+            ai_client(api_key),
             model=ai_model(),
             max_tokens=max_tokens,
             messages=[

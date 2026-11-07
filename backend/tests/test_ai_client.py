@@ -36,6 +36,35 @@ def test_gemini_quota_and_bad_key_messages(monkeypatch):
     assert ai_error_detail(Exception("Error code: 400 - Please pass a valid API key")) == AI_KEY_INVALID_DETAIL
 
 
+def test_retired_model_message(monkeypatch):
+    from ai_limits import AI_MODEL_GONE_DETAIL
+
+    _env(monkeypatch, "AIzaTest")
+    err = Exception("Error code: 404 - This model models/gemini-2.5-flash is no longer available to new users.")
+    assert ai_error_detail(err) == AI_MODEL_GONE_DETAIL
+
+
+def test_thinking_setting_is_dropped_when_rejected():
+    import httpx
+    from openai import BadRequestError
+    from types import SimpleNamespace
+
+    from ai_client import create_chat
+
+    seen = []
+
+    def create(**kw):
+        seen.append(kw)
+        if "extra_body" in kw:
+            resp = httpx.Response(400, request=httpx.Request("POST", "http://x"))
+            raise BadRequestError("reasoning_effort none is not supported", response=resp, body=None)
+        return "ok"
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    assert create_chat(client, model="m", max_tokens=300, extra_body={"reasoning_effort": "none"}) == "ok"
+    assert "extra_body" not in seen[-1] and seen[-1]["max_tokens"] == 2048
+
+
 def test_openai_billing_message_stays(monkeypatch):
     _env(monkeypatch, "sk-test")
     assert ai_error_detail(Exception("billing_not_active")) == OPENAI_BILLING_DETAIL

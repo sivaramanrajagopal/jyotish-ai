@@ -13,7 +13,7 @@ import os
 from openai import OpenAI
 
 OPENAI_MODEL = "gpt-4o-mini"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
@@ -41,8 +41,24 @@ def ai_client(api_key: str | None = None) -> OpenAI:
 
 
 def ai_extra() -> dict:
-    """Gemini 2.5 Flash thinks by default, and thinking eats the short max_tokens budgets."""
+    """Gemini Flash thinks by default, and thinking eats the short max_tokens budgets."""
     return {"extra_body": {"reasoning_effort": "none"}} if is_gemini() else {}
+
+
+def create_chat(client, **kwargs):
+    """chat.completions.create, retried once without the thinking setting if the model rejects it."""
+    from openai import BadRequestError
+
+    try:
+        return client.chat.completions.create(**kwargs)
+    except BadRequestError as exc:
+        text = str(exc).lower()
+        if "extra_body" not in kwargs or ("reason" not in text and "thinking" not in text):
+            raise
+        retry = {k: v for k, v in kwargs.items() if k != "extra_body"}
+        if retry.get("max_tokens"):
+            retry["max_tokens"] = max(retry["max_tokens"] * 4, 2048)  # thinking counts toward the limit
+        return client.chat.completions.create(**retry)
 
 
 def ai_provider() -> str:

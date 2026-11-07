@@ -561,7 +561,7 @@ def chat(
     if CLASSICAL_TOOL in tools:
         system_prompt += CLASSICAL_GUIDE
     from openai import APIError, AuthenticationError, RateLimitError
-    from ai_client import ai_base_url, ai_extra, ai_model
+    from ai_client import ai_base_url, ai_extra, ai_model, create_chat
     from ai_limits import AI_KEY_INVALID_DETAIL, ai_error_detail
     try:
         client = OpenAI(api_key=api_key, base_url=ai_base_url())
@@ -572,7 +572,8 @@ def chat(
         reply = ""
         for round_no in range(4):
             last_round = round_no == 3
-            response = client.chat.completions.create(
+            response = create_chat(
+                client,
                 model=ai_model(),
                 max_tokens=TOKENS,
                 messages=thread,

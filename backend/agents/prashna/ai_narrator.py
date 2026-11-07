@@ -79,8 +79,9 @@ def narrate_prashna(result: dict, language: str = "english") -> str | None:
     )
 
     try:
-        from ai_client import ai_client, ai_extra, ai_model
-        response = ai_client(api_key).chat.completions.create(
+        from ai_client import ai_client, ai_extra, ai_model, create_chat
+        response = create_chat(
+            ai_client(api_key),
             model=ai_model(),
             max_tokens=280,
             messages=[
