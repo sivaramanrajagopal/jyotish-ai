@@ -18,6 +18,23 @@ MAX_JSON_BODY_BYTES = int(os.getenv("MAX_JSON_BODY_BYTES", "262144"))  # 256 KB
 IS_PRODUCTION = os.getenv("APP_ENV", "development") == "production"
 
 
+def expand_loopback_origins(origins: list[str]) -> list[str]:
+    """In development, localhost and 127.0.0.1 are the same browser host."""
+    if IS_PRODUCTION:
+        return list(origins)
+    extra = []
+    for origin in origins:
+        if "://localhost" in origin:
+            extra.append(origin.replace("://localhost", "://127.0.0.1", 1))
+        elif "://127.0.0.1" in origin:
+            extra.append(origin.replace("://127.0.0.1", "://localhost", 1))
+    out: list[str] = []
+    for origin in list(origins) + extra:
+        if origin and origin not in out:
+            out.append(origin)
+    return out
+
+
 def cors_origin_for_request(request: Request, allowed: list[str]) -> Optional[str]:
     """Return Origin only if it is on the allowlist (never echo arbitrary origins)."""
     origin = request.headers.get("origin")

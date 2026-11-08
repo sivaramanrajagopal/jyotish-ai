@@ -75,9 +75,8 @@ def _create(client, **kwargs):
 
     try:
         return client.chat.completions.create(**kwargs)
-    except BadRequestError as exc:
-        text = str(exc).lower()
-        if "extra_body" not in kwargs or ("reason" not in text and "thinking" not in text):
+    except BadRequestError:
+        if "extra_body" not in kwargs:
             raise
         retry = {k: v for k, v in kwargs.items() if k != "extra_body"}
         if retry.get("max_tokens"):

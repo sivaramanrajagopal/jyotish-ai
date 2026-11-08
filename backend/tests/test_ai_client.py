@@ -44,6 +44,23 @@ def test_retired_model_message(monkeypatch):
     assert ai_error_detail(err) == AI_MODEL_GONE_DETAIL
 
 
+def test_invalid_argument_also_drops_thinking_extra():
+    import httpx
+    from openai import BadRequestError
+    from types import SimpleNamespace
+
+    from ai_client import create_chat
+
+    def create(**kw):
+        if "extra_body" in kw:
+            resp = httpx.Response(400, request=httpx.Request("POST", "http://x"))
+            raise BadRequestError("Request contains an invalid argument.", response=resp, body=None)
+        return "ok"
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    assert create_chat(client, model="gemini-flash-lite-latest", extra_body={"reasoning_effort": "none"}) == "ok"
+
+
 def test_thinking_setting_is_dropped_when_rejected():
     import httpx
     from openai import BadRequestError

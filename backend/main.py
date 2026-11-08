@@ -75,6 +75,7 @@ from security import (
     IS_PRODUCTION,
     check_content_length,
     cors_origin_for_request,
+    expand_loopback_origins,
     validate_client_natal_chart,
     verify_admin_token,
 )
@@ -165,7 +166,9 @@ async def lifespan(app: FastAPI):
 
 # ── CORS: read allowed origins from env (NEVER use * in production) ───────────
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000")
-ALLOWED_ORIGINS_LIST = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+ALLOWED_ORIGINS_LIST = expand_loopback_origins(
+    [o.strip() for o in _raw_origins.split(",") if o.strip()]
+)
 
 app = FastAPI(
     title="Parashara Jyotish API",
