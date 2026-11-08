@@ -88,7 +88,7 @@ from agents.panchangam_calendar import build_panchangam_ics
 from agents.natal_agent import calculate_natal_chart, format_chart_output
 from agents.orchestrator import assemble_context
 from agents.narrator import generate_forecast
-from agents.chat_agent import chat as jyotish_chat
+from agents.chat_agent import chat_turn as jyotish_chat
 from agents.ashtama_agent import router as ashtama_router
 from agents.transit_score_agent import score_all_houses
 from agents.forecast_links import daily_context, forecast_links, house_context as links_house_context, public
@@ -951,6 +951,7 @@ class ChatRequest(BaseModel):
     location: str = "Chennai"
     language: str = "english"     # "english" | "tamil"
     page: str = ""
+    gender: Optional[str] = None
 
     model_config = {"str_strip_whitespace": True}
 
@@ -1119,18 +1120,28 @@ def chat_endpoint(
     moderate_messages(msgs)
     chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
     assert_chart_not_stale(chart)
+    gender = _sanitise(req.gender or "", 20).lower()
+    if gender in ("male", "female", "other"):
+        birth = dict(chart.get("birth_data") or {})
+        birth["gender"] = gender
+        chart = {**chart, "birth_data": birth}
     chart = refresh_dasha(chart, force=True)
 
     try:
-        reply = jyotish_chat(
+        result = jyotish_chat(
             natal_chart=chart,
             messages=msgs,
             location=req.location,
             language=req.language,
             page=_sanitise(req.page, 40),
         )
+        if isinstance(result, str):
+            reply, cites = result, []
+        else:
+            reply = result.get("reply") or ""
+            cites = result.get("cites") or []
         track_event("chat_sent", user_id=auth_user.id if auth_user else None, properties={"language": req.language})
-        return {"reply": reply, "model": ai_model()}
+        return {"reply": reply, "model": ai_model(), "cites": cites}
     except RuntimeError as exc:
         msg = str(exc)
         if msg in (OPENAI_BILLING_DETAIL, AI_FREE_LIMIT_DETAIL, AI_KEY_INVALID_DETAIL, AI_MODEL_GONE_DETAIL, AI_BUSY_DETAIL):

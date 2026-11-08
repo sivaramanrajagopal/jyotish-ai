@@ -1179,7 +1179,7 @@ function HomeApp() {
           {chart
             ? <div className="tab-content-wrap max-w-3xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
                 <StaleChartBanner chart={chart} onRecalculate={goHome} />
-                <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} userId={userId} />
+                <ChatPanel chart={chart} placeOfBirth={form.place_of_birth} userId={userId} gender={form.gender} onGoToTab={setTab} />
               </div>
             : <NeedChart onGoHome={goHome} />
           }
@@ -1223,6 +1223,8 @@ function HomeApp() {
           userId={userId}
           placeOfBirth={form.place_of_birth}
           page={TABS.find((tab) => tab.key === activeTab)?.label || 'Home'}
+          gender={form.gender}
+          onGoToTab={setTab}
         />
       )}
 

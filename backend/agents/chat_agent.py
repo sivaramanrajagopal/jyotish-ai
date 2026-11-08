@@ -529,8 +529,19 @@ def chat(
     language: str = "english",
     page: str = "",
 ) -> str:
+    """One turn of conversation. Returns the spoken reply."""
+    return chat_turn(natal_chart, messages, location, language, page)["reply"]
+
+
+def chat_turn(
+    natal_chart: dict,
+    messages: list[dict],
+    location: str = "Chennai",
+    language: str = "english",
+    page: str = "",
+) -> dict:
     """
-    Send one turn of conversation and return the assistant reply.
+    Send one turn of conversation and return the assistant reply plus engine cites.
     language: "english" | "tamil"
     """
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -556,8 +567,9 @@ def chat(
         system_prompt += f"\nThe person is looking at the {page_label} page. Start from that page when it fits the question.\n"
     system_prompt += _TOOL_GUIDE
 
-    from agents.chat_tools import CLASSICAL_TOOL, CLASSICAL_GUIDE, active_tools, tool_result_json
+    from agents.chat_tools import CLASSICAL_TOOL, CLASSICAL_GUIDE, ENGINE_GUIDE, active_tools, cite_for, tool_result_json
     tools = active_tools()
+    system_prompt += ENGINE_GUIDE
     if CLASSICAL_TOOL in tools:
         system_prompt += CLASSICAL_GUIDE
     from openai import APIError, AuthenticationError, RateLimitError
@@ -570,6 +582,8 @@ def chat(
             *messages,
         ]
         reply = ""
+        cites: list[dict] = []
+        seen_tabs: set[str] = set()
         for round_no in range(4):
             last_round = round_no == 3
             response = create_chat(
@@ -588,15 +602,23 @@ def chat(
                 break
             thread.append(message.model_dump(exclude_none=True))
             for call in tool_calls:
+                name = call.function.name
+                cite = cite_for(name)
+                if cite and cite["tab"] not in seen_tabs:
+                    seen_tabs.add(cite["tab"])
+                    cites.append(cite)
                 thread.append({
                     "role": "tool",
                     "tool_call_id": call.id,
                     "content": tool_result_json(
-                        call.function.name, natal_chart, location, call.function.arguments or "",
+                        name, natal_chart, location, call.function.arguments or "",
                     ),
                 })
             reply = message.content or reply
-        return reply or "I could not finish that reading from the chart."
+        return {
+            "reply": reply or "I could not finish that reading from the chart.",
+            "cites": cites,
+        }
     except AuthenticationError:
         raise RuntimeError(AI_KEY_INVALID_DETAIL)
     except RateLimitError as exc:

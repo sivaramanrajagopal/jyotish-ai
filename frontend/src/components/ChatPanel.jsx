@@ -12,6 +12,7 @@ import { resolvePanchangamLocation } from '../lib/resolveLocation'
 import { loadChatMessages, saveChatMessages } from '../lib/chatStorage'
 import QuotaHint from './QuotaHint'
 import ChartEvidence from './ChartEvidence'
+import CiteChips from './CiteChips'
 
 // ── Topic chips ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -283,7 +284,7 @@ function renderBoldSafe(text) {
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export default function ChatPanel({ chart, placeOfBirth, userId }) {
+export default function ChatPanel({ chart, placeOfBirth, userId, gender = 'male', onGoToTab }) {
   const [messages, setMessages]     = useState(() => loadChatMessages(chart))
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
@@ -319,9 +320,10 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
         location: panchangamLocation,
         language,
         page: 'Ask AI',
+        gender,
       }))
       const reply = data.reply || ''
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      setMessages(prev => [...prev, { role: 'assistant', content: reply, cites: data.cites || [] }])
       setActive(detectTopics(reply))
       setLastFailedText('')
     } catch (err) {
@@ -455,6 +457,9 @@ export default function ChatPanel({ chart, placeOfBirth, userId }) {
                     {(CHAT_TR[language] || CHAT_TR.english).aiNarration}
                   </span>
                 </div>
+              )}
+              {msg.role === 'assistant' && (
+                <CiteChips cites={msg.cites} onGoToTab={onGoToTab} />
               )}
               {msg.role === 'assistant' && (
                 <ChartEvidence

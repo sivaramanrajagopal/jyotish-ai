@@ -40,3 +40,45 @@ def test_sky_today_names_the_weekday():
     assert sky["vaaram"]
     assert sky["tithi"]
     assert sky["moon_sign"]
+
+
+def test_engine_tools_cover_the_desk():
+    chart = _chennai()
+    nadi = run_chart_tool("nadi", chart, args={"question": "work"})
+    assert nadi["cite"]["tab"] == "nadi"
+    assert nadi["questions"][0]["id"] == "work"
+    assert nadi["questions"][0]["happening"] == "Leo"
+
+    sitting = run_chart_tool("reading", chart)
+    assert sitting["cite"]["tab"] == "reading"
+    assert sitting["who"]
+    assert any(row["id"] == "work" for row in sitting["life"])
+
+    life = run_chart_tool("life_cycle", chart)
+    assert "LIFE CYCLE" in life["text"]
+    assert life["cite"]["tab"] == "life-cycle"
+
+    career = run_chart_tool("career", chart)
+    assert "Career" in career["text"]
+    health = run_chart_tool("health", chart)
+    assert "Health" in health["text"]
+    radar = run_chart_tool("dosha_radar", chart)
+    assert "DOSHA RADAR" in radar["text"]
+    links = run_chart_tool("house_links", chart, args={"question": "Explain my 10th house"})
+    assert "HOUSE CONNECTIONS" in links["text"]
+    gochar = run_chart_tool("gochar", chart)
+    assert "GOCHARA" in gochar["text"]
+    assert "score" not in gochar["text"].lower() or "Never quote a score" in gochar["text"]
+    facts = run_chart_tool("forecast_facts", chart, "Chennai")
+    assert facts["date"]
+    assert facts["cite"]["tab"] == "forecast"
+    missing = run_chart_tool("prashna", chart, "Chennai", {})
+    assert "error" in missing
+    tamil = run_chart_tool("tamil_doshas", chart)
+    assert tamil["text"]
+    indu = run_chart_tool("indu_lagna", chart)
+    assert "Indu" in indu["text"]
+    sav = run_chart_tool("ashtakavarga", chart)
+    assert sav["text"]
+    bhavam = run_chart_tool("bhavat_bhavam", chart)
+    assert bhavam["cite"]["tab"] == "health"

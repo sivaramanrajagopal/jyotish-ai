@@ -9,12 +9,13 @@ import { formatApiError } from '../lib/apiError'
 import { resolvePanchangamLocation } from '../lib/resolveLocation'
 import { loadChatMessages, saveChatMessages } from '../lib/chatStorage'
 import ChartEvidence from './ChartEvidence'
+import CiteChips from './CiteChips'
 
 function visibleThread(messages) {
   return messages.filter((message) => message.role === 'user' || message.role === 'assistant')
 }
 
-export default function AskFloater({ chart, userId, placeOfBirth, page }) {
+export default function AskFloater({ chart, userId, placeOfBirth, page, gender = 'male', onGoToTab }) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState(() => visibleThread(loadChatMessages(chart)))
   const [input, setInput] = useState('')
@@ -53,8 +54,9 @@ export default function AskFloater({ chart, userId, placeOfBirth, page }) {
         location,
         language: 'english',
         page,
+        gender,
       }))
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || '' }])
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || '', cites: data.cites || [] }])
     } catch (err) {
       setError(formatApiError(err, 'Could not get a reply. Please try again.'))
     } finally {
@@ -106,6 +108,9 @@ export default function AskFloater({ chart, userId, placeOfBirth, page }) {
                 >
                   {message.content}
                 </p>
+                {message.role === 'assistant' && (
+                  <CiteChips cites={message.cites} onGoToTab={onGoToTab} />
+                )}
                 {message.role === 'assistant' && (
                   <ChartEvidence
                     chart={chart}
