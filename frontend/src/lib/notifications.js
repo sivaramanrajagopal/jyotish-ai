@@ -12,6 +12,7 @@ const PREFS_KEY = 'jyotish-notif-prefs-v1'
 const SENT_KEY  = 'jyotish-notif-sent-v1'
 const WATCH_SENT_KEY = 'jyotish-watch-sent-v1'
 const WATCH_CACHE_KEY = 'jyotish-watch-cache-v1'
+const MITRA_CACHE_KEY = 'jyotish-mitra-cache-v1'
 const CHECK_MS  = 5 * 60 * 1000  // every 5 minutes while app is open
 
 const DEFAULT_PREFS = {
@@ -21,6 +22,7 @@ const DEFAULT_PREFS = {
   taraWarnings: true,
   bhuktiWatch: true,
   seasonWatch: true,
+  mitraMuhurta: true,
   location: 'Chennai',
 }
 
@@ -147,13 +149,77 @@ function guessLocation(place) {
   return cities.find(c => lower.includes(c.toLowerCase())) || 'Chennai'
 }
 
-function fmtTime(iso) {
+function fmtTime(iso, timeZone = 'Asia/Kolkata') {
   if (!iso) return ''
   try {
     return new Date(iso).toLocaleTimeString('en-IN', {
-      hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+      hour: '2-digit', minute: '2-digit', hour12: true, timeZone,
     })
   } catch { return '' }
+}
+
+function dateInZone(timeZone) {
+  try {
+    return new Date().toLocaleDateString('en-CA', { timeZone: timeZone || 'Asia/Kolkata' })
+  } catch {
+    return todayKey()
+  }
+}
+
+async function loadMitraMonth(location) {
+  const today = todayKey()
+  try {
+    const cached = JSON.parse(localStorage.getItem(MITRA_CACHE_KEY) || 'null')
+    if (cached?.location === location && cached.date === today) return cached.data
+  } catch { /* storage unavailable (private mode or full) */ }
+  const { data } = await api.get('/panchangam/mitra-muhurta', { params: { location } })
+  try {
+    localStorage.setItem(MITRA_CACHE_KEY, JSON.stringify({ location, date: today, data }))
+  } catch { /* storage unavailable (private mode or full) */ }
+  return data
+}
+
+async function checkMitraAlerts(location) {
+  const prefs = getNotificationPrefs()
+  if (!prefs.mitraMuhurta) return
+  const data = await loadMitraMonth(location)
+  const tz = data?.timezone || 'Asia/Kolkata'
+  const today = dateInZone(tz)
+  const todays = (data?.windows || []).filter((row) => row.date === today)
+  if (!todays.length) return
+
+  const ranges = todays
+    .map((row) => `${row.label} ${fmtTime(row.start, tz)} – ${fmtTime(row.end, tz)}`)
+    .join('; ')
+  if (!alreadySent(`mitra-day-${today}`)) {
+    await showNotification(
+      'Mitra muhurta today',
+      `${ranges}. Traditional timing for paying a loan.`,
+      `mitra-day-${today}`,
+      '/?tab=panchangam',
+    )
+  }
+
+  for (const row of todays) {
+    if (isNow(row.start, row.end) && !alreadySent(`mitra-now-${row.start}`)) {
+      await showNotification(
+        'Mitra muhurta — now',
+        `${row.label} until ${fmtTime(row.end, tz)}.`,
+        `mitra-now-${row.start}`,
+        '/?tab=panchangam',
+      )
+    } else {
+      const mins = minutesUntil(row.start)
+      if (mins > 0 && mins <= 10 && !alreadySent(`mitra-soon-${row.start}`)) {
+        await showNotification(
+          'Mitra muhurta starting soon',
+          `${row.label} begins at ${fmtTime(row.start, tz)}.`,
+          `mitra-soon-${row.start}`,
+          '/?tab=panchangam',
+        )
+      }
+    }
+  }
 }
 
 function isNow(startIso, endIso) {
@@ -213,9 +279,14 @@ export async function checkCosmicAlerts(chart, placeOfBirth, userId) {
   const prefs = getNotificationPrefs()
   if (!prefs.enabled || Notification.permission !== 'granted') return
   await checkComingAlerts(chart, userId)
+  const location = prefs.location || guessLocation(placeOfBirth)
+  try {
+    await checkMitraAlerts(location)
+  } catch (e) {
+    console.warn('[notifications] mitra check failed', e)
+  }
   if (chart?.moon_nakshatra_index == null || chart?.moon_rasi_index == null) return
 
-  const location = prefs.location || guessLocation(placeOfBirth)
   const nakIdx   = chart.moon_nakshatra_index
   const rasiIdx  = chart.moon_rasi_index
 

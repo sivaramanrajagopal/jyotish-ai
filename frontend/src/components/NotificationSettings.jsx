@@ -95,7 +95,7 @@ export default function NotificationSettings({ placeOfBirth, chart, userId }) {
       </div>
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.5 }}>
-        Chandra Ashtama, Rahu Kalam, and Tara stay as they are. Two more alerts cover the next bhukti and the next season opening.
+        Chandra Ashtama, Rahu Kalam, Tara, and Mitra muhurta stay as they are. Two more alerts cover the next bhukti and the next season opening.
         {perm === 'denied' && ' Enable notifications in your browser settings to use this feature.'}
       </p>
 
@@ -110,6 +110,7 @@ export default function NotificationSettings({ placeOfBirth, chart, userId }) {
           { key: 'taraWarnings', label: 'Tara Balam warnings', desc: 'Alert on Naidhana / unfavourable Tara days' },
           { key: 'bhuktiWatch', label: 'Next bhukti', desc: 'Once, when the change is within 7 days' },
           { key: 'seasonWatch', label: 'Next season opening', desc: 'Once, when the opening is within 14 days' },
+          { key: 'mitraMuhurta', label: 'Mitra muhurta', desc: 'On the day, 10 min before, and during the window' },
         ].map(({ key, label, desc }) => (
           <label
             key={key}
@@ -136,7 +137,7 @@ export default function NotificationSettings({ placeOfBirth, chart, userId }) {
 
         <div style={{ marginTop: 4 }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-            Location for Rahu Kalam
+            Location for Rahu Kalam and Mitra muhurta
           </label>
           <select
             value={prefs.location || guessLoc(placeOfBirth)}
