@@ -86,6 +86,7 @@ from agents.panchangam_agent import (
     format_validation_output,
 )
 from agents.panchangam_calendar import build_panchangam_ics
+from agents.mitra_muhurta import compute_mitra_muhurta
 from agents.natal_agent import calculate_natal_chart, format_chart_output
 from agents.orchestrator import assemble_context
 from agents.narrator import generate_forecast
@@ -562,6 +563,33 @@ def panchangam_calendar(
         media_type="text/calendar; charset=utf-8",
         headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )
+
+
+@app.get("/panchangam/mitra-muhurta")
+@limiter.limit("30/minute")
+def mitra_muhurta_month(
+    request: Request,
+    location: str = Query("Chennai", description="Location name"),
+    month: Optional[str] = Query(None, description="Calendar month YYYY-MM"),
+):
+    """Ashwini+Mesha and Anusham+Vrischika lagna overlaps for loan-repayment timing."""
+    if location not in LOCATIONS:
+        raise HTTPException(status_code=400, detail=f"Unknown location '{location}'.")
+    if month and not re.match(r"^\d{4}-\d{2}$", month):
+        raise HTTPException(status_code=400, detail="Invalid month. Use YYYY-MM.")
+    if month:
+        try:
+            datetime.strptime(month + "-01", "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid month value.")
+    try:
+        return compute_mitra_muhurta(location, month)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Mitra muhurta error: %s", exc)
+        raise HTTPException(status_code=500, detail="Could not compute Mitra muhurta.")
 
 
 @app.get("/panchangam/date")

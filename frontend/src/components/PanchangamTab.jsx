@@ -16,6 +16,7 @@ import { useApiResult } from '../hooks/useApiResult'
 import api from '../api/client'
 import SouthIndianChart from './SouthIndianChart'
 import HoraiPanel from './HoraiPanel'
+import MitraMuhurtaCard from './MitraMuhurtaCard'
 import { isPlanetRetrograde } from '../lib/planetRetrograde'
 import { computeLiveHorai, expandPlanetSequence, weekdaySunZeroFromYmd } from '../lib/horai'
 import { localISODate } from '../lib/dates'
@@ -572,6 +573,13 @@ export default function PanchangamTab({ chart = null }) {
             </div>
           )}
           {panch && !loadingP && <PanchangamLimbs data={panch} />}
+
+          <MitraMuhurtaCard
+            location={location}
+            locations={LOCATIONS}
+            onSelectDate={setDate}
+            onSelectLocation={setLocation}
+          />
 
           {panch && !loadingP && (
             <HoraiPanel

@@ -82,3 +82,13 @@ def test_engine_tools_cover_the_desk():
     assert sav["text"]
     bhavam = run_chart_tool("bhavat_bhavam", chart)
     assert bhavam["cite"]["tab"] == "health"
+    mitra = run_chart_tool("mitra_muhurta", chart, "Chennai", {"month": "2026-11"})
+    assert mitra["cite"]["tab"] == "panchangam"
+    assert mitra["location"] == "Chennai"
+    assert mitra["month"] == "2026-11"
+    assert mitra["count"] >= 1
+    labels = {row["label"] for row in mitra["windows"]}
+    assert any("Ashwini" in label and "Mesha" in label for label in labels)
+    assert any("Anusham" in label and "Vrischika" in label for label in labels)
+    unknown = run_chart_tool("mitra_muhurta", chart, "Chennai", {"location": "Atlantis"})
+    assert "error" in unknown

@@ -30,6 +30,7 @@ CITES = {
     "bhavat_bhavam": {"tab": "health", "label": "Health"},
     "prashna": {"tab": "prashna", "label": "Prashna"},
     "forecast_facts": {"tab": "forecast", "label": "Forecast"},
+    "mitra_muhurta": {"tab": "panchangam", "label": "Panchangam"},
 }
 
 def _tool(name: str, description: str, properties: dict | None = None) -> dict:
@@ -124,6 +125,20 @@ TOOLS = [
             },
         },
     ),
+    _tool(
+        "mitra_muhurta",
+        "Mitra muhurta windows for paying a loan or debt: Ashwini with Mesha lagna, and Anusham (Anuradha) with Vrischika lagna. Uses a panchangam city, not the birth chart. Call for loan repayment timing, Mitra, Mythra, or those two pairs.",
+        {
+            "location": {
+                "type": "string",
+                "description": "Panchangam city such as Chennai. Omit to use the current sky location.",
+            },
+            "month": {
+                "type": "string",
+                "description": "Calendar month YYYY-MM. Omit for the current month at that city.",
+            },
+        },
+    ),
 ]
 
 
@@ -162,10 +177,12 @@ CLASSICAL_GUIDE = (
 
 ENGINE_GUIDE = (
     "Call the matching engine tool for Nadi, the sitting, career, health, Dosha Radar, House Links, "
-    "Gochara, Life Cycle, Tamil doshas, Indu, Ashtakavarga, Bhavat Bhavam, forecast facts, or Prashna. "
+    "Gochara, Life Cycle, Tamil doshas, Indu, Ashtakavarga, Bhavat Bhavam, forecast facts, Prashna, "
+    "or Mitra muhurta (loan-repayment windows). "
     "Answer from the tool JSON. Do not invent dates, seasons, or 0-100 scores. "
     "If the native is already married, do not lead with marriage unless they asked. "
-    "Prashna needs the question text; it is a chart of the moment, not the birth chart.\n"
+    "Prashna needs the question text; it is a chart of the moment, not the birth chart. "
+    "Mitra muhurta uses the panchangam city, not the birth chart. Quote the returned windows.\n"
 )
 
 
@@ -446,6 +463,52 @@ def _forecast_facts(chart: dict, location: str, args: dict) -> dict:
     }
 
 
+def _mitra_muhurta(chart: dict, location: str, args: dict) -> dict:
+    from agents.mitra_muhurta import compute_mitra_muhurta
+    from agents.panchangam_agent import LOCATIONS
+
+    place = str(args.get("location") or location or "Chennai").strip()
+    match = next((name for name in LOCATIONS if name.lower() == place.lower()), None)
+    if not match:
+        return {"error": "Unknown location.", "locations": list(LOCATIONS)}
+    month = str(args.get("month") or "").strip() or None
+    if month and (len(month) != 7 or month[4] != "-"):
+        return {"error": "month must be YYYY-MM, for example 2026-11."}
+    try:
+        data = compute_mitra_muhurta(match, month)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(ZoneInfo(data["timezone"]))
+
+    def _row(row: dict) -> dict:
+        return {
+            "date": row["date"],
+            "start": row["start"],
+            "end": row["end"],
+            "label": row["label"],
+        }
+
+    windows = [_row(row) for row in data.get("windows") or []]
+    nxt = None
+    for row in data.get("windows") or []:
+        if datetime.fromisoformat(row["end"]) > now:
+            nxt = _row(row)
+            break
+    return {
+        "location": data["location"],
+        "timezone": data["timezone"],
+        "month": data["month"],
+        "purpose": data["purpose"],
+        "pairs": data["pairs"],
+        "next": nxt,
+        "windows": windows,
+        "count": data["count"],
+        "note": "Quote these times verbatim. Traditional timing for paying a loan, not a promise.",
+    }
+
+
 def _prashna(chart: dict, location: str, args: dict) -> dict:
     from agents.prashna.analyzer import analyze_prashna
     from agents.prashna.constants import CATEGORY_HOUSE
@@ -506,6 +569,7 @@ HANDLERS = {
     "bhavat_bhavam": _bhavat_bhavam,
     "forecast_facts": _forecast_facts,
     "prashna": _prashna,
+    "mitra_muhurta": _mitra_muhurta,
 }
 
 LIMITS = {
