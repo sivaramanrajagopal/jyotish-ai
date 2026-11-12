@@ -1,6 +1,14 @@
 """Health D3 analysis tests."""
 
-from agents.health.body_map import BODY_PARTS, body_part_for_house, drekkana_section
+from agents.health.body_map import (
+    BODY_PARTS,
+    TAMIL_D3_BODY_PARTS,
+    body_part_for_d3_house,
+    body_part_for_house,
+    drekkana_section,
+    drekkana_section_tamil,
+    maps_agree,
+)
 from agents.health.d3 import build_drekkana_from_natal, d1_to_d3_sign_index
 from agents.health_agent import compute_health_analysis, health_context_for_narrator
 from agents.natal_agent import calculate_natal_chart
@@ -114,6 +122,57 @@ def test_health_analysis_structure():
     top = out["body_regions"][0]
     assert top.get("rationale_en")
     assert out["summary"].get("focus_rationale_en")
+
+
+def test_tamil_d3_house_map_keeps_previous_limbs():
+    assert body_part_for_d3_house(1, 5.0)["en"] == "Head"
+    assert body_part_for_d3_house(1, 15.0)["en"] == "Left chest"
+    assert body_part_for_d3_house(7, 5.0)["en"] == "Face"
+    assert drekkana_section(10.0) == "second"
+    assert body_part_for_d3_house(1, 10.0)["en"] == TAMIL_D3_BODY_PARTS[1]["first"]["en"]
+
+
+def test_maps_agree_on_shared_region():
+    classical = body_part_for_house(1, 5.0)
+    tamil = body_part_for_d3_house(1, 5.0)
+    assert classical["en"] == "Head"
+    assert maps_agree(classical, tamil) is True
+    assert maps_agree(body_part_for_house(1, 15.0), body_part_for_d3_house(1, 15.0)) is False
+
+
+def test_health_rows_include_tamil_reference():
+    rows = compute_health_analysis(_chart())["planet_rows"]
+    assert all("tamil_d3_en" in row and isinstance(row["maps_agree"], bool) for row in rows)
+    assert any(row["tamil_d3_en"] != row["body_part_en"] for row in rows)
+
+
+def test_tamil_limbs_follow_d3_house_not_lagna_column():
+    chart = _chart()
+    out = compute_health_analysis(chart)
+    lagna_section = drekkana_section(float(chart["ascendant"]["degree_in_sign"]))
+    for row in out["planet_rows"]:
+        tamil_section = drekkana_section_tamil(row["d1_degree_in_sign"])
+        assert row["tamil_d3_en"] == TAMIL_D3_BODY_PARTS[row["d3_house"]][tamil_section]["en"]
+        assert row["body_part_en"] == BODY_PARTS[row["d1_house"]][lagna_section]["en"]
+
+
+def test_narrator_stays_on_brihat_jataka():
+    ctx = health_context_for_narrator(_chart())
+    assert "Brihat Jataka 5.25" in ctx
+    assert "tamil_d3" not in ctx.lower()
+
+
+def test_tamil_rows_star_current_dasa_and_transit():
+    out = compute_health_analysis(_chart())
+    by_planet = {row["planet"]: row for row in out["planet_rows"]}
+    maha = out["summary"]["maha_dasa"]
+    bhukti = out["summary"]["bhukti"]
+    assert by_planet[maha]["live_dasa"] is True
+    assert by_planet[bhukti]["live_dasa"] is True
+    idle = next(row for row in out["planet_rows"] if row["planet"] not in (maha, bhukti))
+    assert idle["live_dasa"] is False
+    assert any(row["live_transit"] for row in out["planet_rows"])
+    assert any(row["live_transit_bj"] for row in out["planet_rows"])
 
 
 def test_health_narrator_context():

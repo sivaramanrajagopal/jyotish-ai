@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from agents.health.body_map import body_part_for_house, drekkana_section_label
+from agents.health.body_map import (
+    body_part_for_d3_house,
+    body_part_for_house,
+    drekkana_section_label,
+    maps_agree,
+)
 from agents.natal_agent import SIGN_LORDS, SIGNS
 
 PLANETS = [
@@ -61,6 +66,7 @@ def build_planet_rows(
         d3_house = int(d3p.get("house", 0))
         d1_house = _whole_sign_house(d1p.get("sign_index", 0), d1_asc_idx)
         body = body_part_for_house(d1_house, d1_asc_deg)
+        tamil = body_part_for_d3_house(d3_house, d1_deg)
         rows.append({
             "planet": planet,
             "d1_house": d1_house,
@@ -72,6 +78,12 @@ def build_planet_rows(
             "body_part_en": body["en"],
             "body_part_ta": body["ta"],
             "body_zone": body["zone"],
+            "body_emoji": body.get("emoji") or "",
+            "tamil_d3_en": tamil["en"],
+            "tamil_d3_ta": tamil["ta"],
+            "tamil_d3_zone": tamil["zone"],
+            "tamil_d3_emoji": tamil.get("emoji") or "",
+            "maps_agree": maps_agree(body, tamil),
             "retrograde": bool(d1p.get("retrograde")),
             "malefic": planet in MALEFICS,
             "health_house_d3": d3_house in HEALTH_HOUSES,
@@ -254,6 +266,53 @@ def build_transit_today(
             "slow": planet in SLOW_TRANSITS,
         })
     return out
+
+
+def mark_tamil_live(
+    rows: list[dict],
+    *,
+    maha: str,
+    bhukti: str,
+    transit_items: list[dict],
+    transit_today: list[dict],
+) -> None:
+    """Star Tamil (D3) and Brihat Jataka (D1) cells that are live in period or transit."""
+    lords = {maha, bhukti} - {""}
+    transit_planets: set[str] = set()
+    live_d3_houses: set[int] = set()
+    live_d1_houses: set[int] = set()
+    for item in transit_items:
+        if item.get("planet"):
+            transit_planets.add(item["planet"])
+        if item.get("natal_planet"):
+            transit_planets.add(item["natal_planet"])
+        house_d3 = item.get("house_d3")
+        if house_d3 in HEALTH_HOUSES:
+            live_d3_houses.add(int(house_d3))
+        house_d1 = item.get("house_d1")
+        if house_d1 in D1_HEALTH_HOUSES:
+            live_d1_houses.add(int(house_d1))
+    for item in transit_today:
+        if not item.get("health_sensitive"):
+            continue
+        if item.get("slow") and item.get("planet"):
+            transit_planets.add(item["planet"])
+        house_d3 = item.get("house_d3")
+        if house_d3 in HEALTH_HOUSES:
+            live_d3_houses.add(int(house_d3))
+        house_d1 = item.get("house_d1")
+        if house_d1 in D1_HEALTH_HOUSES:
+            live_d1_houses.add(int(house_d1))
+    for row in rows:
+        row["live_dasa"] = row["planet"] in lords
+        row["live_transit"] = (
+            row["planet"] in transit_planets
+            or row["d3_house"] in live_d3_houses
+        )
+        row["live_transit_bj"] = (
+            row["planet"] in transit_planets
+            or row["d1_house"] in live_d1_houses
+        )
 
 
 def build_d3_natal_factors(

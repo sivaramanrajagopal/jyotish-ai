@@ -21,6 +21,7 @@ from agents.health.warnings import (
     build_planet_rows,
     build_transit_today,
     flatten_warnings_for_chat,
+    mark_tamil_live,
 )
 from agents.natal_agent import calculate_natal_chart
 from dasha_core import find_current_dasha_bhukti
@@ -129,6 +130,13 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         d1_asc_idx=d1_asc_idx,
         d1_asc_deg=asc_deg,
         d3_asc_idx=d3_asc_idx,
+    )
+    mark_tamil_live(
+        rows,
+        maha=maha,
+        bhukti=bhukti,
+        transit_items=transit_items,
+        transit_today=transit_today,
     )
 
     top_region = body_regions[0] if body_regions else {}

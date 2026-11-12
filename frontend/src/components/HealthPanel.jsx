@@ -1,7 +1,7 @@
 /**
  * HealthPanel — D3 Drekkana body map, Dasa/Bhukti + transit awareness (EN + TA).
  */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import api from '../api/client'
 import { chartPayload } from '../lib/chartPayload'
 import SouthIndianChart from './SouthIndianChart'
@@ -89,6 +89,244 @@ function HouseBadge({ house, kind }) {
       {house}
       <span className="hl-house-badge__dot" aria-hidden>●</span>
     </span>
+  )
+}
+
+function LiveMarks({ dasa, transit }) {
+  return (
+    <>
+      {dasa && (
+        <abbr className="hl-live-mark" title="Current Dasa or Bhukti">★</abbr>
+      )}
+      {transit && (
+        <abbr className="hl-live-mark hl-live-mark--transit" title="Current transit">*</abbr>
+      )}
+    </>
+  )
+}
+
+const TAMIL_ZONE_LABELS = {
+  head: { en: 'Head / face', ta: 'தலை / முகம்', emoji: '👤' },
+  neck: { en: 'Neck', ta: 'கழுத்து', emoji: '🦴' },
+  chest: { en: 'Chest', ta: 'மார்பு', emoji: '🫀' },
+  torso: { en: 'Torso / ribs', ta: 'விலா / முதுகு', emoji: '🫁' },
+  abdomen: { en: 'Abdomen', ta: 'வயிறு', emoji: '🟠' },
+  arms: { en: 'Arms / shoulders', ta: 'கை / தோள்', emoji: '💪' },
+  pelvis: { en: 'Pelvis / reproductive', ta: 'இடுப்பு / இனப்பெருக்க உறுப்பு', emoji: '🟣' },
+  legs: { en: 'Legs / knees / feet', ta: 'கால் / முழங்கால் / பாதம்', emoji: '🦵' },
+}
+
+function tamilRisk(score) {
+  if (score >= 6) return 'high'
+  if (score >= 3) return 'moderate'
+  return 'low'
+}
+
+function tamilRegionsFromRows(rows) {
+  const grouped = {}
+  for (const row of rows || []) {
+    const zone = row.tamil_d3_zone
+    if (!zone) continue
+    if (!grouped[zone]) grouped[zone] = { score: 0, planets: [] }
+    let score = 0
+    if (row.health_house_d3) score += 2
+    if (row.malefic && row.health_house_d3) score += 2
+    if (row.malefic) score += 0.5
+    if (row.live_dasa) score += 2
+    if (row.live_transit) score += 2
+    grouped[zone].score += score
+    grouped[zone].planets.push(row)
+  }
+  return Object.entries(grouped)
+    .map(([zone, group]) => {
+      const labels = TAMIL_ZONE_LABELS[zone] || { en: zone, ta: zone, emoji: '' }
+      return {
+        zone,
+        score: group.score,
+        risk: tamilRisk(group.score),
+        label_en: labels.en,
+        label_ta: labels.ta,
+        emoji: labels.emoji,
+        planets: group.planets,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+}
+
+function TamilD3BodyMap({ rows }) {
+  const [selectedZone, setSelectedZone] = useState(null)
+  const regions = useMemo(() => tamilRegionsFromRows(rows), [rows])
+  if (!regions.length) return null
+
+  const liveCount = (rows || []).filter((row) => row.live_dasa || row.live_transit).length
+  const picked = selectedZone
+    ? regions.find((region) => region.zone === selectedZone)
+    : regions[0]
+
+  const toggleZone = (zone) => {
+    setSelectedZone((current) => (current === zone ? null : zone))
+  }
+
+  return (
+    <details className="hl-table-collapse hl-tamil-body">
+      <summary className="hl-layer-title hl-table-collapse__summary">
+        <Bilingual
+          en="Tamil D3 body map"
+          ta="தமிழ் D3 உடல் வரைபடம்"
+          inline
+        />
+        <span className="hl-layer-title__count">({liveCount} live)</span>
+      </summary>
+      <p className="hl-primer__body hl-map-compare__note">
+        <Bilingual
+          en="Silhouette from the earlier Tamil D3 house and the planet’s own 10° slice. Color follows D3 health houses plus ★ Dasa/Bhukti and * current D3 transit. Tap a region. The map above stays on Brihat Jataka 5.25."
+          ta="பழைய தமிழ் D3 வீடு + கிரகத்தின் 10° பகுதி. நிறம் D3 ஆரோக்கிய வீடுகள், ★ தசை/புத்தி, * நடப்பு D3 கோசாரம். பகுதியைத் தொடவும். மேலே உள்ள வரைபடம் பிருஹத் ஜாதகம் 5.25."
+          inline
+        />
+      </p>
+      <div className="hl-tamil-body__grid">
+        <div className="hl-tamil-body__map">
+          <BodyMapSvg
+            regions={regions}
+            selectedZone={selectedZone}
+            onSelectZone={toggleZone}
+          />
+          <div className="hl-legend">
+            <span className="hl-legend__item hl-risk--low">Low / குறைவு</span>
+            <span className="hl-legend__item hl-risk--moderate">Moderate / மிதம்</span>
+            <span className="hl-legend__item hl-risk--high">Higher / அதிகம்</span>
+          </div>
+        </div>
+        <ul className="hl-tamil-body__zones">
+          {regions.map((region) => {
+            const active = selectedZone === region.zone
+            return (
+              <li
+                key={region.zone}
+                className={`hl-tamil-body__zone${active ? ' hl-tamil-body__zone--active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="hl-tamil-body__zone-btn"
+                  aria-pressed={active}
+                  onClick={() => toggleZone(region.zone)}
+                >
+                  <span className="hl-tamil-body__zone-label">
+                    {region.emoji ? `${region.emoji} ` : ''}
+                    {region.label_en}
+                  </span>
+                  {region.label_ta && (
+                    <span className="hl-bi__ta"> / {region.label_ta}</span>
+                  )}
+                </button>
+                <div className="hl-tamil-body__planets">
+                  {region.planets.map((row) => (
+                    <span key={row.planet} className="hl-tamil-body__chip">
+                      {row.planet} · {row.tamil_d3_en}
+                      <LiveMarks dasa={row.live_dasa} transit={row.live_transit} />
+                    </span>
+                  ))}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+      {picked && (
+        <p className="hl-zone-rationale hl-tamil-body__rationale">
+          <strong>
+            {picked.emoji ? `${picked.emoji} ` : ''}
+            {picked.label_en}
+            {selectedZone ? ' (selected)' : ' (highest score)'}
+          </strong>
+          {' — '}
+          {picked.planets.map((row) => row.planet).join(', ')}
+        </p>
+      )}
+    </details>
+  )
+}
+
+function MapCompareTable({ rows }) {
+  if (!rows?.length) return null
+  const agreeCount = rows.filter((row) => row.maps_agree).length
+  return (
+    <details className="hl-table-collapse hl-map-compare">
+      <summary className="hl-layer-title hl-table-collapse__summary">
+        <Bilingual
+          en="Earlier D3 house map (reference)"
+          ta="முந்தைய D3 வீட்டு வரைபடம் (ஒப்பீடு)"
+          inline
+        />
+        <span className="hl-layer-title__count">
+          ({agreeCount}/{rows.length} same region)
+        </span>
+      </summary>
+      <p className="hl-primer__body hl-map-compare__note">
+        <Bilingual
+          en="Tamil drekkana used the planet’s D3 house and its own 10° slice. Brihat Jataka 5.25 uses the house from the birth lagna and one column from the lagna’s rising decan. Bold rows share a body region. On both columns, ★ is the running Dasa/Bhukti and * is a current health transit (Tamil by D3 house, Brihat Jataka by D1 house). The map and factors above stay on Brihat Jataka."
+          ta="பழைய வரைபடம் கிரகத்தின் D3 வீட்டையும் அதன் 10° பகுதியையும் பயன்படுத்தியது. பிருஹத் ஜாதகம் 5.25 பிறப்பு லக்ன வீட்டையும் லக்ன திரேக்கானத்தையும் பயன்படுத்துகிறது. தடித்த வரிகள் ஒரே உடல் பகுதி. இரு நெடுவரிசைகளிலும் ★ நடப்பு தசை/புத்தி, * இன்றைய ஆரோக்கிய கோசாரம் (தமிழ் D3 வீடு, பிருஹத் ஜாதகம் D1 வீடு). மேலே உள்ள வரைபடம் பிருஹத் ஜாதகமே."
+          inline
+        />
+      </p>
+      <div className="hl-table-wrap">
+        <table className="hl-table hl-table--compare">
+          <thead>
+            <tr>
+              <th>Planet</th>
+              <th>Tamil D3 house</th>
+              <th>Brihat Jataka 5.25</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const agree = Boolean(row.maps_agree)
+              const emoji = agree
+                ? (row.body_emoji || row.tamil_d3_emoji || '')
+                : `${row.tamil_d3_emoji || ''} ${row.body_emoji || ''}`.trim()
+              return (
+                <tr
+                  key={row.planet}
+                  className={agree ? 'hl-map-compare__agree' : ''}
+                >
+                  <td>
+                    <span className="hl-map-compare__planet">{row.planet}</span>
+                    {agree && (
+                      <span className="hl-map-compare__badge" title="Same body region">
+                        {emoji} same region
+                      </span>
+                    )}
+                    {!agree && emoji && (
+                      <span className="hl-map-compare__split" aria-hidden>{emoji}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={agree ? 'hl-map-compare__part' : ''}>
+                      {row.tamil_d3_emoji ? `${row.tamil_d3_emoji} ` : ''}
+                      {row.tamil_d3_en}
+                    </span>
+                    <LiveMarks dasa={row.live_dasa} transit={row.live_transit} />
+                    {row.tamil_d3_ta && (
+                      <span className="hl-bi__ta"> / {row.tamil_d3_ta}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={agree ? 'hl-map-compare__part' : ''}>
+                      {row.body_emoji ? `${row.body_emoji} ` : ''}
+                      {row.body_part_en}
+                    </span>
+                    <LiveMarks dasa={row.live_dasa} transit={row.live_transit_bj} />
+                    {row.body_part_ta && (
+                      <span className="hl-bi__ta"> / {row.body_part_ta}</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </details>
   )
 }
 
@@ -513,6 +751,9 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
           </table>
         </div>
       </details>
+
+      <MapCompareTable rows={data.planet_rows} />
+      <TamilD3BodyMap rows={data.planet_rows} />
     </div>
   )
 }
