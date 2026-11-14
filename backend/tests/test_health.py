@@ -1,5 +1,6 @@
 """Health D3 analysis tests."""
 
+from agents.health.karakas import PLANET_ROGA, KALAPURUSHA
 from agents.health.body_map import (
     BODY_PARTS,
     TAMIL_D3_BODY_PARTS,
@@ -173,6 +174,25 @@ def test_tamil_rows_star_current_dasa_and_transit():
     assert idle["live_dasa"] is False
     assert any(row["live_transit"] for row in out["planet_rows"])
     assert any(row["live_transit_bj"] for row in out["planet_rows"])
+
+
+def test_planet_karakas_sun_heart_and_kalapurusha():
+    assert "Heart" in PLANET_ROGA["Sun"]["en"]
+    assert KALAPURUSHA[0]["sign"] == "Aries"
+    assert KALAPURUSHA[0]["en"] == "Head"
+    assert KALAPURUSHA[11]["sign"] == "Pisces"
+    out = compute_health_analysis(_chart())
+    by_planet = {row["planet"]: row for row in out["planet_karakas"]}
+    assert by_planet["Sun"]["roga_en"]
+    assert by_planet["Moon"]["sign"] == "Pisces"
+    assert "Feet" in by_planet["Moon"]["kalapurusha_en"]
+    maha = out["summary"]["maha_dasa"]
+    assert by_planet[maha]["live_dasa"] is True
+
+
+def test_health_narrator_mentions_karakas():
+    ctx = health_context_for_narrator(_chart())
+    assert "karaka" in ctx.lower()
 
 
 def test_health_narrator_context():

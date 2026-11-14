@@ -19,6 +19,7 @@ CITES = {
     "nadi": {"tab": "nadi", "label": "Nadi"},
     "reading": {"tab": "reading", "label": "Reading"},
     "career": {"tab": "career", "label": "Career"},
+    "d6": {"tab": "d6", "label": "Ripu"},
     "health": {"tab": "health", "label": "Health"},
     "dosha_radar": {"tab": "dosha-radar", "label": "Dosha Radar"},
     "house_links": {"tab": "house-links", "label": "House Links"},
@@ -72,6 +73,10 @@ TOOLS = [
     _tool(
         "career",
         "Career from D1 and D10. Call for profession, 10th house, or work direction.",
+    ),
+    _tool(
+        "d6",
+        "Ripu from D1 and D6 Shashthamsa (Narasimha Rao / JHora: odd from Aries, even from Libra). Call for debt, enemies, litigation, competitive exams, service jobs, or illness as an obstacle. Not D60. Not medical, legal, or exam advice. Body map is health; profession type is career.",
     ),
     _tool(
         "health",
@@ -176,7 +181,7 @@ CLASSICAL_GUIDE = (
 )
 
 ENGINE_GUIDE = (
-    "Call the matching engine tool for Nadi, the sitting, career, health, Dosha Radar, House Links, "
+    "Call the matching engine tool for Nadi, the sitting, career, Ripu (D6), health, Dosha Radar, House Links, "
     "Gochara, Life Cycle, Tamil doshas, Indu, Ashtakavarga, Bhavat Bhavam, forecast facts, Prashna, "
     "or Mitra muhurta (loan-repayment windows). "
     "Answer from the tool JSON. Do not invent dates, seasons, or 0-100 scores. "
@@ -391,6 +396,11 @@ def _career(chart: dict, location: str, args: dict) -> dict:
     return {"text": _strip_disclaimer(career_context_for_narrator(chart))}
 
 
+def _d6(chart: dict, location: str, args: dict) -> dict:
+    from agents.d6_agent import d6_context_for_narrator
+    return {"text": _strip_disclaimer(d6_context_for_narrator(chart))}
+
+
 def _health(chart: dict, location: str, args: dict) -> dict:
     from agents.health_agent import health_context_for_narrator
     return {"text": _strip_disclaimer(health_context_for_narrator(chart))}
@@ -558,6 +568,7 @@ HANDLERS = {
     "nadi": _nadi,
     "reading": _reading,
     "career": _career,
+    "d6": _d6,
     "health": _health,
     "dosha_radar": _dosha_radar,
     "house_links": _house_links,

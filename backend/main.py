@@ -103,6 +103,7 @@ from agents.tamil_dosha_agent import compute_tamil_doshas
 from agents.indu_lagna_agent import compute_indu_lagna
 from agents.career_agent import compute_career_prediction
 from agents.health_agent import compute_health_analysis
+from agents.d6_agent import compute_d6_analysis
 from agents.dosha_radar_agent import compute_dosha_radar_analysis
 from agents.nadi_agent import compute_nadi
 from agents.reading_agent import compute_reading, compute_watch
@@ -1712,6 +1713,33 @@ def career_predict_endpoint(
 class HealthAnalyzeRequest(BaseModel):
     natal_chart: Optional[dict] = None
     model_config = {"str_strip_whitespace": True}
+
+
+class D6AnalyzeRequest(BaseModel):
+    natal_chart: Optional[dict] = None
+    timing_years: int = 90
+    model_config = {"str_strip_whitespace": True}
+
+
+@app.post("/d6/analyze")
+@limiter.limit("30/minute")
+def d6_analyze_endpoint(
+    request: Request,
+    req: D6AnalyzeRequest,
+    auth_user: Optional[AuthUser] = Depends(get_current_user_optional),
+):
+    """D1 + D6 Ripu themes (debt, enemies, exams, service, illness-as-fight) and Dasa on 6/8."""
+    chart = resolve_natal_chart(req.natal_chart, auth_user.id if auth_user else None, _sanitise)
+    assert_chart_not_stale(chart)
+    timing_years = max(1, min(int(req.timing_years), 120))
+    try:
+        return compute_d6_analysis(chart, timing_years=timing_years)
+    except Exception as exc:
+        import logging, traceback
+        logging.getLogger(__name__).error(
+            "D6 analyze error: %s\n%s", exc, traceback.format_exc()
+        )
+        raise HTTPException(status_code=500, detail="D6 Ripu analysis failed.")
 
 
 @app.post("/health/analyze")

@@ -49,6 +49,7 @@ export const APP_FEATURE_LINKS = [
   { label: 'Tamil Doshas', tab: 'chart', section: 'tamil-doshas' },
   { label: 'Indu Lagna', tab: 'chart', section: 'indu-lagna' },
   { label: 'Career', tab: 'career' },
+  { label: 'Ripu (D6)', tab: 'd6' },
   { label: 'Health', tab: 'health' },
   { label: 'Dosha Radar', tab: 'dosha-radar' },
   { label: 'Avastha', tab: 'avastha' },

@@ -247,6 +247,89 @@ function TamilD3BodyMap({ rows }) {
   )
 }
 
+function PlanetKarakaTable({ rows, selectedZone }) {
+  if (!rows?.length) return null
+  const liveCount = rows.filter((row) => row.live_dasa || row.live_transit_bj).length
+  const zoneHits = selectedZone
+    ? rows.filter(
+        (row) =>
+          (row.zones || []).includes(selectedZone)
+          || (row.kalapurusha_zones || []).includes(selectedZone),
+      )
+    : []
+  return (
+    <details className="hl-table-collapse hl-karaka">
+      <summary className="hl-layer-title hl-table-collapse__summary">
+        <Bilingual
+          en="Planet karakas for illness"
+          ta="நோய்க்கான கிரக காரகங்கள்"
+          inline
+        />
+        <span className="hl-layer-title__count">({liveCount} live)</span>
+      </summary>
+      <p className="hl-primer__body hl-map-compare__note">
+        <Bilingual
+          en="Natural significators (Parashara / Saravali) plus Kalapurusha from the planet’s D1 sign (Aries = head … Pisces = feet). ★ is the running Dasa/Bhukti. * is a current D1 health-house transit. Awareness only — not a diagnosis. Timing of the 6th-house chapter stays on Ripu."
+          ta="கிரகத்தின் இயற்கை காரகமும், D1 ராசியின் காலபுருஷ உறுப்பும் (மேஷம் = தலை … மீனம் = பாதம்). ★ நடப்பு தசை/புத்தி. * D1 ஆரோக்கிய வீட்டு கோசாரம். விழிப்புணர்வு மட்டும் — நோயறிதல் அல்ல. 6ம் வீட்டு காலம் Ripu தாவலில்."
+          inline
+        />
+      </p>
+      {selectedZone && zoneHits.length > 0 && (
+        <p className="hl-karaka__zone">
+          <Bilingual
+            en={`For the selected region: ${zoneHits.map((row) => row.planet).join(', ')}`}
+            ta={`தேர்ந்த பகுதி: ${zoneHits.map((row) => row.planet).join(', ')}`}
+            inline
+          />
+        </p>
+      )}
+      <div className="hl-table-wrap">
+        <table className="hl-table hl-table--compare">
+          <thead>
+            <tr>
+              <th>Planet</th>
+              <th>Illness karaka</th>
+              <th>Kalapurusha (D1 sign)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const zoneHit = selectedZone
+                && (
+                  (row.zones || []).includes(selectedZone)
+                  || (row.kalapurusha_zones || []).includes(selectedZone)
+                )
+              return (
+                <tr
+                  key={row.planet}
+                  className={zoneHit ? 'hl-karaka__hit' : ''}
+                >
+                  <td>
+                    <span className="hl-map-compare__planet">{row.planet}</span>
+                    <LiveMarks dasa={row.live_dasa} transit={row.live_transit_bj} />
+                  </td>
+                  <td>
+                    <span>{row.roga_en}</span>
+                    {row.roga_ta && (
+                      <span className="hl-bi__ta"> / {row.roga_ta}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span>{row.sign}: {row.kalapurusha_en}</span>
+                    {row.kalapurusha_ta && (
+                      <span className="hl-bi__ta"> / {row.kalapurusha_ta}</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )
+}
+
 function MapCompareTable({ rows }) {
   if (!rows?.length) return null
   const agreeCount = rows.filter((row) => row.maps_agree).length
@@ -753,6 +836,7 @@ export default function HealthPanel({ chart, userId, enabled = true }) {
       </details>
 
       <MapCompareTable rows={data.planet_rows} />
+      <PlanetKarakaTable rows={data.planet_karakas} selectedZone={selectedZone} />
       <TamilD3BodyMap rows={data.planet_rows} />
     </div>
   )

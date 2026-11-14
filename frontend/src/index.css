@@ -5163,6 +5163,189 @@ html[data-theme="dark"] .si-chart__lagna-badge {
   .cr-table { font-size: 0.72rem; }
 }
 
+.rp-panel { max-width: 100%; overflow-x: hidden; }
+
+.rp-windows { display: none; list-style: none; margin: 0.35rem 0 0; padding: 0; }
+.rp-read__why--desktop { display: block; }
+
+.rp-meaning { margin-top: 0.75rem; }
+.rp-meaning__en {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-meaning__ta { margin-top: 0.4rem; overflow-wrap: anywhere; }
+
+.rp-consult { margin-top: 1rem; }
+.rp-consult__kicker { margin: 0.15rem 0 0.5rem; overflow-wrap: anywhere; }
+.rp-consult__en {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-consult__ta-wrap { margin-top: 0.75rem; }
+.rp-consult__ta { margin: 0.35rem 0 0; overflow-wrap: anywhere; }
+
+.rp-primer { margin: 0.75rem 0 0; overflow-wrap: anywhere; }
+.rp-themes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rp-theme__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  min-height: 44px;
+}
+.rp-theme__top .td-card__title { margin: 0; }
+.rp-theme__line {
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-outlook { margin: 0.5rem 0 0.75rem; }
+.rp-outlook__now,
+.rp-outlook__eases,
+.rp-outlook__recover {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-outlook__recover { font-weight: 600; }
+.rp-outlook__ta { margin-top: 0.35rem; overflow-wrap: anywhere; }
+.rp-theme__now,
+.rp-theme__eases {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-theme__eases { opacity: 0.9; }
+
+.rp-theme__dasa {
+  font-size: 0.78rem;
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.rp-tone {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.rp-tone--present { background: rgba(239,68,68,0.15); color: #dc2626; }
+.rp-tone--mixed { background: rgba(245,158,11,0.15); color: #d97706; }
+.rp-tone--quiet { background: rgba(34,197,94,0.15); color: #16a34a; }
+
+.rp-guide { margin: 0.5rem 0 0.75rem; }
+.rp-guide__intro {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-guide__tones,
+.rp-guide__links {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.rp-guide__tones li,
+.rp-guide__links li { margin-top: 0.25rem; }
+.rp-read {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.rp-read--watch { background: rgba(245,158,11,0.18); color: #d97706; }
+.rp-read--careful { background: rgba(234,88,12,0.18); color: #ea580c; }
+.rp-read--challenging { background: rgba(220,38,38,0.18); color: #dc2626; }
+.rp-read--quiet { background: rgba(34,197,94,0.15); color: #16a34a; }
+.rp-read__why {
+  font-size: 0.75rem;
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.rp-read__remedy {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-read__sky {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-gochara { margin: 0.5rem 0 0.75rem; }
+.rp-gochara__now,
+.rp-gochara__ta {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+.rp-gochara__houses {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.rp-gochara__houses li { margin-top: 0.25rem; }
+
+@media (max-width: 639px) {
+  .rp-panel .rp-timing-desktop { display: none; }
+  .rp-read__why--desktop { display: none; }
+  .rp-windows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .rp-window {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .rp-window:last-child { border-bottom: 0; }
+  .rp-window__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem 0.6rem;
+    min-height: 44px;
+  }
+  .rp-window__label { overflow-wrap: anywhere; }
+  .rp-window__meta {
+    font-size: 0.78rem;
+    margin: 0.1rem 0 0;
+    overflow-wrap: anywhere;
+    color: var(--text-secondary);
+  }
+  .rp-gochara__now,
+  .rp-gochara__ta { font-size: 0.82rem; }
+  .cr-table th,
+  .cr-table td { overflow-wrap: anywhere; }
+}
+
 /* Health panel (D3 body map) */
 .hl-panel { scroll-margin-top: 5rem; }
 
@@ -5521,6 +5704,19 @@ html[data-theme="dark"] .si-chart__lagna-badge {
 .hl-map-compare {
   margin-top: 0.75rem;
 }
+
+.hl-karaka { margin-top: 0.75rem; }
+.hl-karaka .hl-table-wrap { overflow-x: hidden; }
+.hl-karaka__zone {
+  padding: 0 0.85rem 0.4rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+.hl-karaka__hit {
+  background: var(--yoga-bg, rgba(34, 197, 94, 0.08));
+}
+.hl-karaka td { overflow-wrap: anywhere; vertical-align: top; }
 
 .hl-map-compare__note {
   padding: 0 0.85rem 0.5rem;

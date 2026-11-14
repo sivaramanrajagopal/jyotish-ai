@@ -15,6 +15,7 @@ import { formatNakshatraLine } from '../lib/chartFormat'
  *   navamsa               — boolean, D9 centre label
  *   dasamsa               — boolean, D10 centre label
  *   drekkana              — boolean, D3 centre label
+ *   shashthamsa           — boolean, D6 centre label
  *   showDetails           — boolean (default false), show degree + pada in each badge
  *   variant               — 'default' | 'classic' (classic = traditional Tamil house labels)
  *   chartKind             — 'natal' | 'transit' | 'prashna' (legend + centre label)
@@ -262,6 +263,7 @@ export default function SouthIndianChart({
   navamsa = false,
   dasamsa = false,
   drekkana = false,
+  shashthamsa = false,
   showDetails = false,
   variant = 'default',
   chartKind = 'natal',
@@ -330,10 +332,13 @@ export default function SouthIndianChart({
               {isClassic && chartKind === 'natal' && dasamsa && !drekkana && (
                 <div className="si-chart__centre-tamil">தசாம்சம்</div>
               )}
-              {isClassic && chartKind === 'natal' && navamsa && !dasamsa && !drekkana && (
+              {isClassic && chartKind === 'natal' && shashthamsa && !dasamsa && !drekkana && (
+                <div className="si-chart__centre-tamil">ஷஷ்டாம்சம்</div>
+              )}
+              {isClassic && chartKind === 'natal' && navamsa && !dasamsa && !drekkana && !shashthamsa && (
                 <div className="si-chart__centre-tamil">நவாம்சம்</div>
               )}
-              {isClassic && chartKind === 'natal' && !navamsa && !dasamsa && !drekkana && (
+              {isClassic && chartKind === 'natal' && !navamsa && !dasamsa && !drekkana && !shashthamsa && (
                 <div className="si-chart__centre-tamil">ராசி சக்கரம்</div>
               )}
               {isClassic && chartKind === 'prashna' && (

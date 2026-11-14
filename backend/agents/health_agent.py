@@ -11,6 +11,7 @@ from time_utils import today_ist
 from agents.bhavat_bhavam.slices import compute_health_bhavat_bhavam
 from agents.health.links import dasha_moment, health_links, links_context
 from agents.health.body_map import body_part_for_house
+from agents.health.karakas import build_planet_karakas
 from agents.health.d3 import build_drekkana_from_natal
 from agents.health.warnings import (
     apply_dasa_scores,
@@ -138,6 +139,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         transit_items=transit_items,
         transit_today=transit_today,
     )
+    planet_karakas = build_planet_karakas(pp, rows)
 
     top_region = body_regions[0] if body_regions else {}
     top_factor = (factor_groups.get("d3_natal") or [None])[0]
@@ -176,6 +178,7 @@ def compute_health_analysis(natal_chart: dict) -> dict:
         "drekkana_ascendant": d3_asc,
         "drekkana_positions": d3_pos,
         "planet_rows": rows,
+        "planet_karakas": planet_karakas,
         "body_regions": body_regions,
         "factor_groups": factor_groups,
         "warnings": warnings,
@@ -227,8 +230,16 @@ def health_context_for_narrator(natal_chart: dict) -> str:
         f"Lagna body part: {s['lagna_body_en']}",
         "Body parts: the planet's house from the birth lagna, read in the body section set by "
         "the lagna's decan (Brihat Jataka 5.25). D3 houses 6/8/12 only raise awareness.",
+        "Planet illness karakas and Kalapurusha (Aries=head) are a collapsed Health reference, not a diagnosis.",
         f"Transits as of: {s.get('transit_date', 'today')}",
     ]
+    live_k = [
+        f"{k['planet']} ({k['roga_en']}; Kalapurusha {k['sign']} → {k['kalapurusha_en']})"
+        for k in (data.get("planet_karakas") or [])
+        if k.get("live_dasa") or k.get("live_transit_bj")
+    ]
+    if live_k:
+        lines.append("Live planet karakas: " + "; ".join(live_k[:4]))
     if data.get("house_links"):
         lines.append(links_context(data["house_links"]))
     for f in (fg.get("d3_natal") or [])[:4]:

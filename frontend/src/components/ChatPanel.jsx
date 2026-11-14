@@ -89,6 +89,14 @@ const TOPICS = [
     question: "Explain my D1 and D10 career chart — which professions suit me and when do Dasa periods favour career growth?",
   },
   {
+    key: 'd6',
+    label: '⚔️ Ripu',
+    color: '#b45309',
+    bg: 'rgba(180,83,9,0.15)',
+    border: 'rgba(180,83,9,0.35)',
+    question: "In plain language, what does my D1 and D6 Ripu chart mean for me now? Cover debt, enemies, competitive exams, service work, and illness as an obstacle. Traditional Jyotish only — not medical, legal, or exam advice.",
+  },
+  {
     key: 'health',
     label: '🏥 Health',
     color: '#10b981',
@@ -160,6 +168,7 @@ function detectTopics(text) {
   if (/dosha radar|pushkara|visha gati|divine protection|chandrashtama|obstruction dosha|red zone transit/.test(t)) found.push('dosha_radar')
   if (/house link|house connection|lord link|blesser planet|prediction map|channels in|channels out|explain h\d|raja yoga.*lord|dharma-karma/.test(t)) found.push('house_links')
   if (/d3|body map|health house|drekkana.*health/.test(t)) found.push('health')
+  if (/ripu|shashthamsa|\bd6\b|debt|litigation|enemies|competitive exam|service job/.test(t)) found.push('d6')
   if (/bhavat bhavam|bhavam|house.from.house|6th→11th|6→11|10→7/.test(t)) found.push('bhavam')
   if (/yoga|gajakesari|budha.aditya|vargottama|neecha|raja yoga/.test(t))             found.push('yoga')
   if (/muhurta|auspicious|good time|best time|avoid|wednesday|friday/.test(t))        found.push('muhurta')

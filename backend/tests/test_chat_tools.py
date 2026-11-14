@@ -60,6 +60,9 @@ def test_engine_tools_cover_the_desk():
 
     career = run_chart_tool("career", chart)
     assert "Career" in career["text"]
+    ripu = run_chart_tool("d6", chart)
+    assert "Ripu" in ripu["text"]
+    assert ripu["cite"]["tab"] == "d6"
     health = run_chart_tool("health", chart)
     assert "Health" in health["text"]
     radar = run_chart_tool("dosha_radar", chart)
